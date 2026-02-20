@@ -1,0 +1,2 @@
+# Notiq
+Smart notes app
