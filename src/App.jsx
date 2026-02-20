@@ -1,0 +1,554 @@
+// ══════════════════════════════════════════════════════════════
+// NOTIQ v4 — AI Notes · Gemini · YouTube · Files · Sub-notes
+// ══════════════════════════════════════════════════════════════
+//
+// ┌───────────────────────────────────────────────────────────┐
+// │  PASTE YOUR API KEYS HERE (line 10-11)                   │
+// └───────────────────────────────────────────────────────────┘
+const GEMINI_KEY = "AIzaSyC1ECDxN4bZbKlt1UmhRgrjEF1-5UNoJuw";    // ← Gemini key from aistudio.google.com/apikey
+const YOUTUBE_KEY = "AIzaSyB1ik2Qn1sDsEg1D3ZAesGvf6jsFqS0oGk";   // ← YouTube Data API v3 key
+//
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 1: THEME
+// ══════════════════════════════════════════════════════════════
+const T = { bg:"#12081a",bg2:"#1a0e24",bg3:"#221435",glass:"rgba(255,255,255,.04)",glassH:"rgba(255,255,255,.07)",border:"rgba(255,255,255,.08)",a1:"#e879a8",a2:"#c27bf0",a3:"#f0935a",txt:"#f0e6f6",txt2:"rgba(240,230,246,.4)",txt3:"rgba(240,230,246,.6)",red:"#ff6b8a",amber:"#ffb86c",blue:"#8be9fd",purple:"#bd93f9",cyan:"#67e8f9",pink:"#ff79c6",grad:"linear-gradient(135deg,#e879a8,#c27bf0,#f0935a)" };
+const CM = {
+  daily:{lb:"Daily Tasks",color:T.a1,bg:"rgba(232,121,168,.1)"},study:{lb:"Work / Study",color:T.blue,bg:"rgba(139,233,253,.1)"},
+  health:{lb:"Health & Fitness",color:T.pink,bg:"rgba(255,121,198,.1)"},plan:{lb:"Planning & Finance",color:T.amber,bg:"rgba(255,184,108,.1)"},
+  idea:{lb:"Ideas & Creativity",color:T.purple,bg:"rgba(189,147,249,.1)"},social:{lb:"Social & Memories",color:T.cyan,bg:"rgba(103,232,249,.1)"},
+};
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 2: DATA — with sub-notes (children/parent)
+// ══════════════════════════════════════════════════════════════
+const INIT_FOLDERS = [
+  {id:"mban",name:"MBAn Term 2",notes:["s1","s2","s3"]},{id:"personal",name:"Personal",notes:["d1","d2","h1","h2"]},
+  {id:"projects",name:"Projects & Ideas",notes:["i1","i2"]},{id:"planning",name:"Planning",notes:["p1","p2"]},{id:"social",name:"Social",notes:["x1","x2"]},
+];
+const INIT_NOTES = {
+  s2:{title:"Machine Learning",cat:"study",created:"2026-02-15",children:["s2a","s2b","s2c"],content:""},
+  s2a:{title:"Lesson 1: Supervised",cat:"study",created:"2026-02-15",parent:"s2",content:"<h2>Supervised Learning</h2><ul><li>Linear regression, Logistic regression</li><li>Decision trees, Random forests, SVM</li></ul><p><strong>Key:</strong> model learns from labeled data.</p>"},
+  s2b:{title:"Lesson 2: Unsupervised",cat:"study",created:"2026-02-16",parent:"s2",content:"<h2>Unsupervised Learning</h2><ul><li>K-means clustering</li><li>PCA dimensionality reduction</li><li>DBSCAN</li></ul><p>No labels — finds structure.</p>"},
+  s2c:{title:"Lesson 3: Deep Learning",cat:"study",created:"2026-02-17",parent:"s2",content:"<h2>Deep Learning</h2><ul><li>Neural network architecture</li><li>Backpropagation &amp; gradient descent</li><li>Activation functions (ReLU, sigmoid, tanh)</li></ul><p>Libraries: scikit-learn, TensorFlow, PyTorch</p><p><strong>Due: Feb 28</strong> — CNN assignment</p>"},
+  s1:{title:"Quantum Computing",cat:"study",created:"2026-02-14",children:["s1a","s1b"],content:""},
+  s1a:{title:"Lesson 1: Fundamentals",cat:"study",created:"2026-02-14",parent:"s1",content:"<h2>Qubits vs Classical Bits</h2><p>Superposition allows qubits to be in multiple states.</p><ul><li><strong>Quantum entanglement</strong></li><li><strong>Gates:</strong> Hadamard, CNOT, Pauli</li><li><strong>Decoherence</strong></li></ul>"},
+  s1b:{title:"Lesson 2: Algorithms",cat:"study",created:"2026-02-15",parent:"s1",content:"<h2>Quantum Algorithms</h2><ul><li><strong>Shor's</strong> — factoring</li><li><strong>Grover's</strong> — search</li></ul><p><em>Review:</em> Bloch sphere, density matrices.</p>"},
+  s3:{title:"Corporate Finance",cat:"study",created:"2026-02-16",children:["s3a"],content:""},
+  s3a:{title:"Lesson 1: Valuation",cat:"study",created:"2026-02-16",parent:"s3",content:"<h2>Valuation — Week 5</h2><ul><li>NPV and IRR</li><li>WACC</li><li>Modigliani-Miller</li><li>Dividend policy</li></ul><p><strong>Exam: Mar 15</strong></p>"},
+  d1:{title:"Weekly Errands",cat:"daily",created:"2026-02-15",content:"<ul><li><s>Buy groceries</s></li><li>Call mom</li><li><s>Pay electricity</s></li><li>Pick up dry cleaning</li><li>Email professor</li><li><s>Book dentist</s></li></ul>"},
+  d2:{title:"Grocery Shopping",cat:"daily",created:"2026-02-16",content:"<p>Chicken breast</p><p>Onions, Bell peppers, Garlic</p><p>Soy sauce, Rice, Broccoli, Ginger, Sesame oil</p>"},
+  h1:{title:"Weekly Workout",cat:"health",created:"2026-02-12",content:"<table><tr><th>Day</th><th>Focus</th><th>Exercises</th></tr><tr><td>Mon</td><td>Upper</td><td>Bench 4x8, Rows 4x10, OHP 3x8</td></tr><tr><td>Tue</td><td>Lower</td><td>Squats 5x5, Deadlifts 3x5, Lunges 3x10</td></tr><tr><td>Wed</td><td>Rest</td><td>30 min walk</td></tr><tr><td>Thu</td><td>Push</td><td>Chest press, Shoulder press, Dips</td></tr><tr><td>Fri</td><td>Pull</td><td>Pull-ups, Rows, Face pulls</td></tr></table>"},
+  h2:{title:"Meal Log",cat:"health",created:"2026-02-14",content:"<p><strong>Monday:</strong> Oatmeal (350cal), Chicken salad (450cal), Pasta (600cal), Shake (200cal)</p><p><strong>Tuesday:</strong> Eggs (400cal), Rice bowl (550cal), Stir fry (500cal), Yogurt (150cal)</p><p><strong>Wednesday:</strong> Smoothie (300cal), Sandwich (450cal), Salmon (650cal), Fruit (100cal)</p><p><strong>Thursday:</strong> Pancakes (500cal), Burrito (600cal), Chicken (550cal)</p><p><strong>Friday:</strong> Granola (350cal), Sushi (500cal), Pizza (700cal), Ice cream (250cal)</p>"},
+  p1:{title:"Barcelona Trip",cat:"plan",created:"2026-02-10",content:"<h2>Barcelona 4-Day Itinerary</h2><p><strong>Day 1:</strong> Sagrada Familia, Park Guell</p><p><strong>Day 2:</strong> Gothic Quarter, La Rambla, Beach</p><p><strong>Day 3:</strong> Camp Nou, Montjuic</p><p><strong>Day 4:</strong> La Boqueria, El Born, Picasso Museum</p><p>Budget: 800 / Hotel Jazz</p>"},
+  p2:{title:"February Budget",cat:"plan",created:"2026-02-01",content:'<h3>Income: 2500</h3><table><tr><th>Category</th><th>Amount</th></tr><tr><td>Rent</td><td>800</td></tr><tr><td>Groceries</td><td>300</td></tr><tr><td>Transport</td><td>80</td></tr><tr><td>Subscriptions</td><td>45</td></tr><tr><td>Dining out</td><td>150</td></tr><tr><td>Clothing</td><td>100</td></tr><tr><td>Savings</td><td>500</td></tr><tr><td>Misc</td><td>200</td></tr></table><p><em>Goal: Save 500/month</em></p>'},
+  i1:{title:"Restaurant Analytics SaaS",cat:"idea",created:"2026-02-08",content:"<h2>Problem</h2><p>Small restaurants lack analytics</p><h2>Solution</h2><p>Dashboard for POS</p><ul><li>Revenue forecasting</li><li>Menu performance</li><li>Peak hours</li></ul><p>Market: 500K+ EU restaurants at 49/month</p>"},
+  i2:{title:"YouTube Content Ideas",cat:"idea",created:"2026-02-13",content:"<ol><li>Day in life at ESADE</li><li>Built a SaaS</li><li>Study with me</li><li>Barcelona budget</li></ol>"},
+  x1:{title:"Birthdays & Gifts",cat:"social",created:"2026-02-11",content:"<table><tr><th>Person</th><th>Date</th><th>Idea</th></tr><tr><td>Mom</td><td>Mar 12</td><td>Garden tools</td></tr><tr><td>Carlos</td><td>Apr 3</td><td>PS5 controller</td></tr><tr><td>Sarah</td><td>Feb 28</td><td>Cookbook</td></tr></table>"},
+  x2:{title:"Journal — Feb Wk2",cat:"social",created:"2026-02-16",content:"<p><strong>Mon:</strong> Aced finance quiz — confident</p><p><strong>Tue:</strong> Stressed ML</p><p><strong>Wed:</strong> Coffee Sarah, better</p><p><strong>Thu:</strong> Gym PR — happy</p><p><strong>Fri:</strong> Out with Carlos, tired</p><p><strong>Sat:</strong> Movies, content</p><p><strong>Sun:</strong> Planned week, motivated</p>"},
+};
+const INIT_REVIEWS = [{cat:"health",item:"Chicken Stir-Fry",rating:4,likes:["quick","high protein"],dislikes:["too salty"],date:"2026-02-10"},{cat:"health",item:"Leg Day",rating:5,likes:["strength gains"],dislikes:[],date:"2026-02-14"}];
+
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 3: AI ENGINES (Gemini + YouTube + fallbacks)
+// ══════════════════════════════════════════════════════════════
+async function geminiComplete(ctx,key){if(!key)return null;try{const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"You are a copilot for note-taking. Suggest a concise continuation (4-8 lines). Only output the completion.\n\nNotes:\n"+ctx+"\n\nCompletion:"}]}],generationConfig:{maxOutputTokens:300,temperature:0.7}})});const d=await r.json();return d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}catch(e){return null;}}
+async function geminiAnalyze(content,q,key){if(!key)return null;try{const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"Notes:\n"+content.replace(/<[^>]+>/g,"")+"\n\n"+q+"\nBe concise (3-5 sentences)."}]}],generationConfig:{maxOutputTokens:200,temperature:0.5}})});const d=await r.json();return d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}catch(e){return null;}}
+async function ytSearch(query,key,max=3){if(!key)return[];try{const r=await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=${max}&key=${key}`);const d=await r.json();if(!d.items)return[];return d.items.map(i=>({t:i.snippet.title,ch:i.snippet.channelTitle,thumb:i.snippet.thumbnails?.medium?.url||"",url:`https://www.youtube.com/watch?v=${i.id.videoId}`,ty:"youtube"}));}catch(e){return[];}}
+
+const GHOST_DB = [
+  // ML concepts
+  {trigger:"random forest",ghost:"Random Forest is an ensemble method that builds multiple decision trees and merges their predictions.\n\nHow it works:\n  1. Bootstrap sampling — create N random subsets of training data\n  2. Build a decision tree on each subset (with random feature selection)\n  3. Aggregate predictions — majority vote (classification) or average (regression)\n\nKey hyperparameters:\n  - n_estimators: number of trees (100-500 typical)\n  - max_depth: tree depth limit\n  - min_samples_split: minimum samples to split a node\n  - max_features: sqrt(n) for classification, n/3 for regression\n\nAdvantages: handles non-linearity, resistant to overfitting, feature importance ranking\nLimitations: slow inference on large forests, less interpretable than single trees",
+    video:{t:"Random Forest Clearly Explained",ch:"StatQuest",v:"4.8M",url:"https://www.youtube.com/results?search_query=random+forest+statquest"}},
+  {trigger:"linear regression",ghost:"Linear Regression models the relationship Y = β₀ + β₁X₁ + β₂X₂ + ... + ε\n\nAssumptions:\n  1. Linearity — relationship between X and Y is linear\n  2. Independence — observations are independent\n  3. Homoscedasticity — constant variance of residuals\n  4. Normality — residuals are normally distributed\n\nCost function: MSE = (1/n) Σ(yᵢ - ŷᵢ)²\nOptimization: Ordinary Least Squares (OLS) or Gradient Descent\n\nR² score: proportion of variance explained (0 to 1)\nAdjusted R²: penalizes adding irrelevant features",
+    video:{t:"Linear Regression Explained",ch:"StatQuest",v:"3.2M",url:"https://www.youtube.com/results?search_query=linear+regression+statquest"}},
+  {trigger:"gradient descent",ghost:"Gradient Descent iteratively minimizes a loss function by moving in the direction of steepest descent.\n\nUpdate rule: θ = θ - α · ∂L/∂θ\n  where α = learning rate, L = loss function\n\nVariants:\n  - Batch GD: uses entire dataset per step (stable but slow)\n  - Stochastic GD: one sample per step (noisy but fast)\n  - Mini-batch GD: compromise (32-256 samples per step)\n\nAdvanced optimizers:\n  - Adam: adaptive learning rates + momentum\n  - RMSprop: running average of squared gradients\n  - AdaGrad: per-parameter learning rates\n\nLearning rate too high → diverges | too low → stuck in local minimum",
+    video:{t:"Gradient Descent Step-by-Step",ch:"3Blue1Brown",v:"7.1M",url:"https://www.youtube.com/results?search_query=gradient+descent+3blue1brown"}},
+  {trigger:"neural network",ghost:"Neural Network Architecture:\n\n  Input Layer → Hidden Layers → Output Layer\n\nEach neuron computes: output = activation(Σ(wᵢ · xᵢ) + bias)\n\nCommon activation functions:\n  - ReLU: max(0, x) — default for hidden layers\n  - Sigmoid: 1/(1+e⁻ˣ) — output layer for binary classification\n  - Softmax: e^xᵢ/Σe^xⱼ — output for multi-class\n  - Tanh: (eˣ-e⁻ˣ)/(eˣ+e⁻ˣ) — centered version of sigmoid\n\nTraining: forward pass → compute loss → backpropagation → update weights\nRegularization: dropout, L2 weight decay, batch normalization",
+    video:{t:"Neural Networks from Scratch",ch:"3Blue1Brown",v:"14M",url:"https://www.youtube.com/results?search_query=neural+networks+3blue1brown"}},
+  {trigger:"backpropagation",ghost:"Backpropagation computes gradients of the loss w.r.t. each weight using the chain rule.\n\nSteps:\n  1. Forward pass: compute predictions layer by layer\n  2. Compute loss at output (e.g. cross-entropy, MSE)\n  3. Backward pass: propagate gradients from output to input\n  4. Update weights: w = w - lr × ∂L/∂w\n\nChain rule example for 2-layer network:\n  ∂L/∂w₁ = ∂L/∂a₂ · ∂a₂/∂z₂ · ∂z₂/∂a₁ · ∂a₁/∂z₁ · ∂z₁/∂w₁\n\nVanishing gradient problem: deep networks with sigmoid/tanh\nSolution: ReLU activation, residual connections, proper initialization",
+    video:{t:"Backpropagation Calculus",ch:"3Blue1Brown",v:"6.5M",url:"https://www.youtube.com/results?search_query=backpropagation+3blue1brown"}},
+  {trigger:"k-means",ghost:"K-Means Clustering Algorithm:\n\n  1. Choose K (number of clusters)\n  2. Initialize K centroids randomly\n  3. Assign each point to nearest centroid\n  4. Recompute centroids as mean of assigned points\n  5. Repeat steps 3-4 until convergence\n\nChoosing K: Elbow method — plot inertia vs K, look for the \"elbow\"\nInertia = Σ ||xᵢ - μ_cluster||²\n\nLimitations:\n  - Assumes spherical clusters of equal size\n  - Sensitive to initialization (use k-means++)\n  - Must specify K in advance\n\nAlternatives: DBSCAN (density-based), hierarchical clustering, Gaussian Mixture Models",
+    video:{t:"K-Means Clustering Explained",ch:"StatQuest",v:"2.1M",url:"https://www.youtube.com/results?search_query=kmeans+clustering+statquest"}},
+  {trigger:"decision tree",ghost:"Decision Tree splits data recursively based on feature thresholds.\n\nSplitting criteria:\n  - Classification: Gini impurity = 1 - Σpᵢ², or Entropy = -Σpᵢlog₂(pᵢ)\n  - Regression: Variance reduction (MSE)\n\nThe algorithm greedily selects the split that maximizes information gain at each node.\n\nPruning (prevent overfitting):\n  - Pre-pruning: max_depth, min_samples_leaf, min_samples_split\n  - Post-pruning: cost-complexity pruning (ccp_alpha)\n\nAdvantages: interpretable, handles mixed data types, no scaling needed\nLimitations: high variance (overfitting), axis-aligned splits only",
+    video:{t:"Decision Trees Explained",ch:"StatQuest",v:"3.5M",url:"https://www.youtube.com/results?search_query=decision+tree+statquest"}},
+  // Finance
+  {trigger:"npv",ghost:"Net Present Value (NPV) = Σ [CFₜ / (1+r)ᵗ] - Initial Investment\n\nWhere:\n  CFₜ = Cash flow at time t\n  r = Discount rate (usually WACC)\n  t = Time period\n\nDecision rule: NPV > 0 → accept project (creates value)\n\nExample: Investment of 1000, returns 400/year for 3 years at 10% discount:\n  NPV = -1000 + 400/1.1 + 400/1.21 + 400/1.331 = -5.26 (reject)\n\nAdvantages: accounts for time value of money, considers all cash flows\nLimitations: requires accurate cash flow estimates, sensitive to discount rate",
+    video:{t:"NPV Explained Simply",ch:"365 Financial",v:"1.8M",url:"https://www.youtube.com/results?search_query=npv+explained"}},
+  {trigger:"wacc",ghost:"WACC = (E/V × Re) + (D/V × Rd × (1-T))\n\nComponents:\n  E = Market value of equity\n  D = Market value of debt\n  V = E + D (total firm value)\n  Re = Cost of equity (from CAPM: Rf + β(Rm-Rf))\n  Rd = Cost of debt (yield on existing debt)\n  T = Corporate tax rate\n\nExample: E=600, D=400, V=1000, Re=12%, Rd=6%, T=25%\n  WACC = (0.6×12%) + (0.4×6%×0.75) = 7.2% + 1.8% = 9.0%\n\nUsed as discount rate for NPV calculations and firm valuation.",
+    video:{t:"WACC Calculation Walk-Through",ch:"CFI",v:"800K",url:"https://www.youtube.com/results?search_query=wacc+calculation"}},
+  {trigger:"capm",ghost:"Capital Asset Pricing Model: E(Rᵢ) = Rf + βᵢ(E(Rm) - Rf)\n\nWhere:\n  Rf = Risk-free rate (e.g. 10-year government bond yield)\n  βᵢ = Beta of stock i (systematic risk measure)\n  E(Rm) = Expected market return\n  E(Rm)-Rf = Market risk premium (typically 4-7%)\n\nBeta interpretation:\n  β = 1 → moves with market\n  β > 1 → more volatile than market\n  β < 1 → less volatile (defensive stock)\n  β < 0 → inversely correlated (rare)\n\nLimitations: assumes efficient markets, single-period model, historical beta may not predict future",
+    video:{t:"CAPM Explained",ch:"365 Financial",v:"1.1M",url:"https://www.youtube.com/results?search_query=capm+explained"}},
+  // Quantum
+  {trigger:"quantum entanglement",ghost:"Quantum Entanglement occurs when two particles become correlated such that the state of one instantly determines the state of the other, regardless of distance.\n\nBell State (maximally entangled): |Φ+⟩ = (|00⟩ + |11⟩)/√2\n\nKey properties:\n  - Measuring one particle instantly collapses the other\n  - No faster-than-light communication (no-communication theorem)\n  - Cannot be explained by hidden variables (Bell's theorem)\n\nApplications:\n  - Quantum teleportation\n  - Quantum key distribution (QKD) for secure communication\n  - Superdense coding (2 classical bits per qubit)\n  - Quantum error correction",
+    video:{t:"Entanglement Explained",ch:"Veritasium",v:"9.2M",url:"https://www.youtube.com/results?search_query=quantum+entanglement+veritasium"}},
+  // Health
+  {trigger:"progressive overload",ghost:"Progressive Overload — the principle of gradually increasing training stimulus:\n\nMethods:\n  1. Increase weight (most common) — add 2.5-5kg per session\n  2. Increase reps — add 1-2 reps per set\n  3. Increase sets — add 1 set per exercise\n  4. Increase frequency — train muscle group more often\n  5. Decrease rest time — more metabolic stress\n\nSample 8-week progression for bench press:\n  Week 1-2: 60kg × 4×8\n  Week 3-4: 62.5kg × 4×8\n  Week 5-6: 65kg × 4×8\n  Week 7: Deload 50kg × 3×8\n  Week 8: Test 70kg × 1RM",
+    video:{t:"Progressive Overload Science",ch:"Jeff Nippard",v:"3.8M",url:"https://www.youtube.com/results?search_query=progressive+overload+nippard"}},
+  {trigger:"protein",ghost:"Protein Requirements for Muscle Growth:\n\n  Recommended intake: 1.6 - 2.2g per kg bodyweight per day\n  For a 75kg person: 120-165g protein daily\n\nBest sources (per 100g):\n  - Chicken breast: 31g protein\n  - Greek yogurt: 10g protein\n  - Eggs: 13g protein (2 large)\n  - Whey protein scoop: 24g protein\n  - Salmon: 25g protein\n  - Lentils: 9g protein\n\nTiming: spread across 3-5 meals (30-40g per meal)\nPost-workout window: within 2 hours, 20-40g",
+    video:{t:"How Much Protein?",ch:"Jeff Nippard",v:"5.1M",url:"https://www.youtube.com/results?search_query=protein+muscle+growth"}},
+  // Budget
+  {trigger:"50/30/20",ghost:"50/30/20 Budget Rule:\n\n  50% Needs (essentials):\n    Rent/mortgage, groceries, transport, insurance, utilities, minimum debt payments\n\n  30% Wants (lifestyle):\n    Dining out, entertainment, subscriptions, shopping, hobbies, travel\n\n  20% Savings (future):\n    Emergency fund (3-6 months expenses), investments, extra debt payments, retirement\n\nFor income of 2500:\n  Needs: 1250 max\n  Wants: 750 max\n  Savings: 500 minimum",
+    video:{t:"50/30/20 Rule Explained",ch:"Two Cents",v:"2.8M",url:"https://www.youtube.com/results?search_query=50+30+20+budget+rule"}},
+  // General
+  {trigger:"pomodoro",ghost:"Pomodoro Technique:\n\n  1. Choose a task to work on\n  2. Set timer for 25 minutes (one \"pomodoro\")\n  3. Work with full focus — no distractions\n  4. Short break: 5 minutes\n  5. After 4 pomodoros: long break (15-30 minutes)\n\nTips:\n  - Track completed pomodoros per day\n  - If interrupted, mark it and restart\n  - Plan tasks in pomodoro units (1-4 per task)\n  - Adjust timer length to your attention span (25-50 min)",
+    video:{t:"Pomodoro Technique",ch:"Thomas Frank",v:"2.8M",url:"https://www.youtube.com/results?search_query=pomodoro+technique"}},
+];
+
+function getGhost(text) {
+  const plain = text.replace(/<[^>]+>/g,"").toLowerCase();
+  const lines = plain.split("\n").filter(l=>l.trim());
+  const lastLine = (lines[lines.length-1]||"").trim();
+  const last2 = lines.slice(-3).join(" ");
+  for (const r of GHOST_DB) {
+    if (lastLine.includes(r.trigger) || last2.includes(r.trigger)) return r;
+  }
+  return null;
+}
+
+// --- 3B: Video suggestion panel ---
+const VID_DB = [
+  {t:"Quantum Computing Explained",ch:"Kurzgesagt",v:"12M",ty:"youtube",url:"https://www.youtube.com/results?search_query=quantum+computing",triggers:["quantum","qubit","superposition"]},
+  {t:"ML Full Course 2026",ch:"freeCodeCamp",v:"8.3M",ty:"youtube",url:"https://www.youtube.com/results?search_query=machine+learning+course",triggers:["machine learning","neural","regression","sklearn"]},
+  {t:"Random Forest Deep Dive",ch:"StatQuest",v:"4.8M",ty:"youtube",url:"https://www.youtube.com/results?search_query=random+forest",triggers:["random forest","ensemble","bagging"]},
+  {t:"NPV & IRR Finance",ch:"365 Financial",v:"1.2M",ty:"youtube",url:"https://www.youtube.com/results?search_query=npv+irr",triggers:["npv","irr","wacc","dcf"]},
+  {t:"PyTorch Quick Start",ch:"Fireship",v:"2.1M",ty:"youtube",url:"https://www.youtube.com/results?search_query=pytorch",triggers:["pytorch","tensorflow","deep learning"]},
+  {t:"CNN from Scratch",ch:"Sentdex",v:"1.5M",ty:"youtube",url:"https://www.youtube.com/results?search_query=cnn+tutorial",triggers:["cnn","convolutional","image classification"]},
+  {t:"Chicken Stir-Fry — 15 Min",ch:"Quick Kitchen",v:"2.3M",ty:"youtube",url:"https://www.youtube.com/results?search_query=chicken+stir+fry",triggers:["chicken","stir fry","garlic"]},
+  {t:"30-Min PPL Workout",ch:"Jeff Nippard",v:"4.2M",ty:"youtube",url:"https://www.youtube.com/results?search_query=push+pull+legs",triggers:["workout","bench","squat","deadlift"]},
+  {t:"Barcelona Guide",ch:"Lost LeBlanc",v:"2.1M",ty:"youtube",url:"https://www.youtube.com/results?search_query=barcelona+guide",triggers:["barcelona","sagrada"]},
+  {t:"Validate Startup Ideas",ch:"Y Combinator",v:"1.9M",ty:"youtube",url:"https://www.youtube.com/results?search_query=validate+startup",triggers:["startup","saas","mvp"]},
+  {t:"Transformers Explained",ch:"3Blue1Brown",v:"5.6M",ty:"youtube",url:"https://www.youtube.com/results?search_query=transformer+attention",triggers:["transformer","attention","llm","gpt"]},
+  {t:"Protein Meal Prep",ch:"R. James",v:"3.4M",ty:"youtube",url:"https://www.youtube.com/results?search_query=protein+meal+prep",triggers:["protein","meal prep","calories"]},
+  {t:"Budget Like a Pro",ch:"Two Cents",v:"2.8M",ty:"youtube",url:"https://www.youtube.com/results?search_query=budget+rule",triggers:["budget","savings","income"]},
+];
+function getVideos(text,max=3){const l=text.replace(/<[^>]+>/g,"").toLowerCase();return VID_DB.map(v=>({...v,sc:v.triggers.reduce((s,t)=>s+(l.includes(t)?1:0),0)})).filter(v=>v.sc>0).sort((a,b)=>b.sc-a.sc).slice(0,max);}
+
+// --- 3C: Knowledge tracker ---
+const KT={quantum_computing:{name:"Quantum Computing",kw:["qubit","quantum","superposition","entanglement","hadamard","cnot","pauli","decoherence","shor","grover","bloch"],tot:15},machine_learning:{name:"Machine Learning",kw:["regression","decision tree","random forest","svm","supervised","unsupervised","k-means","pca","dbscan","neural","backpropag","gradient","relu","sigmoid","cnn","pytorch","tensorflow","scikit"],tot:20},finance:{name:"Corporate Finance",kw:["npv","irr","wacc","capital structure","modigliani","dividend","dcf","valuation","cash flow","risk","portfolio","capm"],tot:15}};
+function calcKnow(notes){const t=Object.values(notes).filter(n=>n.cat==="study").map(n=>(n.content||"").replace(/<[^>]+>/g,"").toLowerCase()).join(" ");const r={};for(const[k,v]of Object.entries(KT)){const f=v.kw.filter(w=>t.includes(w)).length;const p=Math.min(100,Math.round(f/v.tot*100));r[k]={name:v.name,pct:p,found:f,total:v.tot,missing:v.kw.filter(w=>!t.includes(w)).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).slice(0,5)};}return r;}
+
+// --- 3D: Next topics ---
+const NXT={quantum_computing:[{topic:"Quantum Error Correction",desc:"Essential for practical quantum computers",video:"https://www.youtube.com/results?search_query=quantum+error+correction",tn:"s1"},{topic:"Quantum Machine Learning",desc:"Intersection of QC and ML",video:"https://www.youtube.com/results?search_query=quantum+machine+learning",tn:"s1"}],machine_learning:[{topic:"Transformers & Attention",desc:"Foundation of modern NLP / LLMs",video:"https://www.youtube.com/results?search_query=transformer+attention",tn:"s2"},{topic:"Reinforcement Learning",desc:"Agents, rewards, and policies",video:"https://www.youtube.com/results?search_query=reinforcement+learning",tn:"s2"},{topic:"MLOps & Deployment",desc:"Taking models to production",video:"https://www.youtube.com/results?search_query=mlops+deployment",tn:"s2"}],finance:[{topic:"Monte Carlo Simulation",desc:"Risk analysis and option pricing",video:"https://www.youtube.com/results?search_query=monte+carlo+finance",tn:"s3"},{topic:"LBO Modeling",desc:"Leveraged buyout valuation",video:"https://www.youtube.com/results?search_query=lbo+model",tn:"s3"}]};
+function getNextTopics(k){const r=[];for(const[key,info]of Object.entries(k)){if(info.pct<85&&NXT[key])for(const nt of NXT[key])r.push({...nt,subject:info.name,curPct:info.pct});}return r.slice(0,5);}
+
+// --- 3E: Parsers ---
+function parseCals(t){const p=t.replace(/<[^>]+>/g,"");const d={};for(const l of p.split("\n")){const m=l.match(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)[:\s]/i);if(m){const c=[...l.matchAll(/(\d+)\s*cal/gi)].map(x=>parseInt(x[1]));if(c.length)d[m[1]]=c.reduce((a,b)=>a+b,0);}}return d;}
+function parseBudget(t){const p=t.replace(/<[^>]+>/g,"");let inc=0;const exp={};const goals=[];for(const l of p.split("\n")){const ll=l.trim().toLowerCase();const im=ll.match(/income[:\s]*(\d+)/);if(im){inc=parseInt(im[1]);continue;}if(ll.startsWith("goal")){goals.push(l.trim());continue;}const em=ll.match(/^([a-z\s]+)[:\s]+(\d+)/);if(em&&!em[1].includes("income")&&!em[1].includes("goal"))exp[em[1].trim().replace(/\b\w/g,c=>c.toUpperCase())]=parseInt(em[2]);}return{income:inc,expenses:exp,goals,total:Object.values(exp).reduce((a,b)=>a+b,0)};}
+function scoreIdea(t){const c=t.replace(/<[^>]+>/g,"").toLowerCase();const n=Math.min(10,3+["unique","novel","innovative","disrupt"].filter(w=>c.includes(w)).length*2);const f=Math.min(10,4+["mvp","prototype","simple","api","build"].filter(w=>c.includes(w)).length);const m=Math.min(10,2+["market","500k","million","restaurant","revenue","saas"].filter(w=>c.includes(w)).length);return{novelty:n,feasibility:f,market:m,overall:((n+f+m)/3).toFixed(1)};}
+function parseMoods(t){const MW={great:5,amazing:5,happy:5,motivated:5,confident:5,aced:5,good:4,fun:4,better:4,content:4,organized:4,okay:3,lazy:3,tired:2,stressed:2,bad:1,sad:1};const p=t.replace(/<[^>]+>/g,"");const d=[];for(const l of p.split("\n")){const dm=l.match(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\w*/i);if(dm){let mood=3;for(const[w,s]of Object.entries(MW))if(l.toLowerCase().includes(w)){mood=s;break;}d.push({day:dm[0],mood});}}return d;}
+
+
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 4: STYLES
+// ══════════════════════════════════════════════════════════════
+const S={
+  app:{display:"flex",height:"100vh",width:"100%",background:T.bg,color:T.txt,fontFamily:"'Inter',system-ui,sans-serif",overflow:"hidden"},
+  sidebar:{width:250,minWidth:250,background:"linear-gradient(180deg,#16061e,#1a0a22,#120820)",borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",overflow:"hidden"},
+  sideScroll:{flex:1,overflowY:"auto",padding:"0 10px 10px"},
+  main:{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"},
+  topBar:{display:"flex",gap:4,padding:"6px 16px",borderBottom:`1px solid ${T.border}`,background:"rgba(255,255,255,.02)",alignItems:"center"},
+  tabBtn:a=>({padding:"6px 16px",borderRadius:8,border:"none",cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:"'Inter',sans-serif",background:a?"linear-gradient(135deg,rgba(232,121,168,.18),rgba(194,123,240,.18))":"transparent",color:a?T.a1:T.txt2}),
+  noteBtn:(a,indent=0)=>({display:"block",width:"100%",textAlign:"left",padding:`4px 8px 4px ${12+indent*10}px`,border:"none",borderRadius:6,cursor:"pointer",fontSize:indent?11:12,fontWeight:a?600:400,background:a?"rgba(232,121,168,.12)":"transparent",color:a?T.a1:T.txt3,fontFamily:"'Inter',sans-serif",marginBottom:1}),
+  glass:{background:T.glass,backdropFilter:"blur(20px)",border:`1px solid ${T.border}`,borderRadius:12,padding:14,marginBottom:8},
+  glassAccent:{background:"linear-gradient(135deg,rgba(232,121,168,.06),rgba(194,123,240,.06))",border:"1px solid rgba(194,123,240,.15)",borderRadius:12,padding:14,marginBottom:8},
+  tag:c=>({display:"inline-block",padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:600,textTransform:"uppercase",background:CM[c]?.bg||T.glass,color:CM[c]?.color||T.txt2}),
+  sh:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:T.a1,letterSpacing:".5px",textTransform:"uppercase",marginBottom:5},
+  sh2:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:T.a2,letterSpacing:".5px",textTransform:"uppercase",marginBottom:5},
+  sh3:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:T.amber,letterSpacing:".5px",textTransform:"uppercase",marginBottom:5},
+  editor:{minHeight:350,outline:"none",padding:"14px 18px",fontFamily:"'Inter',sans-serif",fontSize:15,lineHeight:1.7,color:T.txt,background:"transparent"},
+  toolbar:{display:"flex",flexWrap:"wrap",gap:1,padding:"5px 10px",borderBottom:`1px solid ${T.border}`,background:"rgba(255,255,255,.02)"},
+  toolBtn:{padding:"3px 7px",border:"none",borderRadius:4,cursor:"pointer",fontSize:12,background:"transparent",color:T.txt3,fontFamily:"'Inter',sans-serif"},
+  sugPanel:{width:280,minWidth:280,borderLeft:`1px solid ${T.border}`,background:"rgba(255,255,255,.015)",overflowY:"auto",padding:12},
+  statCard:{background:T.glass,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 12px",textAlign:"center",flex:1},
+  statN:{fontFamily:"'JetBrains Mono',monospace",fontSize:20,fontWeight:700,background:T.grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"},
+  statL:{fontSize:9,color:T.txt2,textTransform:"uppercase",letterSpacing:".7px"},
+  pBar:{height:7,borderRadius:7,background:"rgba(255,255,255,.05)",overflow:"hidden",margin:"3px 0"},
+  pFill:(p,c)=>({height:"100%",borderRadius:7,width:`${p}%`,background:`linear-gradient(90deg,${c}44,${c})`,transition:"width .5s"}),
+};
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 5: RICH EDITOR
+// ══════════════════════════════════════════════════════════════
+function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onShowFiles}){
+  const ref=useRef(null);const[init,setInit]=useState(false);const prev=useRef(noteId);const[dropOver,setDropOver]=useState(false);
+  useEffect(()=>{if(noteId!==prev.current){setInit(false);prev.current=noteId;}},[noteId]);
+  useEffect(()=>{if(ref.current&&!init){ref.current.innerHTML=content||"";setInit(true);}},[content,init]);
+  // Ghost: inject inline span at cursor, accept with TAB
+  useEffect(()=>{
+    const old=ref.current?.querySelector("#nt-ghost");if(old)old.remove();
+    if(!ghostData||!ref.current)return;
+    const text=(typeof ghostData==="string"?ghostData:ghostData.ghost).split("\n").filter(l=>l.trim()).slice(0,2).join("\n");
+    const sel=window.getSelection();
+    if(!sel||!sel.rangeCount||!ref.current.contains(sel.anchorNode))return;
+    const ghost=document.createElement("span");ghost.id="nt-ghost";ghost.setAttribute("contenteditable","false");
+    ghost.textContent=text;ghost.style.cssText="color:rgba(194,123,240,.5);pointer-events:none;user-select:none;white-space:pre-wrap;font-style:italic;";
+    const r=sel.getRangeAt(0).cloneRange();r.collapse(false);r.insertNode(ghost);
+    const nr=document.createRange();nr.setStartBefore(ghost);nr.collapse(true);
+    sel.removeAllRanges();sel.addRange(nr);
+  },[ghostData]);
+  const onInput=useCallback(()=>{
+    const g=ref.current?.querySelector("#nt-ghost");if(g)g.remove();
+    if(ref.current)onChange(ref.current.innerHTML);
+  },[onChange]);
+  const onKey=useCallback(e=>{
+    if(e.key==="Tab"){
+      const ghost=ref.current?.querySelector("#nt-ghost");
+      if(ghost){e.preventDefault();
+        const tn=document.createTextNode(ghost.textContent);
+        ghost.parentNode.replaceChild(tn,ghost);
+        const r=document.createRange();r.setStartAfter(tn);r.collapse(true);
+        const s=window.getSelection();s.removeAllRanges();s.addRange(r);
+        if(ref.current)onChange(ref.current.innerHTML);onAcceptGhost();
+        return;
+      }
+    }
+    if(e.key==="Tab")e.preventDefault();
+  },[onChange,onAcceptGhost]);
+  // Drag-to-move video blocks already in editor
+  const handleBlockDragStart=useCallback(e=>{
+    const blk=e.target.closest("[data-vid-id]");
+    if(blk){
+      const vid=JSON.parse(blk.getAttribute("data-vid-json"));
+      e.dataTransfer.setData("application/json",JSON.stringify({...vid,_moveId:blk.getAttribute("data-vid-id")}));
+      e.dataTransfer.effectAllowed="move";
+    }
+  },[]);
+  const handleDragOver=useCallback(e=>{if(e.dataTransfer.types.includes("application/json")){e.preventDefault();setDropOver(true);}},[]);
+  const handleDragLeave=useCallback(e=>{if(!e.currentTarget.contains(e.relatedTarget))setDropOver(false);},[]);
+  const handleDrop=useCallback(e=>{
+    const raw=e.dataTransfer.getData("application/json");if(!raw)return;
+    try{
+      const data=JSON.parse(raw);if(data.type!=="youtube-video")return;
+      e.preventDefault();setDropOver(false);
+      // Position caret at drop point
+      if(document.caretRangeFromPoint){const rng=document.caretRangeFromPoint(e.clientX,e.clientY);if(rng){const s=window.getSelection();s.removeAllRanges();s.addRange(rng);}}
+      else if(document.caretPositionFromPoint){const p=document.caretPositionFromPoint(e.clientX,e.clientY);if(p){const rng=document.createRange();rng.setStart(p.offsetNode,p.offset);rng.collapse(true);const s=window.getSelection();s.removeAllRanges();s.addRange(rng);}}
+      // Remove old block if moving
+      if(data._moveId&&ref.current){
+        const old=ref.current.querySelector(`[data-vid-id="${data._moveId}"]`);
+        if(old)old.closest("div[data-vid-id]")?.remove()||old.remove();
+      }
+      const cid=`vp${Date.now()}`;
+      const thumb=data.thumb?`<img src="${data.thumb}" style="width:80px;height:54px;border-radius:5px;object-fit:cover;flex-shrink:0;" alt="">`
+        :`<div style="width:80px;height:54px;border-radius:5px;background:linear-gradient(135deg,#e62117,#c4302b);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="color:#fff;font-size:18px;">&#9654;</span></div>`;
+      const html=`<div data-vid-id="${cid}" data-vid-json='${JSON.stringify({type:"youtube-video",t:data.t,ch:data.ch,v:data.v,url:data.url,thumb:data.thumb})}' contenteditable="false" draggable="true" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(194,123,240,.25);background:rgba(194,123,240,.05);margin:8px 0;display:flex;align-items:center;gap:10px;user-select:none;cursor:grab;">${thumb}<div style="flex:1;min-width:0;"><strong style="color:#c27bf0;font-size:13px;">${data.t}</strong><br><span style="font-size:11px;color:rgba(240,230,246,.4);">${data.ch}${data.v?" \u00b7 "+data.v:""}</span><br><a href="${data.url}" target="_blank" style="color:#e879a8;font-size:11px;text-decoration:none;">Watch &#8594;</a></div></div><p data-vc="${cid}"><br></p>`;
+      ref.current?.focus();
+      document.execCommand("insertHTML",false,html);
+      if(ref.current)onChange(ref.current.innerHTML);
+      setTimeout(()=>{
+        const t=ref.current?.querySelector(`[data-vc="${cid}"]`);
+        if(t){t.removeAttribute("data-vc");const r=document.createRange();r.setStart(t,0);r.collapse(true);const s=window.getSelection();s.removeAllRanges();s.addRange(r);ref.current?.focus();}
+      },0);
+    }catch(err){}
+  },[onChange]);
+  const exec=(cmd,val=null)=>{document.execCommand(cmd,false,val);ref.current?.focus();onInput();};
+  return(
+    <div style={{border:`1px solid ${dropOver?T.a2:T.border}`,borderRadius:12,overflow:"hidden",background:dropOver?"rgba(194,123,240,.04)":T.glass,flex:1,display:"flex",flexDirection:"column",transition:"border-color .15s"}} onDragStart={handleBlockDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+      <div style={S.toolbar}>
+        <select onChange={e=>{if(e.target.value)exec("formatBlock",e.target.value);e.target.value="";}} style={{...S.toolBtn,cursor:"pointer",background:"transparent"}}><option value="">Heading</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="p">Normal</option></select>
+        <span style={{width:1,background:T.border,margin:"0 3px"}}/>
+        <button onClick={()=>exec("bold")} style={S.toolBtn}><b>B</b></button>
+        <button onClick={()=>exec("italic")} style={S.toolBtn}><i>I</i></button>
+        <button onClick={()=>exec("underline")} style={S.toolBtn}><u>U</u></button>
+        <button onClick={()=>exec("strikeThrough")} style={S.toolBtn}><s>S</s></button>
+        <span style={{width:1,background:T.border,margin:"0 3px"}}/>
+        <button onClick={()=>exec("insertUnorderedList")} style={S.toolBtn}>• List</button>
+        <button onClick={()=>exec("insertOrderedList")} style={S.toolBtn}>1.</button>
+        <button onClick={()=>exec("indent")} style={S.toolBtn}>→</button>
+        <button onClick={()=>exec("outdent")} style={S.toolBtn}>←</button>
+        <span style={{width:1,background:T.border,margin:"0 3px"}}/>
+        <button onClick={()=>{document.execCommand("insertHTML",false,'<table style="width:100%;border-collapse:collapse;margin:8px 0"><tr><th style="border:1px solid rgba(255,255,255,.08);padding:5px 8px;background:rgba(255,255,255,.03)">Col 1</th><th style="border:1px solid rgba(255,255,255,.08);padding:5px 8px;background:rgba(255,255,255,.03)">Col 2</th></tr><tr><td style="border:1px solid rgba(255,255,255,.08);padding:5px 8px">\u2014</td><td style="border:1px solid rgba(255,255,255,.08);padding:5px 8px">\u2014</td></tr></table>');ref.current?.focus();onInput();}} style={S.toolBtn}>Table</button>
+        <button onClick={()=>exec("formatBlock","blockquote")} style={S.toolBtn}>Quote</button>
+        <button onClick={()=>exec("formatBlock","pre")} style={S.toolBtn}>Code</button>
+        <button onClick={()=>{const u=prompt("URL:");if(u)exec("createLink",u);}} style={S.toolBtn}>Link</button>
+        <button onClick={()=>exec("removeFormat")} style={S.toolBtn}>Clear</button>
+        <span style={{width:1,background:T.border,margin:"0 3px"}}/>
+        <button onClick={onShowFiles} style={{...S.toolBtn,color:T.a2,fontWeight:600}}>Show in Files</button>
+      </div>
+      <div style={{flex:1,overflowY:"auto",position:"relative"}}>
+        <div ref={ref} contentEditable suppressContentEditableWarning onInput={onInput} onKeyDown={onKey} style={S.editor}/>
+        {loading&&<div style={{position:"absolute",bottom:6,right:12,fontSize:10,color:T.a2,fontFamily:"'JetBrains Mono',monospace",opacity:.6,pointerEvents:"none",background:"rgba(0,0,0,.3)",padding:"2px 7px",borderRadius:5}}>AI thinking…</div>}
+        {ghostData&&!loading&&<div style={{position:"absolute",bottom:6,left:18,fontSize:10,color:T.txt2,fontFamily:"'JetBrains Mono',monospace",opacity:.5,pointerEvents:"none"}}>TAB to accept</div>}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 6: SIDEBAR (hierarchical)
+// ══════════════════════════════════════════════════════════════
+function Sidebar({folders,notes,activeNote,activeFolder,onSelect,onSelectFolder,onCreate,onCreateFolder,onSelectParent,onSelectFolderView}){
+  const[nt,setNt]=useState("");const[nf,setNf]=useState(false);const[fn,setFn]=useState("");
+  return(
+    <div style={S.sidebar}>
+      <div style={{padding:"12px 12px 0"}}><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:17,fontWeight:700}}>Notiq</div><div style={{fontSize:10,color:T.txt2,marginBottom:10}}>AI-powered \u00b7 Gemini + YouTube</div></div>
+      <div style={{padding:"0 10px 6px",borderBottom:`1px solid ${T.border}`}}>
+        <div style={{display:"flex",gap:3}}>
+          <input value={nt} onChange={e=>setNt(e.target.value)} placeholder="New note..." style={{flex:1,padding:"5px 8px",borderRadius:6,border:`1px solid ${T.border}`,background:T.glass,color:T.txt,fontSize:11,outline:"none",fontFamily:"'Inter',sans-serif"}} onKeyDown={e=>{if(e.key==="Enter"&&nt.trim()){onCreate(nt.trim(),activeFolder);setNt("");}}}/>
+          <button onClick={()=>{if(nt.trim()){onCreate(nt.trim(),activeFolder);setNt("");}}} style={{padding:"5px 10px",borderRadius:6,border:"none",background:"linear-gradient(135deg,#e879a8,#c27bf0)",color:"#fff",fontSize:10,fontWeight:600,cursor:"pointer"}}>+</button>
+        </div>
+      </div>
+      <div style={S.sideScroll}>
+        {folders.map(f=>(<div key={f.id}>
+          <div style={{fontSize:13,fontWeight:700,color:f.id===activeFolder?T.a1:T.txt3,padding:"6px 0 2px",cursor:"pointer"}} onClick={()=>{onSelectFolder(f.id);onSelectFolderView(f.id);}}>{f.name}</div>
+          {f.notes.map(nid=>{const n=notes[nid];if(!n||n.parent)return null;const ch=n.children?.length>0;return(<div key={nid}>
+            <button style={S.noteBtn(nid===activeNote,0)} onClick={()=>{ch?onSelectParent(nid):onSelect(nid);onSelectFolder(f.id);}}>{ch?"\u25b8 ":""}{n.title}</button>
+            {ch&&n.children.map(cid=>{const cn=notes[cid];if(!cn)return null;return <button key={cid} style={S.noteBtn(cid===activeNote,1)} onClick={()=>{onSelect(cid);onSelectFolder(f.id);}}>{cn.title}</button>;})}
+          </div>);})}
+        </div>))}
+        <div style={{marginTop:10}}>
+          {nf?(<div style={{display:"flex",gap:3}}><input value={fn} onChange={e=>setFn(e.target.value)} placeholder="Folder name..." autoFocus style={{flex:1,padding:"4px 7px",borderRadius:6,border:`1px solid ${T.border}`,background:T.glass,color:T.txt,fontSize:10,outline:"none"}} onKeyDown={e=>{if(e.key==="Enter"&&fn.trim()){onCreateFolder(fn.trim());setFn("");setNf(false);}}}/><button onClick={()=>{if(fn.trim()){onCreateFolder(fn.trim());setFn("");setNf(false);}}} style={{padding:"4px 7px",borderRadius:6,border:"none",background:T.a2,color:"#fff",fontSize:9,cursor:"pointer"}}>+</button></div>):(<button onClick={()=>setNf(true)} style={{...S.noteBtn(false,0),color:T.txt2,fontSize:11}}>+ New Folder</button>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 7: FILE PANEL (drag-drop, "Show in Files")
+// ══════════════════════════════════════════════════════════════
+function FilePanel({files,onUpload,onClose,searchText}){
+  const[dragOver,setDragOver]=useState(false);const[active,setActive]=useState(0);
+  const handle=fileList=>{[...fileList].forEach(f=>{const r=new FileReader();r.onload=e=>onUpload({name:f.name,type:f.type,data:e.target.result,size:f.size});f.type.startsWith("image/")||f.type==="application/pdf"?r.readAsDataURL(f):r.readAsText(f);});};
+  const cur=files[active];
+  return(
+    <div style={S.sugPanel}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={S.sh}>Files & Resources</div><button onClick={onClose} style={{border:"none",background:"transparent",color:T.txt2,cursor:"pointer",fontSize:16}}>\u00d7</button></div>
+      <div onDragOver={e=>{e.preventDefault();setDragOver(true);}} onDragLeave={()=>setDragOver(false)} onDrop={e=>{e.preventDefault();setDragOver(false);handle(e.dataTransfer.files);}}
+        style={{border:`2px dashed ${dragOver?T.a2:T.border}`,borderRadius:10,padding:16,textAlign:"center",marginBottom:10,background:dragOver?"rgba(194,123,240,.06)":"transparent",cursor:"pointer"}}
+        onClick={()=>document.getElementById("fInput")?.click()}>
+        <div style={{fontSize:12,color:dragOver?T.a2:T.txt2}}>Drop files here</div>
+        <div style={{fontSize:10,color:T.txt2}}>PDF, images, text</div>
+        <input id="fInput" type="file" multiple accept="image/*,.pdf,.txt,.md,.csv" style={{display:"none"}} onChange={e=>handle(e.target.files)}/>
+      </div>
+      {files.length>0&&<div style={{display:"flex",gap:2,flexWrap:"wrap",marginBottom:8}}>
+        {files.map((f,i)=><button key={i} onClick={()=>setActive(i)} style={{padding:"3px 8px",borderRadius:6,border:"none",fontSize:10,fontWeight:600,cursor:"pointer",background:i===active?"rgba(194,123,240,.15)":T.glass,color:i===active?T.a2:T.txt2}}>{f.name.length>18?f.name.slice(0,18)+"...":f.name}</button>)}
+      </div>}
+      {cur&&<div style={{borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`}}>
+        {cur.type.startsWith("image/")&&<img src={cur.data} alt="" style={{width:"100%",borderRadius:8}}/>}
+        {cur.type==="application/pdf"&&<iframe src={cur.data} style={{width:"100%",height:400,border:"none"}} title={cur.name}/>}
+        {!cur.type.startsWith("image/")&&cur.type!=="application/pdf"&&(
+          <div style={{padding:10,fontSize:11,color:T.txt3,maxHeight:400,overflowY:"auto",background:"rgba(0,0,0,.2)",borderRadius:8,whiteSpace:"pre-wrap",fontFamily:"'JetBrains Mono',monospace",lineHeight:1.5}}>
+            {(cur.data||"").split("\n").map((line,i)=>{const hl=searchText&&line.toLowerCase().includes(searchText.toLowerCase());return <div key={i} style={{background:hl?"rgba(232,121,168,.15)":"transparent",padding:hl?"1px 4px":"0",borderRadius:hl?4:0}}>{line||" "}</div>;})}
+          </div>
+        )}
+      </div>}
+      {files.length===0&&<div style={{fontSize:11,color:T.txt2,textAlign:"center",padding:10}}>Upload lecture slides, cookbooks, exercise plans \u2014 highlight text in notes and click "Show in Files" to search</div>}
+    </div>
+  );
+}
+
+// EditableNote: contentEditable note for combined view
+function EditableNote({id,content,onChange}){
+  const ref=useRef(null);const[init,setInit]=useState(false);const prevId=useRef(id);
+  useEffect(()=>{if(id!==prevId.current){setInit(false);prevId.current=id;}},[id]);
+  useEffect(()=>{if(ref.current&&!init){ref.current.innerHTML=content||"";setInit(true);}},[content,init]);
+  return(<div ref={ref} contentEditable suppressContentEditableWarning
+    onInput={()=>{if(ref.current)onChange(id,ref.current.innerHTML);}}
+    style={{...S.glass,padding:16,fontSize:15,lineHeight:1.7,outline:"none",minHeight:40,cursor:"text",borderRadius:10}}
+  />);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 8: COMBINED VIEW (folder or parent note)
+// ══════════════════════════════════════════════════════════════
+function CombinedView({title,items,onSelect,onAddLesson,parentId,onChangeNote}){
+  const[nt,setNt]=useState("");
+  return(
+    <div style={{flex:1,overflowY:"auto",padding:"14px 20px"}}>
+      <h2 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:20,margin:"0 0 4px"}}>{title}</h2>
+      <span style={{fontSize:11,color:T.txt2}}>{items.length} note{items.length!==1?"s":""}</span>
+      {parentId&&<div style={{display:"flex",gap:4,margin:"10px 0"}}><input value={nt} onChange={e=>setNt(e.target.value)} placeholder="Add new lesson..." style={{flex:1,padding:"6px 10px",borderRadius:6,border:`1px solid ${T.border}`,background:T.glass,color:T.txt,fontSize:12,outline:"none"}} onKeyDown={e=>{if(e.key==="Enter"&&nt.trim()){onAddLesson(nt.trim());setNt("");}}}/><button onClick={()=>{if(nt.trim()){onAddLesson(nt.trim());setNt("");}}} style={{padding:"6px 14px",borderRadius:6,border:"none",background:"linear-gradient(135deg,#e879a8,#c27bf0)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>+ Lesson</button></div>}
+      <div style={{...S.glass,padding:12,marginBottom:14}}><div style={S.sh}>Table of Contents</div>
+        {items.map((c,i)=><div key={c.id} onClick={()=>onSelect(c.id)} style={{padding:"5px 8px",cursor:"pointer",fontSize:13,color:T.txt3,borderBottom:`1px solid ${T.border}`}}><span style={{color:T.a2,fontWeight:600,marginRight:6}}>{i+1}.</span>{c.title}<span style={{fontSize:10,color:T.txt2,marginLeft:8}}>{c.created}</span></div>)}
+      </div>
+      {items.map(c=>(<div key={c.id} style={{marginBottom:20}}>
+        <h3 style={{fontSize:15,color:T.a1,margin:"0 0 6px",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}} onClick={()=>onSelect(c.id)}>{c.title}</h3>
+        <EditableNote id={c.id} content={c.content||""} onChange={onChangeNote}/>
+      </div>))}
+    </div>
+  );
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 9: AI SUGGESTION PANEL
+// ══════════════════════════════════════════════════════════════
+function SugPanel({videos,ytResults,knowledge,cat,prefs,aiInsight,loadingYT}){
+  const all=ytResults.length>0?ytResults:videos;
+  return(<div style={S.sugPanel}>
+    <div style={S.sh}>Resources {ytResults.length>0&&<span style={{fontSize:9,color:T.a2}}>(live)</span>}</div>
+    {loadingYT&&<div style={{fontSize:11,color:T.a2,marginBottom:6}}>Searching YouTube...</div>}
+    {all.length===0&&!loadingYT&&<p style={{fontSize:11,color:T.txt2}}>Type to get suggestions.</p>}
+    {all.map((v,i)=>(<div key={i} draggable onDragStart={e=>{e.dataTransfer.setData("application/json",JSON.stringify({type:"youtube-video",t:v.t,ch:v.ch,v:v.v||"",url:v.url,thumb:v.thumb||""}));e.dataTransfer.effectAllowed="copy";}} style={{marginBottom:5}}><a href={v.url} target="_blank" rel="noopener noreferrer" style={{textDecoration:"none"}}><div style={{display:"flex",gap:7,alignItems:"center",padding:"5px 7px",borderRadius:8,border:`1px solid ${T.border}`,background:T.glass,cursor:"grab"}}>
+      {v.thumb?<img src={v.thumb} alt="" style={{width:64,height:44,borderRadius:5,objectFit:"cover",flexShrink:0}}/>:<div style={{width:44,height:32,borderRadius:5,background:"linear-gradient(135deg,rgba(232,121,168,.2),rgba(194,123,240,.2))",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:8,color:T.a2,fontWeight:700}}>{(v.ty||"VID").toUpperCase()}</span></div>}
+      <div style={{flex:1,minWidth:0}}><div style={{fontSize:11,fontWeight:600,color:T.txt,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v.t}</div><div style={{fontSize:9,color:T.txt2}}>{v.ch}{v.v?` \u00b7 ${v.v}`:""}</div></div>
+    </div></a><div style={{fontSize:9,color:T.txt2,textAlign:"center",opacity:.45,paddingBottom:2}}>drag to pin</div></div>))}
+    {aiInsight&&<div style={{marginTop:12}}><div style={S.sh2}>AI Insight</div><div style={{...S.glassAccent,padding:10,fontSize:12,color:T.txt3,lineHeight:1.5}}>{aiInsight}</div></div>}
+    {cat==="study"&&knowledge&&<div style={{marginTop:12}}><div style={S.sh2}>Knowledge</div>{Object.values(knowledge).map((info,i)=>(<div key={i} style={{marginBottom:8}}><div style={{display:"flex",justifyContent:"space-between",fontSize:11}}><span style={{fontWeight:600}}>{info.name}</span><span style={{color:T.a1}}>{info.pct}%</span></div><div style={S.pBar}><div style={S.pFill(info.pct,info.pct>60?T.a1:info.pct>30?T.amber:T.purple)}/></div></div>))}</div>}
+    {prefs&&(prefs.likes?.length>0||prefs.dislikes?.length>0)&&<div style={{marginTop:12}}><div style={S.sh3}>Preferences</div><div style={{display:"flex",flexWrap:"wrap",gap:2}}>{(prefs.likes||[]).map((l,i)=><span key={`l${i}`} style={{padding:"2px 6px",borderRadius:20,fontSize:10,background:"rgba(232,121,168,.1)",color:T.a1}}>{l}</span>)}{(prefs.dislikes||[]).map((d,i)=><span key={`d${i}`} style={{padding:"2px 6px",borderRadius:20,fontSize:10,background:"rgba(255,107,138,.1)",color:T.red}}>{d}</span>)}</div></div>}
+  </div>);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 10: SUMMARY
+// ══════════════════════════════════════════════════════════════
+function SummaryPage({notes,knowledge,onAddTopic,geminiKey}){
+  const[tab,setTab]=useState("study");const[aiSum,setAiSum]=useState(null);const[ld,setLd]=useState(false);
+  const nxt=getNextTopics(knowledge);const studyN=Object.values(notes).filter(n=>n.cat==="study"&&!n.children);
+  const healthN=Object.values(notes).filter(n=>n.cat==="health");const planN=Object.values(notes).filter(n=>n.cat==="plan");
+  const ideaN=Object.values(notes).filter(n=>n.cat==="idea");const socialN=Object.values(notes).filter(n=>n.cat==="social");const dailyN=Object.values(notes).filter(n=>n.cat==="daily");
+  const calD={};healthN.forEach(n=>Object.assign(calD,parseCals(n.content)));
+  const gen=async()=>{if(!geminiKey)return;setLd(true);const all=Object.values(notes).filter(n=>n.cat===tab).map(n=>(n.content||"").replace(/<[^>]+>/g,"")).join("\n");const r=await geminiAnalyze(all,`Brief intelligence summary of these ${CM[tab]?.lb} notes. Key insights + 2-3 recommendations.`,geminiKey);setAiSum(r);setLd(false);};
+  return(<div style={{padding:20,overflowY:"auto",flex:1}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+      <h2 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,margin:0}}>Summary</h2>
+      {geminiKey&&<button onClick={gen} style={{padding:"5px 14px",borderRadius:6,border:"none",background:"linear-gradient(135deg,#e879a8,#c27bf0)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>{ld?"...":"AI Summary"}</button>}
+    </div>
+    <div style={{display:"flex",gap:3,marginBottom:14,flexWrap:"wrap"}}>{Object.keys(CM).map(c=><button key={c} onClick={()=>{setTab(c);setAiSum(null);}} style={S.tabBtn(tab===c)}>{CM[c].lb}</button>)}</div>
+    {aiSum&&<div style={{...S.glassAccent,padding:14,marginBottom:14}}><div style={S.sh2}>AI Summary</div><div style={{fontSize:13,color:T.txt3,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{aiSum}</div></div>}
+    {tab==="study"&&<div style={{display:"flex",gap:20}}><div style={{flex:2}}>
+      <div style={S.sh}>Knowledge Radar</div>
+      {Object.values(knowledge).map((info,i)=>(<div key={i} style={{...S.glass,padding:12}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{fontSize:13,fontWeight:600}}>{info.name}</span><span style={{fontSize:12,color:T.a1,fontFamily:"'JetBrains Mono',monospace"}}>{info.pct}%</span></div><div style={S.pBar}><div style={S.pFill(info.pct,T.a1)}/></div><div style={{fontSize:11,color:T.txt2}}>{info.found}/{info.total} concepts</div>{info.missing.length>0&&<div style={{marginTop:4}}><span style={{fontSize:11,color:T.amber}}>Gaps: </span><span style={{fontSize:11,color:T.txt3}}>{info.missing.join(", ")}</span></div>}</div>))}
+    </div><div style={{flex:1}}><div style={S.sh}>Next Topics</div>
+      {nxt.map((nt,i)=>(<div key={i} style={{...S.glass,padding:10}}><div style={{fontSize:13,fontWeight:600}}>{nt.topic}</div><div style={{fontSize:11,color:T.txt2,margin:"2px 0 6px"}}>{nt.subject} ({nt.curPct}%)</div><div style={{display:"flex",gap:5}}><button onClick={()=>onAddTopic(nt)} style={{padding:"3px 9px",borderRadius:6,border:"none",background:"linear-gradient(135deg,#e879a8,#c27bf0)",color:"#fff",fontSize:11,cursor:"pointer"}}>Add</button><a href={nt.video} target="_blank" rel="noopener noreferrer" style={{padding:"3px 9px",borderRadius:6,border:`1px solid ${T.border}`,color:T.a2,fontSize:11,textDecoration:"none"}}>Watch</a></div></div>))}
+    </div></div>}
+    {tab==="health"&&Object.keys(calD).length>0&&<div><div style={{display:"flex",gap:6,alignItems:"flex-end",marginBottom:10}}>{Object.entries(calD).map(([d,c])=><div key={d} style={{flex:1,textAlign:"center"}}><div style={{height:Math.round(c/14),background:c<2000?T.a1:c<2500?T.amber:T.red,borderRadius:"5px 5px 0 0",minHeight:16}}/><div style={{fontSize:9,color:T.txt2,marginTop:3}}>{d.slice(0,3)}</div><div style={{fontSize:10,color:T.txt3}}>{c}</div></div>)}</div><div style={{display:"flex",gap:8}}><div style={S.statCard}><div style={S.statN}>{Math.round(Object.values(calD).reduce((a,b)=>a+b,0)/Object.keys(calD).length)}</div><div style={S.statL}>Avg Cal</div></div></div></div>}
+    {tab==="plan"&&planN.map((n,i)=>{const bg=parseBudget(n.content);if(!bg.income)return null;const rem=bg.income-bg.total;return <div key={i}><div style={{display:"flex",gap:8,marginBottom:12}}><div style={S.statCard}><div style={S.statN}>{bg.income}</div><div style={S.statL}>Income</div></div><div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.amber}}>{bg.total}</div><div style={S.statL}>Spent</div></div><div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:rem>=0?T.a1:T.red}}>{rem}</div><div style={S.statL}>Left</div></div></div>{Object.entries(bg.expenses).sort((a,b)=>b[1]-a[1]).map(([c,a])=><div key={c} style={{marginBottom:5}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span>{c}</span><span style={{color:T.amber}}>{a}</span></div><div style={S.pBar}><div style={S.pFill(a/bg.income*100,T.amber)}/></div></div>)}</div>;})}
+    {tab==="idea"&&ideaN.map((n,i)=>{const sc=scoreIdea(n.content);return <div key={i} style={S.glass}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:14,fontWeight:600}}>#{i+1} {n.title}</span><span style={{fontFamily:"'JetBrains Mono',monospace",color:T.a1}}>{sc.overall}/10</span></div></div>;})}
+    {tab==="daily"&&(()=>{let d=0,t=0;dailyN.forEach(n=>{t+=(n.content.match(/<li>/g)||[]).length;d+=(n.content.match(/<s>/g)||[]).length;});return <div style={{display:"flex",gap:8}}><div style={S.statCard}><div style={S.statN}>{d}/{t}</div><div style={S.statL}>Done</div></div><div style={S.statCard}><div style={S.statN}>{t?Math.round(d/t*100):0}%</div><div style={S.statL}>Rate</div></div></div>;})()}
+    {tab==="social"&&(()=>{const moods=[];socialN.forEach(n=>moods.push(...parseMoods(n.content)));if(!moods.length)return null;const MC={1:T.red,2:T.amber,3:T.purple,4:T.a1,5:T.cyan};return <div><div style={S.statCard}><div style={S.statN}>{(moods.reduce((s,m)=>s+m.mood,0)/moods.length).toFixed(1)}/5</div><div style={S.statL}>Avg Mood</div></div><div style={{display:"flex",gap:5,alignItems:"flex-end",marginTop:10}}>{moods.map((m,i)=><div key={i} style={{flex:1,textAlign:"center"}}><div style={{height:m.mood*18,background:MC[m.mood],borderRadius:"5px 5px 0 0"}}/><div style={{fontSize:9,color:T.txt2,marginTop:2}}>{m.day}</div></div>)}</div></div>;})()}
+  </div>);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 11: REVIEWS (compact)
+// ══════════════════════════════════════════════════════════════
+function ReviewsPage({reviews,preferences,onSubmit}){
+  const[item,setItem]=useState("");const[cat,setCat]=useState("health");const[rating,setRating]=useState(3);const[likes,setLikes]=useState("");const[dislikes,setDislikes]=useState("");
+  const submit=()=>{if(!item.trim())return;onSubmit({cat,item:item.trim(),rating,likes:likes.split(",").map(s=>s.trim()).filter(Boolean),dislikes:dislikes.split(",").map(s=>s.trim()).filter(Boolean),date:new Date().toISOString().slice(0,10)});setItem("");setLikes("");setDislikes("");setRating(3);};
+  const inp={padding:"6px 9px",borderRadius:7,border:`1px solid ${T.border}`,background:T.glass,color:T.txt,fontSize:12,outline:"none",width:"100%",fontFamily:"'Inter',sans-serif"};
+  return(<div style={{padding:20,overflowY:"auto",flex:1}}>
+    <h2 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,margin:"0 0 12px"}}>Reviews</h2>
+    <div style={{...S.glass,padding:14,marginBottom:12}}>
+      <div style={{display:"flex",gap:6,marginBottom:6}}><select value={cat} onChange={e=>setCat(e.target.value)} style={{...inp,width:"auto",cursor:"pointer"}}>{Object.entries(CM).map(([k,v])=><option key={k} value={k}>{v.lb}</option>)}</select><input value={item} onChange={e=>setItem(e.target.value)} placeholder="What?" style={inp}/></div>
+      <div style={{display:"flex",gap:3,marginBottom:6}}>{[1,2,3,4,5].map(n=><button key={n} onClick={()=>setRating(n)} style={{padding:"5px 12px",borderRadius:6,border:"none",cursor:"pointer",fontWeight:700,background:n<=rating?"linear-gradient(135deg,#e879a8,#c27bf0)":T.glass,color:n<=rating?"#fff":T.txt2}}>{n}</button>)}</div>
+      <div style={{display:"flex",gap:6,marginBottom:6}}><input value={likes} onChange={e=>setLikes(e.target.value)} placeholder="Liked?" style={inp}/><input value={dislikes} onChange={e=>setDislikes(e.target.value)} placeholder="Disliked?" style={inp}/></div>
+      <button onClick={submit} style={{padding:"7px 18px",borderRadius:7,border:"none",background:"linear-gradient(135deg,#e879a8,#c27bf0)",color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",width:"100%"}}>Submit</button>
+    </div>
+    {[...reviews].reverse().map((r,i)=><div key={i} style={{...S.glass,padding:10}}><div style={{display:"flex",justifyContent:"space-between"}}><div><span style={S.tag(r.cat)}>{CM[r.cat]?.lb}</span><div style={{fontWeight:600,marginTop:2,fontSize:12}}>{r.item}</div></div><span style={{fontFamily:"'JetBrains Mono',monospace",color:T.a1}}>{r.rating}/5</span></div></div>)}
+  </div>);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 12: MAIN APP
+// ══════════════════════════════════════════════════════════════
+export default function App(){
+  const[folders,setFolders]=useState(INIT_FOLDERS);const[notes,setNotes]=useState(INIT_NOTES);
+  const[activeNote,setActiveNote]=useState("s2");const[activeFolder,setActiveFolder]=useState("mban");
+  const[viewMode,setViewMode]=useState(null); // null=note, "parent:id", "folder:id"
+  const[page,setPage]=useState("notes");const[showAI,setShowAI]=useState(true);const[showFiles,setShowFiles]=useState(false);
+  const[reviews,setReviews]=useState(INIT_REVIEWS);const[prefs,setPrefs]=useState({health:{likes:["quick","high protein"],dislikes:["too salty"]}});
+  const[ghostData,setGhostData]=useState(null);const[ghostLoading,setGhostLoading]=useState(false);
+  const[ytResults,setYtResults]=useState([]);const[ytLoading,setYtLoading]=useState(false);const[aiInsight,setAiInsight]=useState(null);
+  const[uploadedFiles,setUploadedFiles]=useState([]);const[fileSearch,setFileSearch]=useState("");
+  const timerRef=useRef(null);const ytRef=useRef(null);
+
+  const active=notes[activeNote];
+  const knowledge=useMemo(()=>calcKnow(notes),[notes]);
+  const videos=useMemo(()=>active?getVideos(active.content||""):[],[active?.content]);
+
+  const handleChange=useCallback(html=>{
+    setNotes(p=>({...p,[activeNote]:{...p[activeNote],content:html}}));
+    if(timerRef.current)clearTimeout(timerRef.current);
+    timerRef.current=setTimeout(async()=>{
+      const plain=html.replace(/<[^>]+>/g,"");if(plain.length<15)return;
+      const pLines=plain.split("\n").filter(l=>l.trim());const ctx=`Note: "${active?.title||""}"
+
+${pLines.slice(-8).join("\n")}`;
+      if(GEMINI_KEY){setGhostLoading(true);const r=await geminiComplete(ctx,GEMINI_KEY);setGhostData(r||getGhost(html));setGhostLoading(false);}
+      else{setGhostData(getGhost(html));}
+    },800);
+    if(ytRef.current)clearTimeout(ytRef.current);
+    ytRef.current=setTimeout(async()=>{
+      if(!YOUTUBE_KEY)return;const plain=html.replace(/<[^>]+>/g,"");if(plain.length<20)return;
+      const q=plain.split("\n").filter(l=>l.trim()).slice(-2).join(" ").slice(0,80);if(q.length<8)return;
+      setYtLoading(true);const r=await ytSearch(q+" tutorial",YOUTUBE_KEY,3);setYtResults(r);setYtLoading(false);
+    },1500);
+    if(GEMINI_KEY&&html.replace(/<[^>]+>/g,"").length>100){setTimeout(async()=>{const r=await geminiAnalyze(html,"Most important takeaway? One sentence.",GEMINI_KEY);setAiInsight(r);},3000);}
+  },[activeNote]);
+
+  const acceptGhost=useCallback(()=>{setGhostData(null);},[]);
+
+  const selectNote=id=>{setActiveNote(id);setViewMode(null);setGhostData(null);setYtResults([]);setAiInsight(null);setPage("notes");};
+  const selectParent=id=>{setViewMode("parent:"+id);setActiveNote(id);setPage("notes");};
+  const selectFolderView=fid=>{setViewMode("folder:"+fid);setPage("notes");};
+  const createNote=(title,fid)=>{const id=`n_${Date.now()}`;setNotes(p=>({...p,[id]:{title,cat:"study",content:"",created:new Date().toISOString().slice(0,10)}}));setFolders(p=>p.map(f=>f.id===fid?{...f,notes:[...f.notes,id]}:f));selectNote(id);};
+  const createFolder=name=>{setFolders(p=>[...p,{id:`f_${Date.now()}`,name,notes:[]}]);};
+  const addLesson=(pid,title)=>{const id=`${pid}_l${Date.now()}`;setNotes(p=>{const pn=p[pid];return{...p,[pid]:{...pn,children:[...(pn.children||[]),id]},[id]:{title,cat:pn.cat,created:new Date().toISOString().slice(0,10),parent:pid,content:""}};});};
+  const addTopic=nt=>{const tid=nt.tn;if(!notes[tid])return;setNotes(p=>({...p,[tid]:{...p[tid],content:(p[tid].content||"")+`<h3 style="color:#c27bf0">${nt.topic}</h3><p>${nt.desc}</p><p><a href="${nt.video}" target="_blank" style="color:#e879a8">Watch \u2192</a></p>`}}));selectNote(tid);};
+  const submitReview=r=>{setReviews(p=>[...p,r]);setPrefs(p=>{const cp={...p};if(!cp[r.cat])cp[r.cat]={likes:[],dislikes:[]};const c={...cp[r.cat],likes:[...cp[r.cat].likes],dislikes:[...cp[r.cat].dislikes]};r.likes.forEach(l=>{if(!c.likes.includes(l))c.likes.push(l);});r.dislikes.forEach(d=>{if(!c.dislikes.includes(d))c.dislikes.push(d);});return{...cp,[r.cat]:c};});};
+  const handleShowFiles=()=>{const sel=window.getSelection()?.toString()||"";setFileSearch(sel);setShowFiles(true);setShowAI(false);};
+
+  const folderName=folders.find(f=>f.notes.includes(activeNote)||f.notes.some(nid=>notes[nid]?.children?.includes(activeNote)))?.name||"";
+
+  // Build combined view items
+  let combinedTitle="",combinedItems=[],combinedParentId=null;
+  if(viewMode?.startsWith("parent:")){
+    const pid=viewMode.slice(7);const pn=notes[pid];
+    if(pn?.children){combinedTitle=pn.title;combinedParentId=pid;combinedItems=(pn.children||[]).map(id=>({id,...notes[id]})).filter(Boolean).sort((a,b)=>(a.created||"").localeCompare(b.created||""));}
+  }else if(viewMode?.startsWith("folder:")){
+    const fid=viewMode.slice(7);const folder=folders.find(f=>f.id===fid);
+    if(folder){combinedTitle=folder.name;
+      folder.notes.forEach(nid=>{const n=notes[nid];if(!n)return;
+        if(n.children){n.children.forEach(cid=>{if(notes[cid])combinedItems.push({id:cid,...notes[cid]});});}
+        else if(!n.parent){combinedItems.push({id:nid,...n});}
+      });combinedItems.sort((a,b)=>(a.created||"").localeCompare(b.created||""));}
+  }
+
+  return(<div style={S.app}>
+    <Sidebar folders={folders} notes={notes} activeNote={activeNote} activeFolder={activeFolder}
+      onSelect={selectNote} onSelectFolder={setActiveFolder} onCreate={createNote} onCreateFolder={createFolder} onSelectParent={selectParent} onSelectFolderView={selectFolderView}/>
+    <div style={S.main}>
+      <div style={S.topBar}>
+        <button style={S.tabBtn(page==="notes")} onClick={()=>setPage("notes")}>Notes</button>
+        <button style={S.tabBtn(page==="summary")} onClick={()=>setPage("summary")}>Summary</button>
+        <button style={S.tabBtn(page==="reviews")} onClick={()=>setPage("reviews")}>Reviews</button>
+        <div style={{flex:1}}/>
+        <div style={{display:"flex",gap:6,alignItems:"center",marginRight:8}}>
+          <span style={{width:6,height:6,borderRadius:"50%",background:GEMINI_KEY?T.a1:"rgba(255,255,255,.15)"}}/>
+          <span style={{fontSize:10,color:T.txt2}}>Gemini</span>
+          <span style={{width:6,height:6,borderRadius:"50%",background:YOUTUBE_KEY?T.a1:"rgba(255,255,255,.15)"}}/>
+          <span style={{fontSize:10,color:T.txt2}}>YT</span>
+        </div>
+        {page==="notes"&&!viewMode&&<>
+          <button style={{...S.tabBtn(false),fontSize:11,color:showFiles?T.a2:T.txt2}} onClick={()=>{setShowFiles(!showFiles);if(!showFiles)setShowAI(false);else setShowAI(true);}}>{showFiles?"Hide Files":"Files"}</button>
+          <button style={{...S.tabBtn(false),fontSize:11,color:T.txt2}} onClick={()=>{setShowAI(!showAI);if(showAI)setShowFiles(false);}}>{showAI?"Hide AI":"Show AI"}</button>
+        </>}
+      </div>
+      {page==="notes"&&viewMode&&<CombinedView title={combinedTitle} items={combinedItems} onSelect={selectNote} onAddLesson={t=>combinedParentId&&addLesson(combinedParentId,t)} parentId={combinedParentId} onChangeNote={(id,html)=>setNotes(p=>({...p,[id]:{...p[id],content:html}}))}/>}
+      {page==="notes"&&!viewMode&&active&&(
+        <div style={{display:"flex",flex:1,overflow:"hidden"}}>
+          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",padding:"10px 14px"}}>
+            <div style={{marginBottom:6}}>
+              <span style={{fontSize:10,color:T.txt2}}>{folderName} / {active.created}</span>
+              {active.parent&&<span style={{fontSize:10,color:T.a2,marginLeft:6,cursor:"pointer"}} onClick={()=>selectParent(active.parent)}>{"\u2190"} {notes[active.parent]?.title}</span>}
+              <h2 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:19,margin:"2px 0 3px",color:T.txt}}>{active.title}</h2>
+              <span style={S.tag(active.cat)}>{CM[active.cat]?.lb}</span>
+            </div>
+            <RichEditor key={activeNote} content={active.content} onChange={handleChange} ghostData={ghostData} onAcceptGhost={acceptGhost} noteId={activeNote} loading={ghostLoading} onShowFiles={handleShowFiles}/>
+          </div>
+          {showFiles&&<FilePanel files={uploadedFiles} onUpload={f=>setUploadedFiles(p=>[...p,f])} onClose={()=>{setShowFiles(false);setShowAI(true);}} searchText={fileSearch}/>}
+          {showAI&&!showFiles&&<SugPanel videos={videos} ytResults={ytResults} knowledge={active.cat==="study"?knowledge:null} cat={active.cat} prefs={prefs[active.cat]} aiInsight={aiInsight} loadingYT={ytLoading}/>}
+        </div>
+      )}
+      {page==="notes"&&!viewMode&&!active&&<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{textAlign:"center"}}><h1 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:28}}>Notiq</h1><p style={{color:T.txt2}}>Select or create a note.</p></div></div>}
+      {page==="summary"&&<SummaryPage notes={notes} knowledge={knowledge} onAddTopic={addTopic} geminiKey={GEMINI_KEY}/>}
+      {page==="reviews"&&<ReviewsPage reviews={reviews} preferences={prefs} onSubmit={submitReview}/>}
+    </div>
+  </div>);
+}
