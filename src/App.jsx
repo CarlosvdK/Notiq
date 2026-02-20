@@ -13,7 +13,45 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 // ══════════════════════════════════════════════════════════════
 // SECTION 1: THEME
 // ══════════════════════════════════════════════════════════════
-const T = { bg:"#12081a",bg2:"#1a0e24",bg3:"#221435",glass:"rgba(255,255,255,.04)",glassH:"rgba(255,255,255,.07)",border:"rgba(255,255,255,.08)",a1:"#e879a8",a2:"#c27bf0",a3:"#f0935a",txt:"#f0e6f6",txt2:"rgba(240,230,246,.4)",txt3:"rgba(240,230,246,.6)",red:"#ff6b8a",amber:"#ffb86c",blue:"#8be9fd",purple:"#bd93f9",cyan:"#67e8f9",pink:"#ff79c6",grad:"linear-gradient(135deg,#e879a8,#c27bf0,#f0935a)" };
+// Dark: near-black bg, white/grey text + accents
+const DARK_CSS=`
+  --t-bg:#0a0a0a;--t-bg2:#111;--t-bg3:#1a1a1a;
+  --t-glass:rgba(255,255,255,.05);--t-glassH:rgba(255,255,255,.09);--t-border:rgba(255,255,255,.1);
+  --t-a1:#f0f0f0;--t-a2:#999;--t-a3:#666;
+  --t-txt:#f5f5f5;--t-txt2:rgba(245,245,245,.4);--t-txt3:rgba(245,245,245,.62);
+  --t-red:#ff5c5c;--t-amber:#c9912a;--t-blue:#7abfea;--t-purple:#b8b8b8;--t-cyan:#6ec8c8;--t-pink:#d0d0d0;
+  --t-grad:linear-gradient(135deg,#e0e0e0,#aaa);
+  --t-btn:linear-gradient(135deg,#2d2d2d,#444);
+  --t-btn-txt:#f0f0f0;
+  --t-sidebar:linear-gradient(180deg,#050505,#0a0a0a,#070707);
+  --t-tab-active:rgba(255,255,255,.08);
+  --t-note-active:rgba(255,255,255,.07);
+  --t-glass-accent:rgba(255,255,255,.04);
+  --t-panel:rgba(255,255,255,.016);
+  --t-pbar:rgba(255,255,255,.06);
+  --t-dot-off:rgba(255,255,255,.15);
+  --t-topbar:rgba(255,255,255,.02);
+`;
+// Light: white bg, dark-navy text, dark-blue gradient accents
+const LIGHT_CSS=`
+  --t-bg:#ffffff;--t-bg2:#f8fafc;--t-bg3:#f1f5f9;
+  --t-glass:rgba(0,0,0,.04);--t-glassH:rgba(0,0,0,.07);--t-border:rgba(0,0,0,.09);
+  --t-a1:#1e3a8a;--t-a2:#2563eb;--t-a3:#3b82f6;
+  --t-txt:#0f172a;--t-txt2:rgba(15,23,42,.45);--t-txt3:rgba(15,23,42,.65);
+  --t-red:#dc2626;--t-amber:#d97706;--t-blue:#1d4ed8;--t-purple:#4338ca;--t-cyan:#0891b2;--t-pink:#9333ea;
+  --t-grad:linear-gradient(135deg,#1e3a8a,#2563eb,#3b82f6);
+  --t-btn:linear-gradient(135deg,#1e3a8a,#2563eb);
+  --t-btn-txt:#ffffff;
+  --t-sidebar:linear-gradient(180deg,#f8fafc,#f1f5f9,#e2e8f0);
+  --t-tab-active:rgba(30,58,138,.12);
+  --t-note-active:rgba(30,58,138,.08);
+  --t-glass-accent:rgba(30,58,138,.05);
+  --t-panel:rgba(0,0,0,.02);
+  --t-pbar:rgba(0,0,0,.06);
+  --t-dot-off:rgba(0,0,0,.15);
+  --t-topbar:rgba(0,0,0,.02);
+`;
+const T={bg:"var(--t-bg)",bg2:"var(--t-bg2)",bg3:"var(--t-bg3)",glass:"var(--t-glass)",glassH:"var(--t-glassH)",border:"var(--t-border)",a1:"var(--t-a1)",a2:"var(--t-a2)",a3:"var(--t-a3)",txt:"var(--t-txt)",txt2:"var(--t-txt2)",txt3:"var(--t-txt3)",red:"var(--t-red)",amber:"var(--t-amber)",blue:"var(--t-blue)",purple:"var(--t-purple)",cyan:"var(--t-cyan)",pink:"var(--t-pink)",grad:"var(--t-grad)"};
 const CM = {
   daily:{lb:"Daily Tasks",color:T.a1,bg:"rgba(232,121,168,.1)"},study:{lb:"Work / Study",color:T.blue,bg:"rgba(139,233,253,.1)"},
   health:{lb:"Health & Fitness",color:T.pink,bg:"rgba(255,121,198,.1)"},plan:{lb:"Planning & Finance",color:T.amber,bg:"rgba(255,184,108,.1)"},
@@ -147,27 +185,27 @@ function parseMoods(t){const MW={great:5,amazing:5,happy:5,motivated:5,confident
 // ══════════════════════════════════════════════════════════════
 const S={
   app:{display:"flex",height:"100vh",width:"100%",background:T.bg,color:T.txt,fontFamily:"'Inter',system-ui,sans-serif",overflow:"hidden"},
-  sidebar:{width:250,minWidth:250,background:"linear-gradient(180deg,#16061e,#1a0a22,#120820)",borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",overflow:"hidden"},
+  sidebar:{width:250,minWidth:250,background:"var(--t-sidebar)",borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",overflow:"hidden"},
   sideScroll:{flex:1,overflowY:"auto",padding:"0 10px 10px"},
   main:{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"},
-  topBar:{display:"flex",gap:4,padding:"6px 16px",borderBottom:`1px solid ${T.border}`,background:"rgba(255,255,255,.02)",alignItems:"center"},
-  tabBtn:a=>({padding:"6px 16px",borderRadius:8,border:"none",cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:"'Inter',sans-serif",background:a?"linear-gradient(135deg,rgba(232,121,168,.18),rgba(194,123,240,.18))":"transparent",color:a?T.a1:T.txt2}),
-  noteBtn:(a,indent=0)=>({display:"block",width:"100%",textAlign:"left",padding:`4px 8px 4px ${12+indent*10}px`,border:"none",borderRadius:6,cursor:"pointer",fontSize:indent?11:12,fontWeight:a?600:400,background:a?"rgba(232,121,168,.12)":"transparent",color:a?T.a1:T.txt3,fontFamily:"'Inter',sans-serif",marginBottom:1}),
+  topBar:{display:"flex",gap:4,padding:"6px 16px",borderBottom:`1px solid ${T.border}`,background:"var(--t-topbar)",alignItems:"center"},
+  tabBtn:a=>({padding:"6px 16px",borderRadius:8,border:"none",cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:"'Inter',sans-serif",background:a?"var(--t-tab-active)":"transparent",color:a?T.a1:T.txt2}),
+  noteBtn:(a,indent=0)=>({display:"block",width:"100%",textAlign:"left",padding:`4px 8px 4px ${12+indent*10}px`,border:"none",borderRadius:6,cursor:"pointer",fontSize:indent?11:12,fontWeight:a?600:400,background:a?"var(--t-note-active)":"transparent",color:a?T.a1:T.txt3,fontFamily:"'Inter',sans-serif",marginBottom:1}),
   glass:{background:T.glass,backdropFilter:"blur(20px)",border:`1px solid ${T.border}`,borderRadius:12,padding:14,marginBottom:8},
-  glassAccent:{background:"linear-gradient(135deg,rgba(232,121,168,.06),rgba(194,123,240,.06))",border:"1px solid rgba(194,123,240,.15)",borderRadius:12,padding:14,marginBottom:8},
+  glassAccent:{background:"var(--t-glass-accent)",border:`1px solid ${T.border}`,borderRadius:12,padding:14,marginBottom:8},
   tag:c=>({display:"inline-block",padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:600,textTransform:"uppercase",background:CM[c]?.bg||T.glass,color:CM[c]?.color||T.txt2}),
   sh:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:T.a1,letterSpacing:".5px",textTransform:"uppercase",marginBottom:5},
   sh2:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:T.a2,letterSpacing:".5px",textTransform:"uppercase",marginBottom:5},
   sh3:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:T.amber,letterSpacing:".5px",textTransform:"uppercase",marginBottom:5},
   editor:{minHeight:350,outline:"none",padding:"14px 18px",fontFamily:"'Inter',sans-serif",fontSize:15,lineHeight:1.7,color:T.txt,background:"transparent"},
-  toolbar:{display:"flex",flexWrap:"wrap",gap:1,padding:"5px 10px",borderBottom:`1px solid ${T.border}`,background:"rgba(255,255,255,.02)"},
+  toolbar:{display:"flex",flexWrap:"wrap",gap:1,padding:"5px 10px",borderBottom:`1px solid ${T.border}`,background:"var(--t-topbar)"},
   toolBtn:{padding:"3px 7px",border:"none",borderRadius:4,cursor:"pointer",fontSize:12,background:"transparent",color:T.txt3,fontFamily:"'Inter',sans-serif"},
-  sugPanel:{width:280,minWidth:280,borderLeft:`1px solid ${T.border}`,background:"rgba(255,255,255,.015)",overflowY:"auto",padding:12},
+  sugPanel:{width:280,minWidth:280,borderLeft:`1px solid ${T.border}`,background:"var(--t-panel)",overflowY:"auto",padding:12},
   statCard:{background:T.glass,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 12px",textAlign:"center",flex:1},
   statN:{fontFamily:"'JetBrains Mono',monospace",fontSize:20,fontWeight:700,background:T.grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"},
   statL:{fontSize:9,color:T.txt2,textTransform:"uppercase",letterSpacing:".7px"},
-  pBar:{height:7,borderRadius:7,background:"rgba(255,255,255,.05)",overflow:"hidden",margin:"3px 0"},
-  pFill:(p,c)=>({height:"100%",borderRadius:7,width:`${p}%`,background:`linear-gradient(90deg,${c}44,${c})`,transition:"width .5s"}),
+  pBar:{height:7,borderRadius:7,background:"var(--t-pbar)",overflow:"hidden",margin:"3px 0"},
+  pFill:(p,c)=>({height:"100%",borderRadius:7,width:`${p}%`,background:c,transition:"width .5s"}),
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -289,7 +327,7 @@ function Sidebar({folders,notes,activeNote,activeFolder,onSelect,onSelectFolder,
       <div style={{padding:"0 10px 6px",borderBottom:`1px solid ${T.border}`}}>
         <div style={{display:"flex",gap:3}}>
           <input value={nt} onChange={e=>setNt(e.target.value)} placeholder="New note..." style={{flex:1,padding:"5px 8px",borderRadius:6,border:`1px solid ${T.border}`,background:T.glass,color:T.txt,fontSize:11,outline:"none",fontFamily:"'Inter',sans-serif"}} onKeyDown={e=>{if(e.key==="Enter"&&nt.trim()){onCreate(nt.trim(),activeFolder);setNt("");}}}/>
-          <button onClick={()=>{if(nt.trim()){onCreate(nt.trim(),activeFolder);setNt("");}}} style={{padding:"5px 10px",borderRadius:6,border:"none",background:"linear-gradient(135deg,#e879a8,#c27bf0)",color:"#fff",fontSize:10,fontWeight:600,cursor:"pointer"}}>+</button>
+          <button onClick={()=>{if(nt.trim()){onCreate(nt.trim(),activeFolder);setNt("");}}} style={{padding:"5px 10px",borderRadius:6,border:"none",background:"var(--t-btn)",color:"#fff",fontSize:10,fontWeight:600,cursor:"pointer"}}>+</button>
         </div>
       </div>
       <div style={S.sideScroll}>
@@ -362,7 +400,7 @@ function CombinedView({title,items,onSelect,onAddLesson,parentId,onChangeNote}){
     <div style={{flex:1,overflowY:"auto",padding:"14px 20px"}}>
       <h2 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:20,margin:"0 0 4px"}}>{title}</h2>
       <span style={{fontSize:11,color:T.txt2}}>{items.length} note{items.length!==1?"s":""}</span>
-      {parentId&&<div style={{display:"flex",gap:4,margin:"10px 0"}}><input value={nt} onChange={e=>setNt(e.target.value)} placeholder="Add new lesson..." style={{flex:1,padding:"6px 10px",borderRadius:6,border:`1px solid ${T.border}`,background:T.glass,color:T.txt,fontSize:12,outline:"none"}} onKeyDown={e=>{if(e.key==="Enter"&&nt.trim()){onAddLesson(nt.trim());setNt("");}}}/><button onClick={()=>{if(nt.trim()){onAddLesson(nt.trim());setNt("");}}} style={{padding:"6px 14px",borderRadius:6,border:"none",background:"linear-gradient(135deg,#e879a8,#c27bf0)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>+ Lesson</button></div>}
+      {parentId&&<div style={{display:"flex",gap:4,margin:"10px 0"}}><input value={nt} onChange={e=>setNt(e.target.value)} placeholder="Add new lesson..." style={{flex:1,padding:"6px 10px",borderRadius:6,border:`1px solid ${T.border}`,background:T.glass,color:T.txt,fontSize:12,outline:"none"}} onKeyDown={e=>{if(e.key==="Enter"&&nt.trim()){onAddLesson(nt.trim());setNt("");}}}/><button onClick={()=>{if(nt.trim()){onAddLesson(nt.trim());setNt("");}}} style={{padding:"6px 14px",borderRadius:6,border:"none",background:"var(--t-btn)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>+ Lesson</button></div>}
       <div style={{...S.glass,padding:12,marginBottom:14}}><div style={S.sh}>Table of Contents</div>
         {items.map((c,i)=><div key={c.id} onClick={()=>onSelect(c.id)} style={{padding:"5px 8px",cursor:"pointer",fontSize:13,color:T.txt3,borderBottom:`1px solid ${T.border}`}}><span style={{color:T.a2,fontWeight:600,marginRight:6}}>{i+1}.</span>{c.title}<span style={{fontSize:10,color:T.txt2,marginLeft:8}}>{c.created}</span></div>)}
       </div>
@@ -407,7 +445,7 @@ function SummaryPage({notes,knowledge,onAddTopic,geminiKey}){
   return(<div style={{padding:20,overflowY:"auto",flex:1}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
       <h2 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,margin:0}}>Summary</h2>
-      {geminiKey&&<button onClick={gen} style={{padding:"5px 14px",borderRadius:6,border:"none",background:"linear-gradient(135deg,#e879a8,#c27bf0)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>{ld?"...":"AI Summary"}</button>}
+      {geminiKey&&<button onClick={gen} style={{padding:"5px 14px",borderRadius:6,border:"none",background:"var(--t-btn)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>{ld?"...":"AI Summary"}</button>}
     </div>
     <div style={{display:"flex",gap:3,marginBottom:14,flexWrap:"wrap"}}>{Object.keys(CM).map(c=><button key={c} onClick={()=>{setTab(c);setAiSum(null);}} style={S.tabBtn(tab===c)}>{CM[c].lb}</button>)}</div>
     {aiSum&&<div style={{...S.glassAccent,padding:14,marginBottom:14}}><div style={S.sh2}>AI Summary</div><div style={{fontSize:13,color:T.txt3,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{aiSum}</div></div>}
@@ -415,7 +453,7 @@ function SummaryPage({notes,knowledge,onAddTopic,geminiKey}){
       <div style={S.sh}>Knowledge Radar</div>
       {Object.values(knowledge).map((info,i)=>(<div key={i} style={{...S.glass,padding:12}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{fontSize:13,fontWeight:600}}>{info.name}</span><span style={{fontSize:12,color:T.a1,fontFamily:"'JetBrains Mono',monospace"}}>{info.pct}%</span></div><div style={S.pBar}><div style={S.pFill(info.pct,T.a1)}/></div><div style={{fontSize:11,color:T.txt2}}>{info.found}/{info.total} concepts</div>{info.missing.length>0&&<div style={{marginTop:4}}><span style={{fontSize:11,color:T.amber}}>Gaps: </span><span style={{fontSize:11,color:T.txt3}}>{info.missing.join(", ")}</span></div>}</div>))}
     </div><div style={{flex:1}}><div style={S.sh}>Next Topics</div>
-      {nxt.map((nt,i)=>(<div key={i} style={{...S.glass,padding:10}}><div style={{fontSize:13,fontWeight:600}}>{nt.topic}</div><div style={{fontSize:11,color:T.txt2,margin:"2px 0 6px"}}>{nt.subject} ({nt.curPct}%)</div><div style={{display:"flex",gap:5}}><button onClick={()=>onAddTopic(nt)} style={{padding:"3px 9px",borderRadius:6,border:"none",background:"linear-gradient(135deg,#e879a8,#c27bf0)",color:"#fff",fontSize:11,cursor:"pointer"}}>Add</button><a href={nt.video} target="_blank" rel="noopener noreferrer" style={{padding:"3px 9px",borderRadius:6,border:`1px solid ${T.border}`,color:T.a2,fontSize:11,textDecoration:"none"}}>Watch</a></div></div>))}
+      {nxt.map((nt,i)=>(<div key={i} style={{...S.glass,padding:10}}><div style={{fontSize:13,fontWeight:600}}>{nt.topic}</div><div style={{fontSize:11,color:T.txt2,margin:"2px 0 6px"}}>{nt.subject} ({nt.curPct}%)</div><div style={{display:"flex",gap:5}}><button onClick={()=>onAddTopic(nt)} style={{padding:"3px 9px",borderRadius:6,border:"none",background:"var(--t-btn)",color:"#fff",fontSize:11,cursor:"pointer"}}>Add</button><a href={nt.video} target="_blank" rel="noopener noreferrer" style={{padding:"3px 9px",borderRadius:6,border:`1px solid ${T.border}`,color:T.a2,fontSize:11,textDecoration:"none"}}>Watch</a></div></div>))}
     </div></div>}
     {tab==="health"&&Object.keys(calD).length>0&&<div><div style={{display:"flex",gap:6,alignItems:"flex-end",marginBottom:10}}>{Object.entries(calD).map(([d,c])=><div key={d} style={{flex:1,textAlign:"center"}}><div style={{height:Math.round(c/14),background:c<2000?T.a1:c<2500?T.amber:T.red,borderRadius:"5px 5px 0 0",minHeight:16}}/><div style={{fontSize:9,color:T.txt2,marginTop:3}}>{d.slice(0,3)}</div><div style={{fontSize:10,color:T.txt3}}>{c}</div></div>)}</div><div style={{display:"flex",gap:8}}><div style={S.statCard}><div style={S.statN}>{Math.round(Object.values(calD).reduce((a,b)=>a+b,0)/Object.keys(calD).length)}</div><div style={S.statL}>Avg Cal</div></div></div></div>}
     {tab==="plan"&&planN.map((n,i)=>{const bg=parseBudget(n.content);if(!bg.income)return null;const rem=bg.income-bg.total;return <div key={i}><div style={{display:"flex",gap:8,marginBottom:12}}><div style={S.statCard}><div style={S.statN}>{bg.income}</div><div style={S.statL}>Income</div></div><div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.amber}}>{bg.total}</div><div style={S.statL}>Spent</div></div><div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:rem>=0?T.a1:T.red}}>{rem}</div><div style={S.statL}>Left</div></div></div>{Object.entries(bg.expenses).sort((a,b)=>b[1]-a[1]).map(([c,a])=><div key={c} style={{marginBottom:5}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span>{c}</span><span style={{color:T.amber}}>{a}</span></div><div style={S.pBar}><div style={S.pFill(a/bg.income*100,T.amber)}/></div></div>)}</div>;})}
@@ -436,9 +474,9 @@ function ReviewsPage({reviews,preferences,onSubmit}){
     <h2 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,margin:"0 0 12px"}}>Reviews</h2>
     <div style={{...S.glass,padding:14,marginBottom:12}}>
       <div style={{display:"flex",gap:6,marginBottom:6}}><select value={cat} onChange={e=>setCat(e.target.value)} style={{...inp,width:"auto",cursor:"pointer"}}>{Object.entries(CM).map(([k,v])=><option key={k} value={k}>{v.lb}</option>)}</select><input value={item} onChange={e=>setItem(e.target.value)} placeholder="What?" style={inp}/></div>
-      <div style={{display:"flex",gap:3,marginBottom:6}}>{[1,2,3,4,5].map(n=><button key={n} onClick={()=>setRating(n)} style={{padding:"5px 12px",borderRadius:6,border:"none",cursor:"pointer",fontWeight:700,background:n<=rating?"linear-gradient(135deg,#e879a8,#c27bf0)":T.glass,color:n<=rating?"#fff":T.txt2}}>{n}</button>)}</div>
+      <div style={{display:"flex",gap:3,marginBottom:6}}>{[1,2,3,4,5].map(n=><button key={n} onClick={()=>setRating(n)} style={{padding:"5px 12px",borderRadius:6,border:"none",cursor:"pointer",fontWeight:700,background:n<=rating?"var(--t-btn)":T.glass,color:n<=rating?"#fff":T.txt2}}>{n}</button>)}</div>
       <div style={{display:"flex",gap:6,marginBottom:6}}><input value={likes} onChange={e=>setLikes(e.target.value)} placeholder="Liked?" style={inp}/><input value={dislikes} onChange={e=>setDislikes(e.target.value)} placeholder="Disliked?" style={inp}/></div>
-      <button onClick={submit} style={{padding:"7px 18px",borderRadius:7,border:"none",background:"linear-gradient(135deg,#e879a8,#c27bf0)",color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",width:"100%"}}>Submit</button>
+      <button onClick={submit} style={{padding:"7px 18px",borderRadius:7,border:"none",background:"var(--t-btn)",color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",width:"100%"}}>Submit</button>
     </div>
     {[...reviews].reverse().map((r,i)=><div key={i} style={{...S.glass,padding:10}}><div style={{display:"flex",justifyContent:"space-between"}}><div><span style={S.tag(r.cat)}>{CM[r.cat]?.lb}</span><div style={{fontWeight:600,marginTop:2,fontSize:12}}>{r.item}</div></div><span style={{fontFamily:"'JetBrains Mono',monospace",color:T.a1}}>{r.rating}/5</span></div></div>)}
   </div>);
@@ -456,7 +494,13 @@ export default function App(){
   const[ghostData,setGhostData]=useState(null);const[ghostLoading,setGhostLoading]=useState(false);
   const[ytResults,setYtResults]=useState([]);const[ytLoading,setYtLoading]=useState(false);const[aiInsight,setAiInsight]=useState(null);
   const[uploadedFiles,setUploadedFiles]=useState([]);const[fileSearch,setFileSearch]=useState("");
+  const[isDark,setIsDark]=useState(true);
   const timerRef=useRef(null);const ytRef=useRef(null);
+  useEffect(()=>{
+    let s=document.getElementById("nt-theme");
+    if(!s){s=document.createElement("style");s.id="nt-theme";document.head.appendChild(s);}
+    s.textContent=`:root{${isDark?DARK_CSS:LIGHT_CSS}}body,#root{background:var(--t-bg)}`;
+  },[isDark]);
 
   const active=notes[activeNote];
   const knowledge=useMemo(()=>calcKnow(notes),[notes]);
@@ -519,10 +563,11 @@ ${pLines.slice(-8).join("\n")}`;
         <button style={S.tabBtn(page==="summary")} onClick={()=>setPage("summary")}>Summary</button>
         <button style={S.tabBtn(page==="reviews")} onClick={()=>setPage("reviews")}>Reviews</button>
         <div style={{flex:1}}/>
+        <button onClick={()=>setIsDark(d=>!d)} style={{padding:"4px 12px",borderRadius:7,border:`1px solid ${T.border}`,background:T.glass,color:T.txt,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginRight:4}}>{isDark?"Light":"Dark"}</button>
         <div style={{display:"flex",gap:6,alignItems:"center",marginRight:8}}>
-          <span style={{width:6,height:6,borderRadius:"50%",background:GEMINI_KEY?T.a1:"rgba(255,255,255,.15)"}}/>
+          <span style={{width:6,height:6,borderRadius:"50%",background:GEMINI_KEY?T.a1:"var(--t-dot-off)"}}/>
           <span style={{fontSize:10,color:T.txt2}}>Gemini</span>
-          <span style={{width:6,height:6,borderRadius:"50%",background:YOUTUBE_KEY?T.a1:"rgba(255,255,255,.15)"}}/>
+          <span style={{width:6,height:6,borderRadius:"50%",background:YOUTUBE_KEY?T.a1:"var(--t-dot-off)"}}/>
           <span style={{fontSize:10,color:T.txt2}}>YT</span>
         </div>
         {page==="notes"&&!viewMode&&<>
