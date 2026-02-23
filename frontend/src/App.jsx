@@ -55,7 +55,7 @@ const T={bg:"var(--t-bg)",bg2:"var(--t-bg2)",bg3:"var(--t-bg3)",glass:"var(--t-g
 const CM = {
   daily:{lb:"Daily Tasks",color:T.a1,bg:"rgba(232,121,168,.1)"},study:{lb:"Work / Study",color:T.blue,bg:"rgba(139,233,253,.1)"},
   health:{lb:"Health & Fitness",color:T.pink,bg:"rgba(255,121,198,.1)"},plan:{lb:"Planning & Finance",color:T.amber,bg:"rgba(255,184,108,.1)"},
-  idea:{lb:"Ideas & Creativity",color:T.purple,bg:"rgba(189,147,249,.1)"},social:{lb:"Social & Memories",color:T.cyan,bg:"rgba(103,232,249,.1)"},
+  idea:{lb:"Ideas & Creativity",color:T.blue,bg:"rgba(122,191,234,.1)"},social:{lb:"Social & Memories",color:T.cyan,bg:"rgba(103,232,249,.1)"},
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -223,7 +223,7 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
     const sel=window.getSelection();
     if(!sel||!sel.rangeCount||!ref.current.contains(sel.anchorNode))return;
     const ghost=document.createElement("span");ghost.id="nt-ghost";ghost.setAttribute("contenteditable","false");
-    ghost.textContent=text;ghost.style.cssText="color:rgba(194,123,240,.5);pointer-events:none;user-select:none;white-space:pre-wrap;font-style:italic;";
+    ghost.textContent=text;ghost.style.cssText="color:rgba(122,191,234,.5);pointer-events:none;user-select:none;white-space:pre-wrap;font-style:italic;";
     const r=sel.getRangeAt(0).cloneRange();r.collapse(false);r.insertNode(ghost);
     const nr=document.createRange();nr.setStartBefore(ghost);nr.collapse(true);
     sel.removeAllRanges();sel.addRange(nr);
@@ -273,7 +273,7 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
       const cid=`vp${Date.now()}`;
       const thumb=data.thumb?`<img src="${data.thumb}" style="width:80px;height:54px;border-radius:5px;object-fit:cover;flex-shrink:0;" alt="">`
         :`<div style="width:80px;height:54px;border-radius:5px;background:linear-gradient(135deg,#e62117,#c4302b);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="color:#fff;font-size:18px;">&#9654;</span></div>`;
-      const html=`<div data-vid-id="${cid}" data-vid-json='${JSON.stringify({type:"youtube-video",t:data.t,ch:data.ch,v:data.v,url:data.url,thumb:data.thumb})}' contenteditable="false" draggable="true" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(194,123,240,.25);background:rgba(194,123,240,.05);margin:8px 0;display:flex;align-items:center;gap:10px;user-select:none;cursor:grab;">${thumb}<div style="flex:1;min-width:0;"><strong style="color:#c27bf0;font-size:13px;">${data.t}</strong><br><span style="font-size:11px;color:rgba(240,230,246,.4);">${data.ch}${data.v?" \u00b7 "+data.v:""}</span><br><a href="${data.url}" target="_blank" style="color:#e879a8;font-size:11px;text-decoration:none;">Watch &#8594;</a></div></div><p data-vc="${cid}"><br></p>`;
+      const html=`<div data-vid-id="${cid}" data-vid-json='${JSON.stringify({type:"youtube-video",t:data.t,ch:data.ch,v:data.v,url:data.url,thumb:data.thumb})}' contenteditable="false" draggable="true" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(37,99,235,.25);background:rgba(37,99,235,.05);margin:8px 0;display:flex;align-items:center;gap:10px;user-select:none;cursor:grab;">${thumb}<div style="flex:1;min-width:0;"><strong style="color:#7abfea;font-size:13px;">${data.t}</strong><br><span style="font-size:11px;color:rgba(122,191,234,.5);">${data.ch}${data.v?" \u00b7 "+data.v:""}</span><br><a href="${data.url}" target="_blank" style="color:#5ba3d9;font-size:11px;text-decoration:none;">Watch &#8594;</a></div></div><p data-vc="${cid}"><br></p>`;
       ref.current?.focus();
       document.execCommand("insertHTML",false,html);
       if(ref.current)onChange(ref.current.innerHTML);
@@ -285,7 +285,7 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
   },[onChange]);
   const exec=(cmd,val=null)=>{document.execCommand(cmd,false,val);ref.current?.focus();onInput();};
   return(
-    <div style={{border:`1px solid ${dropOver?T.a2:T.border}`,borderRadius:12,overflow:"hidden",background:dropOver?"rgba(194,123,240,.04)":T.glass,flex:1,display:"flex",flexDirection:"column",transition:"border-color .15s"}} onDragStart={handleBlockDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+    <div style={{border:`1px solid ${dropOver?T.a2:T.border}`,borderRadius:12,overflow:"hidden",background:dropOver?"rgba(37,99,235,.04)":T.glass,flex:1,display:"flex",flexDirection:"column",transition:"border-color .15s"}} onDragStart={handleBlockDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
       <div style={S.toolbar}>
         <select onChange={e=>{if(e.target.value)exec("formatBlock",e.target.value);e.target.value="";}} style={{...S.toolBtn,cursor:"pointer",background:"transparent"}}><option value="">Heading</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="p">Normal</option></select>
         <span style={{width:1,background:T.border,margin:"0 3px"}}/>
@@ -357,14 +357,14 @@ function FilePanel({files,onUpload,onClose,searchText}){
     <div style={S.sugPanel}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={S.sh}>Files & Resources</div><button onClick={onClose} style={{border:"none",background:"transparent",color:T.txt2,cursor:"pointer",fontSize:16}}>\u00d7</button></div>
       <div onDragOver={e=>{e.preventDefault();setDragOver(true);}} onDragLeave={()=>setDragOver(false)} onDrop={e=>{e.preventDefault();setDragOver(false);handle(e.dataTransfer.files);}}
-        style={{border:`2px dashed ${dragOver?T.a2:T.border}`,borderRadius:10,padding:16,textAlign:"center",marginBottom:10,background:dragOver?"rgba(194,123,240,.06)":"transparent",cursor:"pointer"}}
+        style={{border:`2px dashed ${dragOver?T.a2:T.border}`,borderRadius:10,padding:16,textAlign:"center",marginBottom:10,background:dragOver?"rgba(37,99,235,.06)":"transparent",cursor:"pointer"}}
         onClick={()=>document.getElementById("fInput")?.click()}>
         <div style={{fontSize:12,color:dragOver?T.a2:T.txt2}}>Drop files here</div>
         <div style={{fontSize:10,color:T.txt2}}>PDF, images, text</div>
         <input id="fInput" type="file" multiple accept="image/*,.pdf,.txt,.md,.csv" style={{display:"none"}} onChange={e=>handle(e.target.files)}/>
       </div>
       {files.length>0&&<div style={{display:"flex",gap:2,flexWrap:"wrap",marginBottom:8}}>
-        {files.map((f,i)=><button key={i} onClick={()=>setActive(i)} style={{padding:"3px 8px",borderRadius:6,border:"none",fontSize:10,fontWeight:600,cursor:"pointer",background:i===active?"rgba(194,123,240,.15)":T.glass,color:i===active?T.a2:T.txt2}}>{f.name.length>18?f.name.slice(0,18)+"...":f.name}</button>)}
+        {files.map((f,i)=><button key={i} onClick={()=>setActive(i)} style={{padding:"3px 8px",borderRadius:6,border:"none",fontSize:10,fontWeight:600,cursor:"pointer",background:i===active?"rgba(37,99,235,.15)":T.glass,color:i===active?T.a2:T.txt2}}>{f.name.length>18?f.name.slice(0,18)+"...":f.name}</button>)}
       </div>}
       {cur&&<div style={{borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`}}>
         {cur.type.startsWith("image/")&&<img src={cur.data} alt="" style={{width:"100%",borderRadius:8}}/>}
@@ -423,11 +423,11 @@ function SugPanel({videos,ytResults,knowledge,cat,prefs,aiInsight,loadingYT}){
     {loadingYT&&<div style={{fontSize:11,color:T.a2,marginBottom:6}}>Searching YouTube...</div>}
     {all.length===0&&!loadingYT&&<p style={{fontSize:11,color:T.txt2}}>Type to get suggestions.</p>}
     {all.map((v,i)=>(<div key={i} draggable onDragStart={e=>{e.dataTransfer.setData("application/json",JSON.stringify({type:"youtube-video",t:v.t,ch:v.ch,v:v.v||"",url:v.url,thumb:v.thumb||""}));e.dataTransfer.effectAllowed="copy";}} style={{marginBottom:5}}><a href={v.url} target="_blank" rel="noopener noreferrer" style={{textDecoration:"none"}}><div style={{display:"flex",gap:7,alignItems:"center",padding:"5px 7px",borderRadius:8,border:`1px solid ${T.border}`,background:T.glass,cursor:"grab"}}>
-      {v.thumb?<img src={v.thumb} alt="" style={{width:64,height:44,borderRadius:5,objectFit:"cover",flexShrink:0}}/>:<div style={{width:44,height:32,borderRadius:5,background:"linear-gradient(135deg,rgba(232,121,168,.2),rgba(194,123,240,.2))",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:8,color:T.a2,fontWeight:700}}>{(v.ty||"VID").toUpperCase()}</span></div>}
+      {v.thumb?<img src={v.thumb} alt="" style={{width:64,height:44,borderRadius:5,objectFit:"cover",flexShrink:0}}/>:<div style={{width:44,height:32,borderRadius:5,background:"linear-gradient(135deg,rgba(37,99,235,.2),rgba(122,191,234,.2))",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:8,color:T.a2,fontWeight:700}}>{(v.ty||"VID").toUpperCase()}</span></div>}
       <div style={{flex:1,minWidth:0}}><div style={{fontSize:11,fontWeight:600,color:T.txt,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v.t}</div><div style={{fontSize:9,color:T.txt2}}>{v.ch}{v.v?` \u00b7 ${v.v}`:""}</div></div>
     </div></a><div style={{fontSize:9,color:T.txt2,textAlign:"center",opacity:.45,paddingBottom:2}}>drag to pin</div></div>))}
     {aiInsight&&<div style={{marginTop:12}}><div style={S.sh2}>AI Insight</div><div style={{...S.glassAccent,padding:10,fontSize:12,color:T.txt3,lineHeight:1.5}}>{aiInsight}</div></div>}
-    {cat==="study"&&knowledge&&<div style={{marginTop:12}}><div style={S.sh2}>Knowledge</div>{Object.values(knowledge).map((info,i)=>(<div key={i} style={{marginBottom:8}}><div style={{display:"flex",justifyContent:"space-between",fontSize:11}}><span style={{fontWeight:600}}>{info.name}</span><span style={{color:T.a1}}>{info.pct}%</span></div><div style={S.pBar}><div style={S.pFill(info.pct,info.pct>60?T.a1:info.pct>30?T.amber:T.purple)}/></div></div>))}</div>}
+    {cat==="study"&&knowledge&&<div style={{marginTop:12}}><div style={S.sh2}>Knowledge</div>{Object.values(knowledge).map((info,i)=>(<div key={i} style={{marginBottom:8}}><div style={{display:"flex",justifyContent:"space-between",fontSize:11}}><span style={{fontWeight:600}}>{info.name}</span><span style={{color:T.a1}}>{info.pct}%</span></div><div style={S.pBar}><div style={S.pFill(info.pct,info.pct>60?T.a1:info.pct>30?T.amber:T.blue)}/></div></div>))}</div>}
     {prefs&&(prefs.likes?.length>0||prefs.dislikes?.length>0)&&<div style={{marginTop:12}}><div style={S.sh3}>Preferences</div><div style={{display:"flex",flexWrap:"wrap",gap:2}}>{(prefs.likes||[]).map((l,i)=><span key={`l${i}`} style={{padding:"2px 6px",borderRadius:20,fontSize:10,background:"rgba(232,121,168,.1)",color:T.a1}}>{l}</span>)}{(prefs.dislikes||[]).map((d,i)=><span key={`d${i}`} style={{padding:"2px 6px",borderRadius:20,fontSize:10,background:"rgba(255,107,138,.1)",color:T.red}}>{d}</span>)}</div></div>}
   </div>);
 }
@@ -437,29 +437,205 @@ function SugPanel({videos,ytResults,knowledge,cat,prefs,aiInsight,loadingYT}){
 // ══════════════════════════════════════════════════════════════
 function SummaryPage({notes,knowledge,onAddTopic,geminiKey}){
   const[tab,setTab]=useState("study");const[aiSum,setAiSum]=useState(null);const[ld,setLd]=useState(false);
-  const nxt=getNextTopics(knowledge);const studyN=Object.values(notes).filter(n=>n.cat==="study"&&!n.children);
-  const healthN=Object.values(notes).filter(n=>n.cat==="health");const planN=Object.values(notes).filter(n=>n.cat==="plan");
-  const ideaN=Object.values(notes).filter(n=>n.cat==="idea");const socialN=Object.values(notes).filter(n=>n.cat==="social");const dailyN=Object.values(notes).filter(n=>n.cat==="daily");
+  const nxt=getNextTopics(knowledge);
+  const healthN=Object.values(notes).filter(n=>n.cat==="health");
+  const planN=Object.values(notes).filter(n=>n.cat==="plan");
+  const ideaN=Object.values(notes).filter(n=>n.cat==="idea");
+  const socialN=Object.values(notes).filter(n=>n.cat==="social");
+  const dailyN=Object.values(notes).filter(n=>n.cat==="daily");
   const calD={};healthN.forEach(n=>Object.assign(calD,parseCals(n.content)));
-  const gen=async()=>{if(!geminiKey)return;setLd(true);const all=Object.values(notes).filter(n=>n.cat===tab).map(n=>(n.content||"").replace(/<[^>]+>/g,"")).join("\n");const r=await geminiAnalyze(all,`Brief intelligence summary of these ${CM[tab]?.lb} notes. Key insights + 2-3 recommendations.`,geminiKey);setAiSum(r);setLd(false);};
+  const gen=async()=>{if(!geminiKey)return;setLd(true);const all=Object.values(notes).filter(n=>n.cat===tab).map(n=>(n.content||"").replace(/<[^>]+>/g,"")).join("\n");const r=await geminiAnalyze(all,`Intelligence summary of these ${CM[tab]?.lb} notes. Key insights + 2-3 actionable recommendations.`,geminiKey);setAiSum(r);setLd(false);};
+  // ── Daily analytics ──
+  let dTotal=0,dDone=0;dailyN.forEach(n=>{dTotal+=(n.content.match(/<li>/g)||[]).length;dDone+=(n.content.match(/<s>/g)||[]).length;});
+  const dRate=dTotal?Math.round(dDone/dTotal*100):0;
+  const dScore=Math.min(100,Math.round(dRate*0.7+Math.min(30,dTotal*3)));
+  // ── Study analytics ──
+  const kVals=Object.values(knowledge);
+  const avgMastery=kVals.length?Math.round(kVals.reduce((s,k)=>s+k.pct,0)/kVals.length):0;
+  const atRisk=kVals.filter(k=>k.pct<50);
+  const weakest=[...kVals].sort((a,b)=>a.pct-b.pct)[0];
+  const totalGaps=kVals.reduce((s,k)=>s+(k.total-k.found),0);
+  const estHours=Math.round(totalGaps*0.5);
+  // ── Health analytics ──
+  const TARGET_CAL=2000;
+  const cals=Object.values(calD);
+  const avgCal=cals.length?Math.round(cals.reduce((a,b)=>a+b,0)/cals.length):0;
+  const energyIdx=cals.length?Math.max(0,Math.round(100-Math.abs(avgCal-TARGET_CAL)/TARGET_CAL*100)):50;
+  const calStd=cals.length>1?Math.round(Math.sqrt(cals.reduce((s,c)=>s+Math.pow(c-avgCal,2),0)/cals.length)):0;
+  const consistScore=Math.max(0,Math.min(100,100-Math.round(calStd/8)));
+  const calEntries=Object.entries(calD);
+  const bestDay=calEntries.length?calEntries.reduce((a,b)=>Math.abs(b[1]-TARGET_CAL)<Math.abs(a[1]-TARGET_CAL)?b:a,calEntries[0]):null;
+  const worstDay=calEntries.length?calEntries.reduce((a,b)=>Math.abs(b[1]-TARGET_CAL)>Math.abs(a[1]-TARGET_CAL)?b:a,calEntries[0]):null;
+  // ── Finance analytics ──
+  let fIncome=0,fSpent=0,fExpenses={};
+  planN.forEach(n=>{const bg=parseBudget(n.content);if(bg.income){fIncome+=bg.income;fSpent+=bg.total;Object.entries(bg.expenses).forEach(([k,v])=>{fExpenses[k]=(fExpenses[k]||0)+v;});}});
+  const burnRate=fIncome?Math.round(fSpent/fIncome*100):0;
+  const fSaved=fIncome-fSpent;
+  const fHealthScore=Math.max(0,Math.min(100,100-burnRate+(fSaved>0?15:0)));
+  const topExp=Object.entries(fExpenses).sort((a,b)=>b[1]-a[1])[0];
+  // ── Ideas analytics ──
+  const ideaScored=ideaN.map(n=>{const sc=scoreIdea(n.content);const wc=n.content.replace(/<[^>]+>/g,"").split(/\s+/).filter(Boolean).length;const mom=Math.min(100,Math.round(wc*3+parseFloat(sc.overall)*6));const opp=Math.round((parseInt(sc.market)+parseInt(sc.novelty))/2*10);return{...n,...sc,mom,opp};}).sort((a,b)=>b.mom-a.mom);
+  // ── Social analytics ──
+  const allMoods=[];socialN.forEach(n=>allMoods.push(...parseMoods(n.content)));
+  const moodAvg=allMoods.length?allMoods.reduce((s,m)=>s+m.mood,0)/allMoods.length:0;
+  const moodStd=allMoods.length>1?Math.sqrt(allMoods.reduce((s,m)=>s+Math.pow(m.mood-moodAvg,2),0)/allMoods.length):0;
+  const moodVolatility=Math.round(moodStd*25);
+  const moodTrend=allMoods.length>=2?allMoods[allMoods.length-1].mood-allMoods[0].mood:0;
+  const moodTrendLbl=moodTrend>0.5?"Improving":moodTrend<-0.5?"Declining":"Stable";
+  const MC2={1:T.red,2:T.amber,3:T.blue,4:T.a1,5:T.cyan};
+  // ── Weekly overall ──
+  const wkScores=[dScore,avgMastery,energyIdx,fHealthScore].filter(s=>s>0);
+  const weekScore=wkScores.length?Math.round(wkScores.reduce((a,b)=>a+b,0)/wkScores.length):0;
+  // ── Reusable mini-components ──
+  const IBox=({icon,text})=>(<div style={{...S.glassAccent,padding:"8px 12px",display:"flex",gap:8,alignItems:"flex-start",marginBottom:6}}><span style={{fontSize:14,flexShrink:0}}>{icon}</span><div style={{fontSize:12,color:T.txt3,lineHeight:1.5}}>{text}</div></div>);
+  const ABox=({text})=>(<div style={{...S.glass,padding:"8px 12px",borderLeft:`3px solid ${T.a2}`,marginBottom:6}}><div style={{fontSize:10,color:T.a2,fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:2}}>Recommended Action</div><div style={{fontSize:12,color:T.txt,lineHeight:1.5}}>{text}</div></div>);
   return(<div style={{padding:20,overflowY:"auto",flex:1}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-      <h2 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,margin:0}}>Summary</h2>
-      {geminiKey&&<button onClick={gen} style={{padding:"5px 14px",borderRadius:6,border:"none",background:"var(--t-btn)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>{ld?"...":"AI Summary"}</button>}
+      <h2 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,margin:0}}>Intelligence Summary</h2>
+      {geminiKey&&<button onClick={gen} style={{padding:"5px 14px",borderRadius:6,border:"none",background:"var(--t-btn)",color:"var(--t-btn-txt)",fontSize:11,fontWeight:600,cursor:"pointer"}}>{ld?"...":"AI Deep Dive"}</button>}
     </div>
+    {/* Weekly Intelligence Card */}
+    <div style={{...S.glassAccent,padding:16,marginBottom:16,borderRadius:12}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+        <div><div style={S.sh}>Weekly Intelligence</div><div style={{fontSize:11,color:T.txt2}}>Cross-domain performance synthesis</div></div>
+        <div style={{textAlign:"right"}}><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:28,fontWeight:700,background:T.grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{weekScore}</div><div style={{fontSize:9,color:T.txt2,textTransform:"uppercase"}}>Overall</div></div>
+      </div>
+      <div style={S.pBar}><div style={S.pFill(weekScore,T.grad)}/></div>
+      <div style={{fontSize:11,color:T.txt2,margin:"6px 0 10px"}}>{weekScore>=75?"Strong week — all systems performing well":weekScore>=50?"Good progress — a few areas need attention":"Focus week — prioritise key gaps to unlock momentum"}</div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        <div style={S.statCard}><div style={S.statN}>{dScore}</div><div style={S.statL}>Tasks</div></div>
+        <div style={S.statCard}><div style={S.statN}>{avgMastery}%</div><div style={S.statL}>Mastery</div></div>
+        <div style={S.statCard}><div style={S.statN}>{energyIdx}</div><div style={S.statL}>Energy</div></div>
+        <div style={S.statCard}><div style={S.statN}>{fHealthScore}</div><div style={S.statL}>Finance</div></div>
+        {allMoods.length>0&&<div style={S.statCard}><div style={S.statN}>{moodAvg.toFixed(1)}</div><div style={S.statL}>Mood</div></div>}
+      </div>
+    </div>
+    {/* Tab nav */}
     <div style={{display:"flex",gap:3,marginBottom:14,flexWrap:"wrap"}}>{Object.keys(CM).map(c=><button key={c} onClick={()=>{setTab(c);setAiSum(null);}} style={S.tabBtn(tab===c)}>{CM[c].lb}</button>)}</div>
-    {aiSum&&<div style={{...S.glassAccent,padding:14,marginBottom:14}}><div style={S.sh2}>AI Summary</div><div style={{fontSize:13,color:T.txt3,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{aiSum}</div></div>}
+    {aiSum&&<div style={{...S.glassAccent,padding:14,marginBottom:14}}><div style={S.sh2}>AI Deep Dive</div><div style={{fontSize:13,color:T.txt3,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{aiSum}</div></div>}
+    {/* ── DAILY TASKS ── */}
+    {tab==="daily"&&<div>
+      <div style={{display:"flex",gap:8,marginBottom:12}}>
+        <div style={S.statCard}><div style={S.statN}>{dScore}</div><div style={S.statL}>Productivity Score</div></div>
+        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:dRate>=70?T.a1:dRate>=40?T.amber:T.red}}>{dRate}%</div><div style={S.statL}>Completion Rate</div></div>
+        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.txt3}}>{dDone}/{dTotal}</div><div style={S.statL}>Done / Total</div></div>
+      </div>
+      <div style={S.pBar}><div style={S.pFill(dRate,dRate>=70?T.a1:dRate>=40?T.amber:T.red)}/></div>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:T.txt2,margin:"3px 0 12px"}}><span>0%</span><span>Target: 80%</span><span>100%</span></div>
+      <IBox icon="↗" text={`${dDone} of ${dTotal} tasks completed this week. ${dTotal-dDone>0?`${dTotal-dDone} remaining.`:""} ${dRate>=80?"Excellent execution — top-quartile productivity.":dRate>=50?"Solid progress — push through the final stretch.":"Below target — try time-blocking remaining tasks into focused 25-min sessions."}`}/>
+      <div style={{...S.glass,padding:"8px 12px",borderLeft:`3px solid ${dTotal-dDone>5?T.red:dTotal-dDone>2?T.amber:T.a1}`,marginBottom:6}}>
+        <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",color:dTotal-dDone>5?T.red:dTotal-dDone>2?T.amber:T.a1,marginBottom:2}}>Risk Alert</div>
+        <div style={{fontSize:12,color:T.txt}}>{dTotal-dDone>5?"High — many tasks pending, ruthless prioritisation required":dTotal-dDone>2?"Medium — a few tasks still outstanding":dTotal-dDone>0?"Low — almost there!":"None — all clear!"}</div>
+      </div>
+      <ABox text={dTotal-dDone>0?`Complete the ${dTotal-dDone} outstanding task${dTotal-dDone>1?"s":""} — focus on the highest-impact items first, defer the rest.`:"All tasks done! Plan next week now to maintain momentum."}/>
+    </div>}
+    {/* ── WORK / STUDY ── */}
     {tab==="study"&&<div style={{display:"flex",gap:20}}><div style={{flex:2}}>
+      <div style={{display:"flex",gap:8,marginBottom:12}}>
+        <div style={S.statCard}><div style={S.statN}>{avgMastery}%</div><div style={S.statL}>Retention Score</div></div>
+        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:atRisk.length>0?T.amber:T.a1}}>{atRisk.length}</div><div style={S.statL}>At-Risk Topics</div></div>
+        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.txt3}}>{estHours}h</div><div style={S.statL}>To Mastery Est.</div></div>
+      </div>
       <div style={S.sh}>Knowledge Radar</div>
-      {Object.values(knowledge).map((info,i)=>(<div key={i} style={{...S.glass,padding:12}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{fontSize:13,fontWeight:600}}>{info.name}</span><span style={{fontSize:12,color:T.a1,fontFamily:"'JetBrains Mono',monospace"}}>{info.pct}%</span></div><div style={S.pBar}><div style={S.pFill(info.pct,T.a1)}/></div><div style={{fontSize:11,color:T.txt2}}>{info.found}/{info.total} concepts</div>{info.missing.length>0&&<div style={{marginTop:4}}><span style={{fontSize:11,color:T.amber}}>Gaps: </span><span style={{fontSize:11,color:T.txt3}}>{info.missing.join(", ")}</span></div>}</div>))}
-    </div><div style={{flex:1}}><div style={S.sh}>Next Topics</div>
-      {nxt.map((nt,i)=>(<div key={i} style={{...S.glass,padding:10}}><div style={{fontSize:13,fontWeight:600}}>{nt.topic}</div><div style={{fontSize:11,color:T.txt2,margin:"2px 0 6px"}}>{nt.subject} ({nt.curPct}%)</div><div style={{display:"flex",gap:5}}><button onClick={()=>onAddTopic(nt)} style={{padding:"3px 9px",borderRadius:6,border:"none",background:"var(--t-btn)",color:"#fff",fontSize:11,cursor:"pointer"}}>Add</button><a href={nt.video} target="_blank" rel="noopener noreferrer" style={{padding:"3px 9px",borderRadius:6,border:`1px solid ${T.border}`,color:T.a2,fontSize:11,textDecoration:"none"}}>Watch</a></div></div>))}
+      {Object.values(knowledge).map((info,i)=>(<div key={i} style={{...S.glass,padding:12,marginBottom:8}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{fontSize:13,fontWeight:600}}>{info.name}</span><span style={{fontSize:12,color:T.a1,fontFamily:"'JetBrains Mono',monospace"}}>{info.pct}%</span></div>
+        <div style={S.pBar}><div style={S.pFill(info.pct,info.pct>70?T.a1:info.pct>40?T.amber:T.red)}/></div>
+        <div style={{fontSize:11,color:T.txt2,marginTop:2}}>{info.found}/{info.total} concepts covered</div>
+        {info.pct<50&&<div style={{fontSize:10,color:T.amber,marginTop:3}}>Forgetting risk — schedule a review session soon</div>}
+        {info.missing.length>0&&<div style={{marginTop:4}}><span style={{fontSize:11,color:T.amber}}>Gaps: </span><span style={{fontSize:11,color:T.txt3}}>{info.missing.join(", ")}</span></div>}
+      </div>))}
+      <IBox icon="→" text={`Average mastery: ${avgMastery}%. ${atRisk.length>0?`${atRisk.length} topic${atRisk.length>1?"s":""} below 50% — high forgetting risk.`:"All topics above 50% — good retention baseline."} Estimated ${estHours}h to close remaining concept gaps.`}/>
+      <ABox text={weakest?`Prioritise ${weakest.name} (${weakest.pct}%) — review "${weakest.missing?.[0]||"key concepts"}" first using spaced repetition (20 min sessions, every 2 days).`:"Maintain weekly reviews to prevent knowledge decay."}/>
+    </div><div style={{flex:1}}>
+      <div style={S.sh}>Next Topics</div>
+      {nxt.map((nt,i)=>(<div key={i} style={{...S.glass,padding:10,marginBottom:8}}>
+        <div style={{fontSize:13,fontWeight:600}}>{nt.topic}</div>
+        <div style={{fontSize:11,color:T.txt2,margin:"2px 0 6px"}}>{nt.subject} ({nt.curPct}%)</div>
+        <div style={{display:"flex",gap:5}}><button onClick={()=>onAddTopic(nt)} style={{padding:"3px 9px",borderRadius:6,border:"none",background:"var(--t-btn)",color:"var(--t-btn-txt)",fontSize:11,cursor:"pointer"}}>Add</button><a href={nt.video} target="_blank" rel="noopener noreferrer" style={{padding:"3px 9px",borderRadius:6,border:`1px solid ${T.border}`,color:T.a2,fontSize:11,textDecoration:"none"}}>Watch</a></div>
+      </div>))}
     </div></div>}
-    {tab==="health"&&Object.keys(calD).length>0&&<div><div style={{display:"flex",gap:6,alignItems:"flex-end",marginBottom:10}}>{Object.entries(calD).map(([d,c])=><div key={d} style={{flex:1,textAlign:"center"}}><div style={{height:Math.round(c/14),background:c<2000?T.a1:c<2500?T.amber:T.red,borderRadius:"5px 5px 0 0",minHeight:16}}/><div style={{fontSize:9,color:T.txt2,marginTop:3}}>{d.slice(0,3)}</div><div style={{fontSize:10,color:T.txt3}}>{c}</div></div>)}</div><div style={{display:"flex",gap:8}}><div style={S.statCard}><div style={S.statN}>{Math.round(Object.values(calD).reduce((a,b)=>a+b,0)/Object.keys(calD).length)}</div><div style={S.statL}>Avg Cal</div></div></div></div>}
-    {tab==="plan"&&planN.map((n,i)=>{const bg=parseBudget(n.content);if(!bg.income)return null;const rem=bg.income-bg.total;return <div key={i}><div style={{display:"flex",gap:8,marginBottom:12}}><div style={S.statCard}><div style={S.statN}>{bg.income}</div><div style={S.statL}>Income</div></div><div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.amber}}>{bg.total}</div><div style={S.statL}>Spent</div></div><div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:rem>=0?T.a1:T.red}}>{rem}</div><div style={S.statL}>Left</div></div></div>{Object.entries(bg.expenses).sort((a,b)=>b[1]-a[1]).map(([c,a])=><div key={c} style={{marginBottom:5}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span>{c}</span><span style={{color:T.amber}}>{a}</span></div><div style={S.pBar}><div style={S.pFill(a/bg.income*100,T.amber)}/></div></div>)}</div>;})}
-    {tab==="idea"&&ideaN.map((n,i)=>{const sc=scoreIdea(n.content);return <div key={i} style={S.glass}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:14,fontWeight:600}}>#{i+1} {n.title}</span><span style={{fontFamily:"'JetBrains Mono',monospace",color:T.a1}}>{sc.overall}/10</span></div></div>;})}
-    {tab==="daily"&&(()=>{let d=0,t=0;dailyN.forEach(n=>{t+=(n.content.match(/<li>/g)||[]).length;d+=(n.content.match(/<s>/g)||[]).length;});return <div style={{display:"flex",gap:8}}><div style={S.statCard}><div style={S.statN}>{d}/{t}</div><div style={S.statL}>Done</div></div><div style={S.statCard}><div style={S.statN}>{t?Math.round(d/t*100):0}%</div><div style={S.statL}>Rate</div></div></div>;})()}
-    {tab==="social"&&(()=>{const moods=[];socialN.forEach(n=>moods.push(...parseMoods(n.content)));if(!moods.length)return null;const MC={1:T.red,2:T.amber,3:T.purple,4:T.a1,5:T.cyan};return <div><div style={S.statCard}><div style={S.statN}>{(moods.reduce((s,m)=>s+m.mood,0)/moods.length).toFixed(1)}/5</div><div style={S.statL}>Avg Mood</div></div><div style={{display:"flex",gap:5,alignItems:"flex-end",marginTop:10}}>{moods.map((m,i)=><div key={i} style={{flex:1,textAlign:"center"}}><div style={{height:m.mood*18,background:MC[m.mood],borderRadius:"5px 5px 0 0"}}/><div style={{fontSize:9,color:T.txt2,marginTop:2}}>{m.day}</div></div>)}</div></div>;})()}
+    {/* ── HEALTH ── */}
+    {tab==="health"&&<div>
+      <div style={{display:"flex",gap:8,marginBottom:12}}>
+        <div style={S.statCard}><div style={S.statN}>{energyIdx}</div><div style={S.statL}>Energy Index</div></div>
+        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:consistScore>=70?T.a1:consistScore>=40?T.amber:T.red}}>{consistScore}</div><div style={S.statL}>Consistency Score</div></div>
+        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.txt3}}>{avgCal||"—"}</div><div style={S.statL}>Avg Cal / Day</div></div>
+      </div>
+      {Object.keys(calD).length>0&&<div style={{display:"flex",gap:6,alignItems:"flex-end",marginBottom:12,height:90,paddingTop:10}}>
+        {Object.entries(calD).map(([d,c])=><div key={d} style={{flex:1,textAlign:"center"}}>
+          <div style={{height:Math.max(8,Math.round(c/18)),background:Math.abs(c-TARGET_CAL)<200?T.a1:Math.abs(c-TARGET_CAL)<400?T.amber:T.red,borderRadius:"5px 5px 0 0"}}/>
+          <div style={{fontSize:9,color:T.txt2,marginTop:2}}>{d.slice(0,3)}</div>
+          <div style={{fontSize:9,color:T.txt3}}>{c}</div>
+        </div>)}
+      </div>}
+      {bestDay&&<div style={{display:"flex",gap:8,marginBottom:12}}>
+        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.a1}}>{bestDay[0]}</div><div style={S.statL}>Best Day</div></div>
+        {worstDay&&worstDay[0]!==bestDay[0]&&<div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.red}}>{worstDay[0]}</div><div style={S.statL}>Needs Work</div></div>}
+        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.amber}}>{calStd>0?`±${calStd}`:"—"}</div><div style={S.statL}>Cal Variance</div></div>
+      </div>}
+      <IBox icon="↗" text={`Average ${avgCal||"—"} cal/day vs ${TARGET_CAL} target. ${energyIdx>=80?"Energy well-balanced — great nutritional discipline.":energyIdx>=60?"Moderate alignment — a few off days pulling the average.":"Significant deviation from target — review meal structure."} Consistency score: ${consistScore}/100 (variance ±${calStd} cal).`}/>
+      <ABox text={consistScore<60?"Aim for consistent calorie intake — meal prepping 2-3 days ahead significantly reduces day-to-day variance.":energyIdx<65?`Adjust portions closer to ${TARGET_CAL} cal/day. ${avgCal>TARGET_CAL?"Consider reducing high-calorie meals on weekends.":"Ensure adequate fuelling, especially on training days."}`:"Great consistency! Focus on meal quality, macro split, and protein targets next."}/>
+    </div>}
+    {/* ── PLANNING / FINANCE ── */}
+    {tab==="plan"&&<div>
+      <div style={{display:"flex",gap:8,marginBottom:12}}>
+        <div style={S.statCard}><div style={S.statN}>{fHealthScore}</div><div style={S.statL}>Financial Health</div></div>
+        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:burnRate>80?T.red:burnRate>60?T.amber:T.a1}}>{burnRate}%</div><div style={S.statL}>Burn Rate</div></div>
+        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:fSaved>=0?T.a1:T.red}}>{fSaved>=0?"+":""}{fSaved}</div><div style={S.statL}>Net Saved</div></div>
+      </div>
+      {planN.map((n,i)=>{const bg=parseBudget(n.content);if(!bg.income)return null;const rem=bg.income-bg.total;const bRate=Math.round(bg.total/bg.income*100);return <div key={i} style={{marginBottom:16}}>
+        <div style={S.sh}>{n.title}</div>
+        <div style={S.pBar}><div style={S.pFill(bRate,bRate>80?T.red:bRate>60?T.amber:T.a1)}/></div>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:T.txt2,margin:"3px 0 8px"}}><span>{bRate}% of income spent</span><span style={{color:rem>=0?T.a1:T.red}}>{rem>=0?"Saved: "+rem:"Over by: "+Math.abs(rem)}</span></div>
+        {Object.entries(bg.expenses).sort((a,b)=>b[1]-a[1]).map(([c,a])=><div key={c} style={{marginBottom:5}}>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span>{c}</span><span style={{color:T.amber}}>{a} <span style={{fontSize:9,color:T.txt2}}>({Math.round(a/bg.income*100)}%)</span></span></div>
+          <div style={S.pBar}><div style={S.pFill(a/bg.income*100,T.amber)}/></div>
+        </div>)}
+      </div>;})}
+      {topExp&&<IBox icon="→" text={`Top expense: ${topExp[0]} at ${topExp[1]}. Overall burn rate ${burnRate}% of income. ${burnRate>80?"Warning: high spend — review discretionary costs immediately.":burnRate>60?"Moderate spend — small cuts could significantly boost savings.":"Healthy financial discipline — well within budget."}`}/>}
+      <ABox text={burnRate>80?`Reduce discretionary spend urgently. A ${Math.max(0,burnRate-70)}pp reduction brings burn rate to a sustainable 70%.`:burnRate>60?`Good control. Trim ${topExp?.[0]||"top expense"} by 10-15% to boost monthly savings.`:"Excellent! Deploy surplus savings into index funds or grow your emergency buffer."}/>
+    </div>}
+    {/* ── IDEAS ── */}
+    {tab==="idea"&&<div>
+      {ideaScored.length>0&&<div style={{display:"flex",gap:8,marginBottom:12}}>
+        <div style={S.statCard}><div style={S.statN}>{ideaScored[0].mom}</div><div style={S.statL}>Top Momentum</div></div>
+        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.blue}}>{ideaScored[0].opp}</div><div style={S.statL}>Opportunity Score</div></div>
+        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.txt3}}>{ideaScored.length}</div><div style={S.statL}>Ideas Tracked</div></div>
+      </div>}
+      {ideaScored.map((n,i)=><div key={i} style={{...S.glass,padding:12,marginBottom:8}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+          <div><div style={{fontSize:14,fontWeight:600}}>#{i+1} {n.title}</div><div style={{fontSize:10,color:T.txt2,marginTop:1}}>Created {n.created}</div></div>
+          <div style={{textAlign:"right"}}><div style={{fontFamily:"'JetBrains Mono',monospace",color:T.a1,fontWeight:700,fontSize:16}}>{n.overall}/10</div><div style={{fontSize:9,color:T.txt2}}>Overall</div></div>
+        </div>
+        <div style={{display:"flex",gap:6}}>
+          <div style={{flex:1}}><div style={{fontSize:9,color:T.txt2,marginBottom:2}}>Momentum {n.mom}</div><div style={S.pBar}><div style={S.pFill(n.mom,T.a1)}/></div></div>
+          <div style={{flex:1}}><div style={{fontSize:9,color:T.txt2,marginBottom:2}}>Opportunity {n.opp}</div><div style={S.pBar}><div style={S.pFill(n.opp,T.blue)}/></div></div>
+          <div style={{flex:1}}><div style={{fontSize:9,color:T.txt2,marginBottom:2}}>Feasibility {parseInt(n.feasibility)*10}</div><div style={S.pBar}><div style={S.pFill(parseInt(n.feasibility)*10,T.cyan)}/></div></div>
+        </div>
+      </div>)}
+      {ideaScored.length>0&&<>
+        <IBox icon="↗" text={`${ideaScored.length} idea${ideaScored.length>1?"s":""} tracked. "${ideaScored[0].title}" leads with ${ideaScored[0].mom}/100 momentum. ${ideaScored[0].opp>60?"Strong market opportunity — time to validate with real users.":ideaScored[0].opp>30?"Moderate opportunity — sharpen the market thesis.":"Refocus on the problem statement and target user."}`}/>
+        <ABox text={`Next step for "${ideaScored[0].title}": ${parseInt(ideaScored[0].feasibility)>=7?"Build a lightweight MVP to test your core hypothesis with real users.":parseInt(ideaScored[0].market)>=7?"Run 5 customer discovery interviews to validate the market need.":"Deepen problem analysis — map the pain points and who feels them most."}`}/>
+      </>}
+      {ideaScored.length===0&&<div style={{padding:20,textAlign:"center",color:T.txt2,fontSize:13}}>Add ideas notes to see momentum analytics.</div>}
+    </div>}
+    {/* ── SOCIAL ── */}
+    {tab==="social"&&(allMoods.length>0?<div>
+      <div style={{display:"flex",gap:8,marginBottom:12}}>
+        <div style={S.statCard}><div style={S.statN}>{moodAvg.toFixed(1)}/5</div><div style={S.statL}>Avg Mood</div></div>
+        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:moodVolatility>50?T.amber:T.a1}}>{moodVolatility}</div><div style={S.statL}>Volatility</div></div>
+        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:moodTrend>0?T.a1:moodTrend<0?T.red:T.txt3}}>{moodTrendLbl}</div><div style={S.statL}>Trend</div></div>
+      </div>
+      <div style={{display:"flex",gap:4,alignItems:"flex-end",marginBottom:12,height:80}}>
+        {allMoods.map((m,i)=><div key={i} style={{flex:1,textAlign:"center"}}>
+          <div style={{height:m.mood*14,background:MC2[m.mood],borderRadius:"5px 5px 0 0",minHeight:8,transition:"height .3s"}}/>
+          <div style={{fontSize:9,color:T.txt2,marginTop:2}}>{m.day}</div>
+        </div>)}
+      </div>
+      <IBox icon="→" text={`Mood averaged ${moodAvg.toFixed(1)}/5 across ${allMoods.length} data points. Trend: ${moodTrendLbl}. ${moodVolatility>50?"High emotional volatility — identify recurring stress triggers.":"Stable emotional baseline — good mental equilibrium."}`}/>
+      <ABox text={moodTrend<-0.5?"Identify what shifted your mood downward. A quick end-of-day journal entry can surface patterns before they compound.":moodVolatility>50?"Anchor daily routines — consistent sleep, exercise, and one meaningful social interaction per day reduces volatility.":"Mood is in a great place! Capture what's working — these habits are worth protecting."}/>
+      <div style={{...S.glass,padding:12,marginTop:10}}><div style={S.sh2}>Reflection Prompt</div><div style={{fontSize:13,color:T.txt3,lineHeight:1.6,fontStyle:"italic"}}>{moodAvg>=4?"What interactions or activities energised you most this week? How can you do more of them next week?":moodAvg>=3?"What was one moment this week that shifted your mood — positively or negatively? What triggered it?":"What's one small, concrete action you could take tomorrow to improve how you feel?"}</div></div>
+    </div>:<div style={{padding:20,textAlign:"center",color:T.txt2,fontSize:13}}>Add social or journal notes with daily mood entries to see analytics.</div>)}
   </div>);
 }
 
@@ -534,7 +710,7 @@ ${pLines.slice(-8).join("\n")}`;
   const createNote=(title,fid)=>{const id=`n_${Date.now()}`;setNotes(p=>({...p,[id]:{title,cat:"study",content:"",created:new Date().toISOString().slice(0,10)}}));setFolders(p=>p.map(f=>f.id===fid?{...f,notes:[...f.notes,id]}:f));selectNote(id);};
   const createFolder=name=>{setFolders(p=>[...p,{id:`f_${Date.now()}`,name,notes:[]}]);};
   const addLesson=(pid,title)=>{const id=`${pid}_l${Date.now()}`;setNotes(p=>{const pn=p[pid];return{...p,[pid]:{...pn,children:[...(pn.children||[]),id]},[id]:{title,cat:pn.cat,created:new Date().toISOString().slice(0,10),parent:pid,content:""}};});};
-  const addTopic=nt=>{const tid=nt.tn;if(!notes[tid])return;setNotes(p=>({...p,[tid]:{...p[tid],content:(p[tid].content||"")+`<h3 style="color:#c27bf0">${nt.topic}</h3><p>${nt.desc}</p><p><a href="${nt.video}" target="_blank" style="color:#e879a8">Watch \u2192</a></p>`}}));selectNote(tid);};
+  const addTopic=nt=>{const tid=nt.tn;if(!notes[tid])return;setNotes(p=>({...p,[tid]:{...p[tid],content:(p[tid].content||"")+`<h3 style="color:var(--t-blue)">${nt.topic}</h3><p>${nt.desc}</p><p><a href="${nt.video}" target="_blank" style="color:var(--t-a2)">Watch \u2192</a></p>`}}));selectNote(tid);};
   const submitReview=r=>{setReviews(p=>[...p,r]);setPrefs(p=>{const cp={...p};if(!cp[r.cat])cp[r.cat]={likes:[],dislikes:[]};const c={...cp[r.cat],likes:[...cp[r.cat].likes],dislikes:[...cp[r.cat].dislikes]};r.likes.forEach(l=>{if(!c.likes.includes(l))c.likes.push(l);});r.dislikes.forEach(d=>{if(!c.dislikes.includes(d))c.dislikes.push(d);});return{...cp,[r.cat]:c};});};
   const handleShowFiles=()=>{const sel=window.getSelection()?.toString()||"";setFileSearch(sel);setShowFiles(true);setShowAI(false);};
 
@@ -563,7 +739,7 @@ ${pLines.slice(-8).join("\n")}`;
         <button style={S.tabBtn(page==="summary")} onClick={()=>setPage("summary")}>Summary</button>
         <button style={S.tabBtn(page==="reviews")} onClick={()=>setPage("reviews")}>Reviews</button>
         <div style={{flex:1}}/>
-        <button onClick={()=>setIsDark(d=>!d)} style={{padding:"4px 12px",borderRadius:7,border:`1px solid ${T.border}`,background:T.glass,color:T.txt,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginRight:4}}>{isDark?"Light":"Dark"}</button>
+        <button onClick={()=>setIsDark(d=>!d)} style={{padding:"4px 12px",borderRadius:7,border:`1px solid ${T.border}`,background:T.glass,color:T.txt,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginRight:4}}>{isDark?"Dark":"Light"}</button>
         <div style={{display:"flex",gap:6,alignItems:"center",marginRight:8}}>
           <span style={{width:6,height:6,borderRadius:"50%",background:GEMINI_KEY?T.a1:"var(--t-dot-off)"}}/>
           <span style={{fontSize:10,color:T.txt2}}>Gemini</span>
