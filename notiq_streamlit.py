@@ -4,15 +4,16 @@ Run: pip install streamlit plotly streamlit-quill
      streamlit run smartnotes_v6.py
 """
 import streamlit as st
-import re, html as html_mod, requests
+import re, html as html_mod, requests, os
 from datetime import datetime
-from collections import Counter
+from dotenv import load_dotenv
+load_dotenv()
 
 st.set_page_config(page_title="Notiq",page_icon="N",layout="wide",initial_sidebar_state="expanded")
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
-:root{--bg:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--glass:rgba(255,255,255,.05);--glass-h:rgba(255,255,255,.09);--glass-b:rgba(255,255,255,.10);--shadow:0 4px 16px rgba(0,0,0,.5);--a1:#f0f0f0;--a2:#999;--a3:#666;--grad:linear-gradient(135deg,#e0e0e0,#aaa);--txt:#f5f5f5;--txt2:rgba(245,245,245,.40);--txt3:rgba(245,245,245,.62);--red:#ff5c5c;--amber:#c9912a;--blue:#7abfea;--purple:#b8b8b8;--cyan:#6ec8c8;--pink:#d0d0d0}
+:root{--bg:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--glass:rgba(255,255,255,.05);--glass-h:rgba(255,255,255,.09);--glass-b:rgba(255,255,255,.10);--shadow:0 4px 16px rgba(0,0,0,.4);--a1:#f0f0f0;--a2:#999;--a3:#666;--grad:linear-gradient(135deg,#e0e0e0,#aaa);--txt:#f5f5f5;--txt2:rgba(245,245,245,.40);--txt3:rgba(245,245,245,.62);--red:#ff5c5c;--amber:#c9912a;--blue:#7abfea;--purple:#b8b8b8;--cyan:#6ec8c8;--pink:#d0d0d0}
 .stApp{background:var(--bg);font-family:'Inter',sans-serif;color:var(--txt)}
 #MainMenu,footer,header{visibility:hidden}
 .block-container{padding-top:.5rem;max-width:1500px}
@@ -21,14 +22,14 @@ st.markdown("""
 .cg{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.9rem;margin:.5rem 0;box-shadow:var(--shadow)}
 .cw{background:rgba(201,145,42,.06);border:1px solid rgba(201,145,42,.15);border-radius:10px;padding:.9rem;margin-bottom:.5rem;box-shadow:var(--shadow)}
 .cb{background:rgba(122,191,234,.05);border:1px solid rgba(122,191,234,.12);border-radius:10px;padding:.9rem;margin-bottom:.5rem;box-shadow:var(--shadow)}
-.sug{background:var(--glass);border:1px solid var(--glass-b);border-radius:8px;padding:.5rem;margin-bottom:.4rem;transition:all .2s;display:flex;gap:.5rem;align-items:center}
+.sug{background:var(--glass);border:1px solid var(--glass-b);border-radius:8px;padding:.5rem;margin-bottom:.4rem;transition:all .2s;display:flex;gap:.5rem;align-items:center;overflow:hidden;max-width:100%}
 .sug:hover{border-color:rgba(255,255,255,.2);background:var(--glass-h)}
 .sug-thumb{width:48px;height:34px;border-radius:5px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.5rem;color:var(--txt2);border:1px solid var(--glass-b)}
-.sug-body{flex:1;min-width:0}.sug-t{font-size:.74rem;font-weight:600;color:var(--txt);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sug-m{font-size:.62rem;color:var(--txt2)}
+.sug-body{flex:1;min-width:0;overflow:hidden}.sug-t{font-size:.74rem;font-weight:600;color:var(--txt);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sug-m{font-size:.62rem;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tag{display:inline-block;padding:2px 7px;border-radius:20px;font-size:.62rem;font-weight:600;margin:1px 2px;letter-spacing:.3px;text-transform:uppercase}
-.t-task{background:rgba(240,240,240,.07);color:var(--a1)}.t-study{background:rgba(122,191,234,.10);color:var(--blue)}.t-health{background:rgba(110,200,200,.10);color:var(--cyan)}.t-plan{background:rgba(201,145,42,.10);color:var(--amber)}.t-idea{background:rgba(184,184,184,.08);color:var(--purple)}.t-social{background:rgba(110,200,200,.08);color:var(--cyan)}
+.t-task{background:rgba(240,240,240,.07);color:var(--a1)}.t-study{background:rgba(122,191,234,.10);color:var(--blue)}.t-health{background:rgba(208,208,208,.08);color:var(--pink)}.t-plan{background:rgba(201,145,42,.10);color:var(--amber)}.t-idea{background:rgba(122,191,234,.08);color:var(--blue)}.t-social{background:rgba(110,200,200,.08);color:var(--cyan)}
 .tt{display:inline-block;padding:1px 5px;border-radius:3px;font-size:.52rem;font-weight:700;text-transform:uppercase}.tt-yt{background:rgba(255,92,92,.15);color:var(--red)}.tt-art{background:rgba(122,191,234,.10);color:var(--blue)}.tt-tut{background:rgba(184,184,184,.10);color:var(--purple)}
-.lvl{display:inline-block;padding:2px 7px;border-radius:5px;font-size:.62rem;font-weight:700;text-transform:uppercase}.l-nov{background:rgba(255,255,255,.05);color:var(--txt2)}.l-beg{background:rgba(122,191,234,.10);color:var(--blue)}.l-int{background:rgba(255,255,255,.07);color:var(--a1)}.l-adv{background:rgba(201,145,42,.10);color:var(--amber)}.l-exp{background:rgba(184,184,184,.10);color:var(--purple)}.l-mas{background:rgba(255,92,92,.10);color:var(--red)}
+.lvl{display:inline-block;padding:2px 7px;border-radius:5px;font-size:.62rem;font-weight:700;text-transform:uppercase}.l-nov{background:rgba(255,255,255,.05);color:var(--a3)}.l-beg{background:rgba(122,191,234,.10);color:var(--blue)}.l-int{background:rgba(255,255,255,.07);color:var(--a1)}.l-adv{background:rgba(201,145,42,.10);color:var(--amber)}.l-exp{background:rgba(110,200,200,.10);color:var(--cyan)}.l-mas{background:rgba(255,92,92,.10);color:var(--red)}
 .pref{display:inline-block;padding:2px 6px;border-radius:20px;font-size:.64rem;font-weight:600;margin:1px 2px}.pref-y{background:rgba(255,255,255,.07);color:var(--a1)}.pref-n{background:rgba(255,92,92,.10);color:var(--red)}
 .pri{display:inline-block;padding:2px 6px;border-radius:5px;font-size:.6rem;font-weight:700}.pri-u{background:rgba(255,92,92,.15);color:var(--red)}.pri-h{background:rgba(201,145,42,.12);color:var(--amber)}.pri-n{background:rgba(255,255,255,.06);color:var(--a1)}.pri-l{background:rgba(255,255,255,.04);color:var(--txt2)}
 .pbb{background:rgba(255,255,255,.06);border-radius:6px;height:6px;width:100%;overflow:hidden;margin:3px 0}.pb{height:100%;border-radius:6px;transition:width .5s}
@@ -66,40 +67,53 @@ div[data-testid="stSidebar"] .stButton>button:hover{background:var(--glass)!impo
 # ═══════════════════════════════════════════════════════════════
 # API KEYS
 # ═══════════════════════════════════════════════════════════════
-GEMINI_KEY  = "AIzaSyC1ECDxN4bZbKlt1UmhRgrjEF1-5UNoJuw"
-YOUTUBE_KEY = "AIzaSyB1ik2Qn1sDsEg1D3ZAesGvf6jsFqS0oGk"
+GEMINI_KEY  = os.getenv("GEMINI_KEY", "")
+YOUTUBE_KEY = os.getenv("YOUTUBE_KEY", "")
 
 # ═══════════════════════════════════════════════════════════════
 # SECTION 2: DATA MODEL — Folders + Notes
 # ═══════════════════════════════════════════════════════════════
-CATS={"daily":{"lb":"Daily Tasks","tc":"t-task","cl":"#e879a8"},"study":{"lb":"Work / Study","tc":"t-study","cl":"#8be9fd"},"health":{"lb":"Health & Fitness","tc":"t-health","cl":"#ff79c6"},"plan":{"lb":"Planning & Finance","tc":"t-plan","cl":"#ffb86c"},"idea":{"lb":"Ideas & Creativity","tc":"t-idea","cl":"#bd93f9"},"social":{"lb":"Social & Memories","tc":"t-social","cl":"#67e8f9"}}
+CATS={"daily":{"lb":"Daily Tasks","tc":"t-task","cl":"#f0f0f0"},"study":{"lb":"Work / Study","tc":"t-study","cl":"#7abfea"},"health":{"lb":"Health & Fitness","tc":"t-health","cl":"#d0d0d0"},"plan":{"lb":"Planning & Finance","tc":"t-plan","cl":"#c9912a"},"idea":{"lb":"Ideas & Creativity","tc":"t-idea","cl":"#7abfea"},"social":{"lb":"Social & Memories","tc":"t-social","cl":"#6ec8c8"}}
 
 if "folders" not in st.session_state:
     st.session_state.folders = {
-        "personal":{"name":"Personal","notes":["d1","d2","h1","h2","x1","x2"]},
         "mban_t2":{"name":"MBAn Term 2","notes":["s1","s2","s3"]},
+        "personal":{"name":"Personal","notes":["d1","d2","h1","h2"]},
         "projects":{"name":"Projects & Ideas","notes":["i1","i2"]},
         "planning":{"name":"Planning","notes":["p1","p2"]},
+        "social":{"name":"Social","notes":["x1","x2"]},
     }
 
 if "notes" not in st.session_state:
     st.session_state.notes = {
+        # Study — parent notes with children (sub-notes)
+        "s1":{"title":"Quantum Computing","cat":"study","children":["s1a","s1b"],"plain":"","created":"2026-02-14 14:22"},
+        "s1a":{"title":"Lesson 1: Fundamentals","cat":"study","parent":"s1","plain":"Qubits vs classical bits — superposition allows qubits to be in multiple states simultaneously.\n\nKey concepts:\n- Quantum entanglement\n- Quantum gates (Hadamard, CNOT, Pauli)\n- Decoherence and error correction","created":"2026-02-14 14:22"},
+        "s1b":{"title":"Lesson 2: Algorithms","cat":"study","parent":"s1","plain":"Quantum Algorithms:\n- Shor's algorithm for factoring\n- Grover's search algorithm\n\nNeed to review: Bloch sphere representation and density matrices.","created":"2026-02-15 10:00"},
+        "s2":{"title":"Machine Learning","cat":"study","children":["s2a","s2b","s2c"],"plain":"","created":"2026-02-15 10:30"},
+        "s2a":{"title":"Lesson 1: Supervised","cat":"study","parent":"s2","plain":"Supervised learning:\n- Linear regression, Logistic regression\n- Decision trees, Random forests, SVM\n\nKey: model learns from labeled data.","created":"2026-02-15 10:30"},
+        "s2b":{"title":"Lesson 2: Unsupervised","cat":"study","parent":"s2","plain":"Unsupervised learning:\n- K-means clustering\n- PCA dimensionality reduction\n- DBSCAN\n\nNo labels — finds structure in data.","created":"2026-02-16 09:00"},
+        "s2c":{"title":"Lesson 3: Deep Learning","cat":"study","parent":"s2","plain":"Deep learning:\n- Neural network architecture\n- Backpropagation & gradient descent\n- Activation functions (ReLU, sigmoid, tanh)\n\nLibraries: scikit-learn, TensorFlow, PyTorch\n\nAssignment due: Feb 28 — implement a CNN for image classification","created":"2026-02-17 11:00"},
+        "s3":{"title":"Corporate Finance","cat":"study","children":["s3a"],"plain":"","created":"2026-02-16 11:00"},
+        "s3a":{"title":"Lesson 1: Valuation","cat":"study","parent":"s3","plain":"Corporate Finance — Week 5\n- NPV and IRR calculations\n- Weighted average cost of capital (WACC)\n- Capital structure theory (Modigliani-Miller)\n- Dividend policy\n\nExam: March 15\nNeed to practice: DCF valuation models","created":"2026-02-16 11:00"},
+        # Daily
         "d1":{"title":"Weekly Errands","cat":"daily","plain":"- [x] Buy groceries\n- [ ] Call mom\n- [x] Pay electricity bill\n- [ ] Pick up dry cleaning\n- [ ] Email professor about deadline\n- [x] Book dentist appointment\n- [ ] Return Amazon package","created":"2026-02-15 08:30"},
         "d2":{"title":"Grocery Shopping","cat":"daily","plain":"Chicken breast\nOnions\nBell peppers\nGarlic\nSoy sauce\nRice\nBroccoli\nGinger\nSesame oil\nGreen onions","created":"2026-02-16 09:00"},
-        "s1":{"title":"Quantum Computing","cat":"study","plain":"Qubits vs classical bits — superposition allows qubits to be in multiple states simultaneously.\n\nKey concepts:\n- Quantum entanglement\n- Quantum gates (Hadamard, CNOT, Pauli)\n- Decoherence and error correction\n- Shor's algorithm for factoring\n- Grover's search algorithm\n\nNeed to review: Bloch sphere representation and density matrices.","created":"2026-02-14 14:22"},
-        "s2":{"title":"Machine Learning","cat":"study","plain":"Supervised learning:\n- Linear regression, Logistic regression\n- Decision trees, Random forests, SVM\n\nUnsupervised learning:\n- K-means clustering\n- PCA dimensionality reduction\n- DBSCAN\n\nDeep learning:\n- Neural network architecture\n- Backpropagation & gradient descent\n- Activation functions (ReLU, sigmoid, tanh)\n\nLibraries: scikit-learn, TensorFlow, PyTorch\n\nAssignment due: Feb 28 — implement a CNN for image classification","created":"2026-02-15 10:30"},
-        "s3":{"title":"Corporate Finance","cat":"study","plain":"Corporate Finance — Week 5\n- NPV and IRR calculations\n- Weighted average cost of capital (WACC)\n- Capital structure theory (Modigliani-Miller)\n- Dividend policy\n\nExam: March 15\nNeed to practice: DCF valuation models","created":"2026-02-16 11:00"},
+        # Health
         "h1":{"title":"Weekly Workout Plan","cat":"health","plain":"Monday: Upper body — bench press 4x8, rows 4x10, overhead press 3x8, bicep curls 3x12\nTuesday: Lower body — squats 5x5, deadlifts 3x5, lunges 3x10, leg press 3x12\nWednesday: Rest / active recovery — 30 min walk\nThursday: Push — chest press, shoulder press, tricep dips, lateral raises\nFriday: Pull — pull-ups, barbell rows, face pulls, hammer curls\nSaturday: Legs + core — front squats, RDLs, planks, hanging leg raises\nSunday: Rest","created":"2026-02-12 08:00"},
         "h2":{"title":"Meal Log This Week","cat":"health","plain":"Monday: Oatmeal + banana (350cal), Chicken salad (450cal), Pasta with veggies (600cal), Protein shake (200cal)\nTuesday: Eggs + toast (400cal), Rice bowl + chicken (550cal), Stir fry (500cal), Greek yogurt (150cal)\nWednesday: Smoothie (300cal), Sandwich (450cal), Salmon + rice (650cal), Fruit (100cal)\nThursday: Pancakes (500cal), Burrito bowl (600cal), Chicken breast + sweet potato (550cal)\nFriday: Granola + milk (350cal), Sushi (500cal), Pizza (700cal), Ice cream (250cal)","created":"2026-02-14 20:00"},
+        # Planning
         "p1":{"title":"Barcelona Trip Plan","cat":"plan","plain":"Day 1: Sagrada Familia, Park Guell, Gracia neighborhood\nDay 2: Gothic Quarter, La Rambla, Barceloneta Beach\nDay 3: Camp Nou, Montjuic, Magic Fountain\nDay 4: La Boqueria market, El Born, Picasso Museum\n\nBudget: 800 for 4 days\nHotel: Hotel Jazz, Carrer de Pelai","created":"2026-02-10 15:00"},
         "p2":{"title":"February Budget","cat":"plan","plain":"Income: 2500\n\nRent: 800\nGroceries: 300\nTransport: 80\nSubscriptions: 45\nDining out: 150\nClothing: 100\nSavings: 500\nMiscellaneous: 200\n\nGoal: Save 500 this month\nGoal: Keep dining under 150","created":"2026-02-01 09:00"},
+        # Ideas
         "i1":{"title":"Restaurant Analytics SaaS","cat":"idea","plain":"Problem: Small restaurants don't have access to data analytics\nSolution: Simple dashboard that connects to POS systems\n\nFeatures:\n- Revenue trends & forecasting\n- Menu item performance\n- Peak hours analysis\n- Food cost tracking\n\nMonetization: 49/month per restaurant\nMarket: 500K+ independent restaurants in EU\nCompetitors: Toast, MarketMan\n\nNext steps: Build MVP, talk to 10 restaurant owners","created":"2026-02-08 22:00"},
         "i2":{"title":"YouTube Content Ideas","cat":"idea","plain":"1. Day in the life at ESADE\n2. How I built my first SaaS\n3. Study with me — Pomodoro session\n4. Barcelona on a student budget\n5. Comparing MBA programs in Europe\n\nGoal: 1 video per week\nEquipment needed: Better microphone","created":"2026-02-13 19:00"},
+        # Social
         "x1":{"title":"Birthday & Gift Ideas","cat":"social","plain":"Mom — March 12 — Loves gardening\nCarlos — April 3 — Into gaming\nSarah — Feb 28 — cookbook by Ottolenghi\nDad — June 15 — golf balls\n\nESADE class reunion: March 20","created":"2026-02-11 16:00"},
         "x2":{"title":"Journal — Feb Week 2","cat":"social","plain":"Monday: Great day — aced the finance quiz, feeling confident\nTuesday: Stressed about the ML assignment, stayed up late\nWednesday: Coffee with Sarah, feeling better\nThursday: Gym was amazing, hit a PR on deadlifts. Happy\nFriday: Went out with Carlos, fun night but tired\nSaturday: Lazy day, watched movies. Content\nSunday: Planned the week, feeling organized and motivated","created":"2026-02-16 21:00"},
     }
 
-if "active_note" not in st.session_state: st.session_state.active_note = "s2"
+if "active_note" not in st.session_state: st.session_state.active_note = "s2a"
 if "active_folder" not in st.session_state: st.session_state.active_folder = "mban_t2"
 if "show_ai" not in st.session_state: st.session_state.show_ai = True
 if "reviews" not in st.session_state:
@@ -229,7 +243,7 @@ def parse_events(c):
                 ev.append({"name":m.group(1).strip(),"date":ed.strftime("%b %d"),"days":delta,"detail":det})
             except:pass
     return sorted(ev,key=lambda e:e["days"])
-LVLS=[{"n":"Novice","min":0,"c":"l-nov","clr":"#bd93f9","bar":"rgba(189,147,249,.3)"},{"n":"Beginner","min":100,"c":"l-beg","clr":"#8be9fd","bar":"rgba(139,233,253,.3)"},{"n":"Intermediate","min":300,"c":"l-int","clr":"#e879a8","bar":"rgba(232,121,168,.4)"},{"n":"Advanced","min":600,"c":"l-adv","clr":"#ffb86c","bar":"rgba(255,184,108,.4)"},{"n":"Expert","min":1000,"c":"l-exp","clr":"#bd93f9","bar":"rgba(189,147,249,.5)"},{"n":"Master","min":1500,"c":"l-mas","clr":"#ff6b8a","bar":"rgba(255,107,138,.5)"}]
+LVLS=[{"n":"Novice","min":0,"c":"l-nov","clr":"#999","bar":"rgba(153,153,153,.3)"},{"n":"Beginner","min":100,"c":"l-beg","clr":"#7abfea","bar":"rgba(122,191,234,.3)"},{"n":"Intermediate","min":300,"c":"l-int","clr":"#f0f0f0","bar":"rgba(240,240,240,.3)"},{"n":"Advanced","min":600,"c":"l-adv","clr":"#c9912a","bar":"rgba(201,145,42,.4)"},{"n":"Expert","min":1000,"c":"l-exp","clr":"#6ec8c8","bar":"rgba(110,200,200,.4)"},{"n":"Master","min":1500,"c":"l-mas","clr":"#ff5c5c","bar":"rgba(255,92,92,.4)"}]
 def get_lvl(xp):
     cur=LVLS[0]
     for l in LVLS:
@@ -370,18 +384,35 @@ with st.sidebar:
             st.session_state.active_folder=fid;st.rerun()
     st.markdown("---")
 
-    # Folder tree
+    # Folder tree with parent/child hierarchy
     for fid,folder in st.session_state.folders.items():
         is_active_f = fid==st.session_state.active_folder
         f_clr="color:var(--a1);font-weight:700" if is_active_f else "color:var(--txt3);font-weight:600"
         st.markdown(f'<p style="{f_clr};font-size:.76rem;margin:.7rem 0 .1rem;letter-spacing:.2px;text-transform:uppercase;font-family:\'JetBrains Mono\',monospace">▸ {folder["name"]}</p>',unsafe_allow_html=True)
         for nid in folder["notes"]:
-            if nid in st.session_state.notes:
-                note=st.session_state.notes[nid]
-                is_active_n = nid==st.session_state.active_note
-                prefix="▶ " if is_active_n else "    "
-                if st.button(f"{prefix}{note['title']}",key=f"sb_{nid}",use_container_width=True):
-                    st.session_state.active_note=nid;st.session_state.active_folder=fid
+            if nid not in st.session_state.notes:continue
+            note=st.session_state.notes[nid]
+            # Skip child notes — they render under their parent
+            if note.get("parent"):continue
+            has_children=bool(note.get("children"))
+            is_active_n = nid==st.session_state.active_note
+            prefix="▶ " if is_active_n else ("▸ " if has_children else "   ")
+            if st.button(f"{prefix}{note['title']}",key=f"sb_{nid}",use_container_width=True):
+                # If parent, select first child; otherwise select the note
+                if has_children and note["children"]:
+                    st.session_state.active_note=note["children"][0]
+                else:
+                    st.session_state.active_note=nid
+                st.session_state.active_folder=fid
+            # Render children indented
+            if has_children:
+                for cid in note.get("children",[]):
+                    if cid not in st.session_state.notes:continue
+                    child=st.session_state.notes[cid]
+                    is_active_c = cid==st.session_state.active_note
+                    c_prefix="  ▶ " if is_active_c else "     "
+                    if st.button(f"{c_prefix}{child['title']}",key=f"sb_{cid}",use_container_width=True):
+                        st.session_state.active_note=cid;st.session_state.active_folder=fid
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -401,13 +432,22 @@ with main_tab[0]:
         sugs=get_sug(cat,plain) if plain else []
         autocompletes=get_autocomplete(plain) if plain else []
 
-        # Header
+        # Header with breadcrumb
         hc1,hc2=st.columns([8,2])
         with hc1:
             folder_name=""
+            # Find folder — check direct membership or parent membership
+            anid=st.session_state.active_note
+            parent_id=active.get("parent")
+            lookup_id=parent_id if parent_id else anid
             for fid,f in st.session_state.folders.items():
-                if st.session_state.active_note in f["notes"]:folder_name=f["name"];break
-            st.markdown(f'<span style="font-size:.65rem;color:var(--txt2)">{folder_name} / {active["created"]}</span><h2 class="mono" style="color:var(--txt);margin:.05rem 0;font-size:1.2rem">{active["title"]}</h2><span class="tag {ci["tc"]}">{ci["lb"]}</span>',unsafe_allow_html=True)
+                if lookup_id in f["notes"]:folder_name=f["name"];break
+            # Build breadcrumb: folder / parent / note
+            crumbs=folder_name
+            if parent_id and parent_id in st.session_state.notes:
+                crumbs+=f" / {st.session_state.notes[parent_id]['title']}"
+            crumbs+=f" / {active['created']}"
+            st.markdown(f'<span style="font-size:.65rem;color:var(--txt2)">{crumbs}</span><h2 class="mono" style="color:var(--txt);margin:.05rem 0;font-size:1.2rem">{active["title"]}</h2><span class="tag {ci["tc"]}">{ci["lb"]}</span>',unsafe_allow_html=True)
         with hc2:
             if st.button("Hide AI" if st.session_state.show_ai else "Show AI",key="tai"):
                 st.session_state.show_ai=not st.session_state.show_ai;st.rerun()
@@ -452,10 +492,21 @@ with main_tab[0]:
                 if st.button("Delete"):
                     if len(st.session_state.notes)>1:
                         nid=st.session_state.active_note
+                        note_to_del=st.session_state.notes[nid]
+                        # Remove from parent's children list if child note
+                        pid=note_to_del.get("parent")
+                        if pid and pid in st.session_state.notes:
+                            pn=st.session_state.notes[pid]
+                            if nid in pn.get("children",[]):pn["children"].remove(nid)
+                        # Remove from folder
                         for f in st.session_state.folders.values():
                             if nid in f["notes"]:f["notes"].remove(nid)
+                        # If parent note, also delete children
+                        for cid in note_to_del.get("children",[]):
+                            if cid in st.session_state.notes:del st.session_state.notes[cid]
                         del st.session_state.notes[nid]
-                        st.session_state.active_note=list(st.session_state.notes.keys())[0];st.rerun()
+                        remaining=[k for k in st.session_state.notes if not st.session_state.notes[k].get("parent")]
+                        st.session_state.active_note=remaining[0] if remaining else list(st.session_state.notes.keys())[0];st.rerun()
 
         # AI Panel
         if col_ai is not None:
@@ -574,8 +625,8 @@ with main_tab[1]:
             try:
                 import plotly.graph_objects as go
                 names=[t["name"] for t in know.values()];pcts=[t["pct"] for t in know.values()]
-                fig=go.Figure(go.Scatterpolar(r=pcts+[pcts[0]],theta=names+[names[0]],fill='toself',line=dict(color='#e879a8'),fillcolor='rgba(232,121,168,.12)'))
-                fig.update_layout(polar=dict(bgcolor="rgba(26,10,30,.5)",radialaxis=dict(visible=True,range=[0,100],gridcolor="rgba(255,255,255,.08)"),angularaxis=dict(gridcolor="rgba(255,255,255,.08)",tickfont=dict(color="#f0e6f6",size=11))),paper_bgcolor="#1a0a1e",font=dict(color="#f0e6f6"),margin=dict(t=25,b=25,l=55,r=55),height=300)
+                fig=go.Figure(go.Scatterpolar(r=pcts+[pcts[0]],theta=names+[names[0]],fill='toself',line=dict(color='#7abfea'),fillcolor='rgba(122,191,234,.12)'))
+                fig.update_layout(polar=dict(bgcolor="rgba(17,17,17,.8)",radialaxis=dict(visible=True,range=[0,100],gridcolor="rgba(255,255,255,.08)"),angularaxis=dict(gridcolor="rgba(255,255,255,.08)",tickfont=dict(color="#f0f0f0",size=11))),paper_bgcolor="#0a0a0a",font=dict(color="#f0f0f0"),margin=dict(t=25,b=25,l=55,r=55),height=300)
                 st.plotly_chart(fig,use_container_width=True)
             except ImportError:pass
             for k,info in know.items():
@@ -610,9 +661,9 @@ with main_tab[1]:
                 import plotly.graph_objects as go
                 do=["Monday","Tuesday","Wednesday","Thursday","Friday"]
                 sd=[d for d in do if d in acd];cv=[acd[d]["cal"] for d in sd]
-                cls=["#e879a8" if c<2000 else "#ffb86c" if c<2500 else "#ff6b8a" for c in cv]
-                fig=go.Figure(go.Bar(x=sd,y=cv,marker_color=cls,text=cv,textposition="outside",textfont=dict(color="#f0e6f6")))
-                fig.update_layout(paper_bgcolor="#1a0a1e",plot_bgcolor="rgba(26,10,30,.5)",font=dict(color="#f0e6f6"),margin=dict(t=25,b=25),height=250)
+                cls=["#7abfea" if c<2000 else "#c9912a" if c<2500 else "#ff5c5c" for c in cv]
+                fig=go.Figure(go.Bar(x=sd,y=cv,marker_color=cls,text=cv,textposition="outside",textfont=dict(color="#f0f0f0")))
+                fig.update_layout(paper_bgcolor="#0a0a0a",plot_bgcolor="rgba(17,17,17,.8)",font=dict(color="#f0f0f0"),margin=dict(t=25,b=25),height=250)
                 st.plotly_chart(fig,use_container_width=True)
             except ImportError:pass
 
@@ -624,8 +675,8 @@ with main_tab[1]:
             if bg["income"]>0:
                 try:
                     import plotly.graph_objects as go
-                    fig=go.Figure(go.Pie(labels=list(bg["expenses"].keys()),values=list(bg["expenses"].values()),marker=dict(colors=["#e879a8","#c27bf0","#ffb86c","#ff79c6","#bd93f9","#67e8f9","#f0935a"]),hole=.4))
-                    fig.update_layout(paper_bgcolor="#1a0a1e",font=dict(color="#f0e6f6"),margin=dict(t=15,b=15),height=260)
+                    fig=go.Figure(go.Pie(labels=list(bg["expenses"].keys()),values=list(bg["expenses"].values()),marker=dict(colors=["#7abfea","#c9912a","#6ec8c8","#f0f0f0","#999","#b8b8b8","#ff5c5c","#666"]),hole=.4))
+                    fig.update_layout(paper_bgcolor="#0a0a0a",font=dict(color="#f0f0f0"),margin=dict(t=15,b=15),height=260)
                     st.plotly_chart(fig,use_container_width=True)
                 except ImportError:pass
                 break
@@ -644,9 +695,9 @@ with main_tab[1]:
         if amoods:
             try:
                 import plotly.graph_objects as go
-                MC={1:"#ff6b8a",2:"#ffb86c",3:"#bd93f9",4:"#e879a8",5:"#67e8f9"}
-                fig=go.Figure(go.Scatter(x=[m["day"] for m in amoods],y=[m["mood"] for m in amoods],mode='lines+markers',line=dict(color="#67e8f9",width=3),marker=dict(size=10,color=[MC.get(s["mood"],"#bd93f9") for s in amoods]),fill='tozeroy',fillcolor='rgba(103,232,249,.06)'))
-                fig.update_layout(paper_bgcolor="#1a0a1e",plot_bgcolor="rgba(26,10,30,.5)",font=dict(color="#f0e6f6"),yaxis=dict(range=[0,6],dtick=1),margin=dict(t=15,b=25),height=240)
+                MC={1:"#ff5c5c",2:"#c9912a",3:"#999",4:"#7abfea",5:"#6ec8c8"}
+                fig=go.Figure(go.Scatter(x=[m["day"] for m in amoods],y=[m["mood"] for m in amoods],mode='lines+markers',line=dict(color="#6ec8c8",width=3),marker=dict(size=10,color=[MC.get(s["mood"],"#999") for s in amoods]),fill='tozeroy',fillcolor='rgba(110,200,200,.06)'))
+                fig.update_layout(paper_bgcolor="#0a0a0a",plot_bgcolor="rgba(17,17,17,.8)",font=dict(color="#f0f0f0"),yaxis=dict(range=[0,6],dtick=1),margin=dict(t=15,b=25),height=240)
                 st.plotly_chart(fig,use_container_width=True)
             except ImportError:pass
 

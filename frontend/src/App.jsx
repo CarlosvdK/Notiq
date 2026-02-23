@@ -5,8 +5,8 @@
 // ┌───────────────────────────────────────────────────────────┐
 // │  PASTE YOUR API KEYS HERE (line 10-11)                   │
 // └───────────────────────────────────────────────────────────┘
-const GEMINI_KEY = "AIzaSyA2Lfe95C7xZTggaT1JR6jGxgQ5TwLuKv8";    // ← Gemini key from aistudio.google.com/apikey
-const YOUTUBE_KEY = "AIzaSyB1ik2Qn1sDsEg1D3ZAesGvf6jsFqS0oGk";   // ← YouTube Data API v3 key
+const GEMINI_KEY = import.meta.env.VITE_GEMINI_KEY || "";    // ← set in .env as VITE_GEMINI_KEY
+const YOUTUBE_KEY = import.meta.env.VITE_YOUTUBE_KEY || "";   // ← set in .env as VITE_YOUTUBE_KEY
 //
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
