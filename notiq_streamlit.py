@@ -97,8 +97,8 @@ div[data-testid="stSidebar"] hr{border-color:rgba(255,255,255,.08)!important}
 # ═══════════════════════════════════════════════════════════════
 # API KEYS
 # ═══════════════════════════════════════════════════════════════
-GEMINI_KEY  = os.getenv("GEMINI_KEY", "")
-YOUTUBE_KEY = os.getenv("YOUTUBE_KEY", "")
+GEMINI_KEY = st.secrets["GEMINI_KEY"]
+YOUTUBE_KEY = st.secrets["YOUTUBE_KEY"]
 
 # ═══════════════════════════════════════════════════════════════
 # DATA MODEL
