@@ -61,13 +61,40 @@ const CM = {
 };
 
 // ══════════════════════════════════════════════════════════════
-// SECTION 2: DATA — with sub-notes (children/parent)
+// SECTION 2: DATA — with sub-notes (children/parent) + subfolders
 // ══════════════════════════════════════════════════════════════
 const INIT_FOLDERS = [
-  {id:"academics",name:"Academics",notes:["n1","n2","n3","n4","n5","n6"]},
-  {id:"career",name:"Career & Projects",notes:["n7","n8","n9","n10"]},
-  {id:"health",name:"Health & Fitness",notes:["n11","n12","n13","n14"]},
-  {id:"life",name:"Life & Planning",notes:["n15","n16","n17","n18","n19","n20"]},
+  {id:"academics",name:"Academics",children:[
+    {id:"ml_2026",name:"Machine Learning 2026",notes:["n1","n2","n3"]},
+    {id:"fin_2026",name:"Corporate Finance 2026",notes:["n4"]},
+    {id:"qt_2026",name:"Quantum & Ethics 2026",notes:["n5","n6"]},
+  ]},
+  {id:"career",name:"Career & Projects",children:[
+    {id:"startup",name:"RestaurantIQ Startup",notes:["n7","n8"]},
+    {id:"career_dev",name:"Career Development",notes:["n9","n10"]},
+  ]},
+  {id:"health",name:"Health & Fitness",children:[
+    {id:"training",name:"Training Program",notes:["n11","n13"]},
+    {id:"nutrition_rec",name:"Nutrition & Recovery",notes:["n12","n14"]},
+  ]},
+  {id:"life",name:"Life & Planning",children:[
+    {id:"barcelona",name:"Barcelona Living",notes:["n16","n18"]},
+    {id:"productivity",name:"Productivity & Growth",notes:["n15","n17","n19","n20"]},
+  ]},
+];
+// Folder helpers
+const getAllFolderNoteIds=(f)=>{const ids=[];if(f.notes)ids.push(...f.notes);if(f.children)f.children.forEach(c=>{if(c.notes)ids.push(...c.notes);});return ids;};
+const findNoteLocation=(folders,noteId)=>{for(const f of folders){if(f.children){for(const sub of f.children){if(sub.notes?.includes(noteId))return{root:f,sub};}}if(f.notes?.includes(noteId))return{root:f,sub:null};}return null;};
+const findSubfolder=(folders,subId)=>{for(const f of folders){if(f.children){const sub=f.children.find(c=>c.id===subId);if(sub)return{root:f,sub};}if(f.id===subId)return{root:f,sub:null};}return null;};
+// Section colors for topic detection
+const SECTION_COLORS=[
+  {bg:'rgba(102,126,234,0.07)',border:'#667eea',text:'#667eea'},
+  {bg:'rgba(118,75,162,0.07)',border:'#764ba2',text:'#764ba2'},
+  {bg:'rgba(6,182,212,0.07)',border:'#06b6d4',text:'#06b6d4'},
+  {bg:'rgba(245,158,11,0.07)',border:'#f59e0b',text:'#f59e0b'},
+  {bg:'rgba(236,72,153,0.07)',border:'#ec4899',text:'#ec4899'},
+  {bg:'rgba(34,197,94,0.07)',border:'#22c55e',text:'#22c55e'},
+  {bg:'rgba(139,92,246,0.07)',border:'#8b5cf6',text:'#8b5cf6'},
 ];
 const INIT_NOTES = {
 
@@ -754,10 +781,11 @@ const geminiCall=async(prompt,key,opts={},signal)=>{
 
 // ── Copilot-style autocomplete ──
 async function geminiComplete(ctx,meta,key,signal){
+  const contextBlock=meta.context?`\nReference context provided by the user:\n${meta.context.slice(0,1500)}\n\nUse the above reference material to make your suggestions more accurate and specific to this subject.\n`:"";
   return geminiCall(
     `You are an intelligent autocomplete engine for a note-taking app, similar to GitHub Copilot. Predict what the user will type next.\n\n`+
-    `Note title: "${meta.title}"\n\n`+
-    `Current content (end of note):\n${ctx}\n\n`+
+    `Note title: "${meta.title}"\n`+contextBlock+
+    `\nCurrent content (end of note):\n${ctx}\n\n`+
     `Rules:\n`+
     `- Output ONLY the continuation text — no explanations, no quotes, no prefixes like "Here's..."\n`+
     `- Continue from EXACTLY where the text ends, do not repeat any existing text\n`+
@@ -902,25 +930,25 @@ function getNextTopics(k){const r=[];for(const[key,info]of Object.entries(k)){if
 // ══════════════════════════════════════════════════════════════
 const S={
   app:{display:"flex",height:"100vh",width:"100%",background:"#08090d",color:T.txt,fontFamily:"'Inter',system-ui,sans-serif",overflow:"hidden",position:"relative"},
-  sidebar:{width:260,minWidth:260,background:"rgba(6,7,11,0.85)",backdropFilter:"blur(24px)",borderRight:"1px solid rgba(255,255,255,0.06)",display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",zIndex:2},
+  sidebar:{width:270,minWidth:270,background:"rgba(6,7,11,0.9)",backdropFilter:"blur(24px)",borderRight:"1px solid rgba(255,255,255,0.06)",display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",zIndex:2,boxShadow:"4px 0 24px rgba(0,0,0,0.3)"},
   sideScroll:{flex:1,overflowY:"auto",padding:"0 14px 14px"},
   main:{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",zIndex:1},
-  topBar:{display:"flex",gap:4,padding:"10px 20px",borderBottom:"1px solid rgba(255,255,255,0.08)",background:"rgba(8,9,13,0.6)",backdropFilter:"blur(16px)",alignItems:"center"},
+  topBar:{display:"flex",gap:6,padding:"10px 20px",borderBottom:"1px solid rgba(255,255,255,0.08)",background:"rgba(8,9,13,0.7)",backdropFilter:"blur(16px)",alignItems:"center",boxShadow:"0 2px 12px rgba(0,0,0,0.15)"},
   tabBtn:a=>({padding:"8px 20px",borderRadius:10,border:`1px solid ${a?"rgba(102,126,234,.3)":"transparent"}`,cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:"'Inter',sans-serif",background:a?"rgba(102,126,234,0.1)":"transparent",color:a?"#667eea":"#64748b",transition:"all 0.2s ease"}),
-  noteBtn:(a,indent=0)=>({display:"block",width:"100%",textAlign:"left",padding:`7px 10px 7px ${14+indent*12}px`,border:"none",borderRadius:8,cursor:"pointer",fontSize:indent?11:12,fontWeight:a?600:400,background:a?"rgba(102,126,234,0.1)":"transparent",color:a?"#e2e8f0":"#94a3b8",fontFamily:"'Inter',sans-serif",marginBottom:2,transition:"all 0.15s ease"}),
-  glass:{background:"rgba(255,255,255,0.03)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:20,padding:16,marginBottom:8},
-  glassAccent:{background:"rgba(102,126,234,0.06)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:20,padding:16,marginBottom:8},
+  noteBtn:(a,indent=0)=>({display:"block",width:"100%",textAlign:"left",padding:`8px 12px 8px ${14+indent*14}px`,border:"none",borderRadius:8,cursor:"pointer",fontSize:indent?12:13,fontWeight:a?600:400,background:a?"rgba(102,126,234,0.1)":"transparent",color:a?"#e2e8f0":"#94a3b8",fontFamily:"'Inter',sans-serif",marginBottom:2,transition:"all 0.15s ease"}),
+  glass:{background:"rgba(255,255,255,0.03)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:20,padding:18,marginBottom:10,boxShadow:"0 2px 16px rgba(0,0,0,0.12)"},
+  glassAccent:{background:"rgba(102,126,234,0.06)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:20,padding:18,marginBottom:10,boxShadow:"0 2px 16px rgba(0,0,0,0.12)"},
   tag:c=>({display:"inline-block",padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:600,textTransform:"uppercase",background:CM[c]?.bg||"rgba(255,255,255,0.03)",color:CM[c]?.color||"#64748b"}),
   sh:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"#667eea",letterSpacing:".5px",textTransform:"uppercase",marginBottom:6},
   sh2:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"#94a3b8",letterSpacing:".5px",textTransform:"uppercase",marginBottom:6},
   sh3:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"#f59e0b",letterSpacing:".5px",textTransform:"uppercase",marginBottom:6},
-  editor:{minHeight:350,outline:"none",padding:"20px 24px",fontFamily:"'Inter',sans-serif",fontSize:15,lineHeight:1.75,color:"#e2e8f0",background:"transparent"},
-  toolbar:{display:"flex",flexWrap:"wrap",gap:3,padding:"8px 14px",borderBottom:"1px solid rgba(255,255,255,0.08)",background:"rgba(8,9,13,0.4)",backdropFilter:"blur(12px)"},
-  toolBtn:{padding:"5px 10px",border:"none",borderRadius:8,cursor:"pointer",fontSize:12,background:"transparent",color:"#94a3b8",fontFamily:"'Inter',sans-serif",transition:"all 0.15s ease"},
-  sugPanel:{width:300,minWidth:300,borderLeft:"1px solid rgba(255,255,255,0.08)",background:"rgba(8,9,13,0.5)",backdropFilter:"blur(16px)",overflowY:"auto",padding:16},
-  statCard:{background:"rgba(255,255,255,0.03)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:18,padding:"12px 16px",textAlign:"center",flex:1},
-  statN:{fontFamily:"'JetBrains Mono',monospace",fontSize:22,fontWeight:700,background:"linear-gradient(135deg,#667eea,#764ba2)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"},
-  statL:{fontSize:9,color:"#64748b",textTransform:"uppercase",letterSpacing:".7px",marginTop:2},
+  editor:{minHeight:350,outline:"none",padding:"24px 32px",fontFamily:"'Inter',sans-serif",fontSize:16,lineHeight:1.8,color:"#e2e8f0",background:"transparent"},
+  toolbar:{display:"flex",flexWrap:"wrap",gap:2,padding:"6px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",background:"rgba(8,9,13,0.5)",backdropFilter:"blur(12px)",alignItems:"center"},
+  toolBtn:{padding:"5px 8px",border:"none",borderRadius:6,cursor:"pointer",fontSize:12,background:"transparent",color:"#94a3b8",fontFamily:"'Inter',sans-serif",transition:"all 0.15s ease",display:"inline-flex",alignItems:"center",justifyContent:"center"},
+  sugPanel:{width:320,minWidth:320,borderLeft:"1px solid rgba(255,255,255,0.08)",background:"rgba(8,9,13,0.6)",backdropFilter:"blur(16px)",overflowY:"auto",padding:18,boxShadow:"-4px 0 24px rgba(0,0,0,0.2)"},
+  statCard:{background:"rgba(255,255,255,0.03)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:18,padding:"14px 18px",textAlign:"center",flex:1,boxShadow:"0 2px 12px rgba(0,0,0,0.1)"},
+  statN:{fontFamily:"'JetBrains Mono',monospace",fontSize:26,fontWeight:700,background:"linear-gradient(135deg,#667eea,#764ba2)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"},
+  statL:{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:".7px",marginTop:3},
   pBar:{height:6,borderRadius:6,background:"rgba(255,255,255,0.06)",overflow:"hidden",margin:"4px 0"},
   pFill:(p,c)=>({height:"100%",borderRadius:6,width:`${p}%`,background:c||"linear-gradient(135deg,#667eea,#764ba2)",transition:"width .5s"}),
 };
@@ -928,10 +956,48 @@ const S={
 // ══════════════════════════════════════════════════════════════
 // SECTION 5: RICH EDITOR
 // ══════════════════════════════════════════════════════════════
-function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onShowFiles}){
+function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onShowFiles,sectionColors}){
   const ref=useRef(null);const[init,setInit]=useState(false);const prev=useRef(noteId);const[dropOver,setDropOver]=useState(false);
+  const[fontSize,setFontSize]=useState("16");
+  const[showColorPicker,setShowColorPicker]=useState(false);const[showHighlightPicker,setShowHighlightPicker]=useState(false);
+  const colorRef=useRef(null);const highlightRef=useRef(null);
+  const FONT_COLORS=["#e2e8f0","#667eea","#f093fb","#f59e0b","#06b6d4","#ff5c5c","#22c55e","#94a3b8"];
+  const HIGHLIGHT_COLORS=["transparent","rgba(102,126,234,.25)","rgba(240,147,251,.2)","rgba(245,158,11,.25)","rgba(6,182,212,.2)","rgba(255,92,92,.2)","rgba(34,197,94,.2)","rgba(148,163,184,.15)"];
+  // Close color pickers on outside click
+  useEffect(()=>{
+    const h=e=>{if(colorRef.current&&!colorRef.current.contains(e.target))setShowColorPicker(false);
+      if(highlightRef.current&&!highlightRef.current.contains(e.target))setShowHighlightPicker(false);};
+    document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h);
+  },[]);
   useEffect(()=>{if(noteId!==prev.current){setInit(false);prev.current=noteId;}},[noteId]);
   useEffect(()=>{if(ref.current&&!init){ref.current.innerHTML=content||"";setInit(true);}},[content,init]);
+  // Section coloring: apply alternating colors to headings
+  const applySectionColors=useCallback(()=>{
+    if(!ref.current||!sectionColors)return;
+    // Reset previous section coloring
+    ref.current.querySelectorAll('[data-ntsc]').forEach(el=>{el.style.borderLeft='';el.style.paddingLeft='';el.style.background='';el.style.borderRadius='';el.style.marginBottom='';el.removeAttribute('data-ntsc');});
+    const headings=[...ref.current.querySelectorAll('h2,h3')];
+    if(!headings.length)return;
+    headings.forEach((h,i)=>{
+      const c=sectionColors[i%sectionColors.length];
+      h.style.borderLeft=`3px solid ${c.border}`;
+      h.style.paddingLeft='10px';
+      h.style.background=c.bg;
+      h.style.borderRadius='6px';
+      h.style.marginBottom='4px';
+      h.setAttribute('data-ntsc','1');
+      // Color following siblings until next heading
+      let el=h.nextElementSibling;
+      while(el&&!['H2','H3'].includes(el.tagName)){
+        el.style.borderLeft=`2px solid ${c.border}33`;
+        el.style.paddingLeft='10px';
+        el.style.background=`${c.bg.replace('0.07','0.03')}`;
+        el.setAttribute('data-ntsc','1');
+        el=el.nextElementSibling;
+      }
+    });
+  },[sectionColors]);
+  useEffect(()=>{if(init)requestAnimationFrame(applySectionColors);},[init,applySectionColors]);
   // Ghost: inject inline span at cursor, accept with TAB
   useEffect(()=>{
     const old=ref.current?.querySelector("#nt-ghost");if(old)old.remove();
@@ -949,7 +1015,8 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
   const onInput=useCallback(()=>{
     const g=ref.current?.querySelector("#nt-ghost");if(g)g.remove();
     if(ref.current)onChange(ref.current.innerHTML);
-  },[onChange]);
+    requestAnimationFrame(applySectionColors);
+  },[onChange,applySectionColors]);
   const onKey=useCallback(e=>{
     if(e.key==="Tab"){
       const ghost=ref.current?.querySelector("#nt-ghost");
@@ -981,10 +1048,8 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
     try{
       const data=JSON.parse(raw);if(data.type!=="youtube-video")return;
       e.preventDefault();setDropOver(false);
-      // Position caret at drop point
       if(document.caretRangeFromPoint){const rng=document.caretRangeFromPoint(e.clientX,e.clientY);if(rng){const s=window.getSelection();s.removeAllRanges();s.addRange(rng);}}
       else if(document.caretPositionFromPoint){const p=document.caretPositionFromPoint(e.clientX,e.clientY);if(p){const rng=document.createRange();rng.setStart(p.offsetNode,p.offset);rng.collapse(true);const s=window.getSelection();s.removeAllRanges();s.addRange(rng);}}
-      // Remove old block if moving
       if(data._moveId&&ref.current){
         const old=ref.current.querySelector(`[data-vid-id="${data._moveId}"]`);
         if(old)old.closest("div[data-vid-id]")?.remove()||old.remove();
@@ -1003,34 +1068,257 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
     }catch(err){}
   },[onChange]);
   const exec=(cmd,val=null)=>{document.execCommand(cmd,false,val);ref.current?.focus();onInput();};
+  const sep=<span style={{width:1,height:22,background:"rgba(255,255,255,0.06)",margin:"0 3px",flexShrink:0}}/>;
+  // ── Ribbon tab state ──
+  const[ribbonTab,setRibbonTab]=useState("home");
+  // ── Drawing state ──
+  const canvasRef=useRef(null);const[drawing,setDrawing]=useState(false);const[drawTool,setDrawTool]=useState("pen");
+  const[drawColor,setDrawColor]=useState("#667eea");const[drawSize,setDrawSize]=useState(3);const drawCtx=useRef(null);
+  const[showCanvas,setShowCanvas]=useState(false);
+  const startDraw=useCallback(e=>{if(!canvasRef.current)return;const c=drawCtx.current;if(!c)return;setDrawing(true);const r=canvasRef.current.getBoundingClientRect();c.beginPath();c.moveTo(e.clientX-r.left,e.clientY-r.top);},[]);
+  const moveDraw=useCallback(e=>{if(!drawing||!drawCtx.current||!canvasRef.current)return;const r=canvasRef.current.getBoundingClientRect();const c=drawCtx.current;
+    if(drawTool==="eraser"){c.globalCompositeOperation="destination-out";c.lineWidth=drawSize*4;}
+    else{c.globalCompositeOperation="source-over";c.strokeStyle=drawColor;c.lineWidth=drawSize;}
+    c.lineCap="round";c.lineJoin="round";c.lineTo(e.clientX-r.left,e.clientY-r.top);c.stroke();},[drawing,drawTool,drawColor,drawSize]);
+  const endDraw=useCallback(()=>setDrawing(false),[]);
+  useEffect(()=>{if(showCanvas&&canvasRef.current){const c=canvasRef.current.getContext("2d");drawCtx.current=c;}},[showCanvas]);
+  // ── Comments state ──
+  const[comments,setComments]=useState([]);const[showComments,setShowComments]=useState(false);const[newComment,setNewComment]=useState("");
+  const addComment=()=>{if(!newComment.trim())return;const sel=window.getSelection()?.toString()||"";setComments(p=>[...p,{id:Date.now(),text:newComment.trim(),selection:sel,author:"You",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),resolved:false}]);setNewComment("");};
+  // ── Share state ──
+  const[showShare,setShowShare]=useState(false);const[shareEmail,setShareEmail]=useState("");const[collaborators,setCollaborators]=useState([{name:"You",email:"owner",color:"#667eea",online:true}]);
+  const[shareLink]=useState(()=>`notiq.app/share/${Math.random().toString(36).slice(2,10)}`);
+  const[copied,setCopied]=useState(false);
+  const addCollab=()=>{if(!shareEmail.trim()||!shareEmail.includes("@"))return;const colors=["#f093fb","#06b6d4","#f59e0b","#22c55e","#ff5c5c"];
+    setCollaborators(p=>[...p,{name:shareEmail.split("@")[0],email:shareEmail,color:colors[p.length%colors.length],online:false}]);setShareEmail("");};
+  const copyLink=()=>{navigator.clipboard?.writeText("https://"+shareLink);setCopied(true);setTimeout(()=>setCopied(false),2000);};
+
+  const DRAW_COLORS=["#000000","#ff0000","#667eea","#f59e0b","#22c55e","#f093fb","#06b6d4","#e2e8f0"];
+  const tabStyle=t=>({padding:"6px 16px",fontSize:12,fontWeight:ribbonTab===t?700:500,color:ribbonTab===t?"#667eea":"#94a3b8",background:"transparent",border:"none",borderBottom:ribbonTab===t?"2px solid #667eea":"2px solid transparent",cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.15s"});
+
+  // ── Ribbon content per tab ──
+  const HomeRibbon=()=>(<>
+    <button className="tool-btn" onClick={()=>exec("undo")} style={S.toolBtn} title="Undo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 105.64-11.36L1 10"/></svg></button>
+    <button className="tool-btn" onClick={()=>exec("redo")} style={S.toolBtn} title="Redo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-5.64-11.36L23 10"/></svg></button>
+    {sep}
+    <select className="tool-btn" onChange={e=>{if(e.target.value){document.execCommand("fontName",false,e.target.value);ref.current?.focus();onInput();}}} style={{...S.toolBtn,cursor:"pointer",background:"transparent",minWidth:100}} title="Font">
+      <option value="Inter">Inter</option><option value="JetBrains Mono">JetBrains Mono</option><option value="Georgia">Georgia</option><option value="Arial">Arial</option><option value="Times New Roman">Times New Roman</option><option value="Courier New">Courier New</option>
+    </select>
+    <select className="tool-btn" value={fontSize} onChange={e=>{setFontSize(e.target.value);document.execCommand("fontSize",false,"7");const fonts=ref.current?.querySelectorAll('font[size="7"]');if(fonts)fonts.forEach(f=>{f.removeAttribute("size");f.style.fontSize=e.target.value+"px";});ref.current?.focus();onInput();}} style={{...S.toolBtn,cursor:"pointer",background:"transparent",width:50}} title="Size">
+      {[10,11,12,14,16,18,20,24,28,32,36,48].map(s=><option key={s} value={s}>{s}</option>)}
+    </select>
+    <select className="tool-btn" onChange={e=>{if(e.target.value)exec("formatBlock",e.target.value);e.target.value="";}} style={{...S.toolBtn,cursor:"pointer",background:"transparent",minWidth:72}} title="Styles"><option value="">Styles</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="p">Normal</option></select>
+    {sep}
+    <button className="tool-btn" onClick={()=>exec("bold")} style={S.toolBtn} title="Bold"><b>B</b></button>
+    <button className="tool-btn" onClick={()=>exec("italic")} style={S.toolBtn} title="Italic"><i>I</i></button>
+    <button className="tool-btn" onClick={()=>exec("underline")} style={S.toolBtn} title="Underline"><u>U</u></button>
+    <button className="tool-btn" onClick={()=>exec("strikeThrough")} style={S.toolBtn} title="Strike"><s>ab</s></button>
+    <button className="tool-btn" onClick={()=>exec("subscript")} style={S.toolBtn} title="Sub">x<sub style={{fontSize:8}}>2</sub></button>
+    <button className="tool-btn" onClick={()=>exec("superscript")} style={S.toolBtn} title="Super">x<sup style={{fontSize:8}}>2</sup></button>
+    {sep}
+    <div ref={colorRef} style={{position:"relative"}}><button className="tool-btn" onClick={()=>{setShowColorPicker(!showColorPicker);setShowHighlightPicker(false);}} style={{...S.toolBtn,display:"flex",alignItems:"center",gap:2}} title="Font Color"><span style={{fontWeight:700}}>A</span><span style={{width:14,height:3,background:"linear-gradient(90deg,#667eea,#f093fb)",borderRadius:1,display:"block"}}/></button>
+      {showColorPicker&&<div style={{position:"absolute",top:"100%",left:0,zIndex:99,background:"rgba(13,14,20,0.95)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:8,display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4,boxShadow:"0 8px 24px rgba(0,0,0,0.4)"}}>{FONT_COLORS.map(c=><button key={c} onClick={()=>{exec("foreColor",c);setShowColorPicker(false);}} style={{width:22,height:22,borderRadius:4,border:"1px solid rgba(255,255,255,0.1)",background:c,cursor:"pointer"}}/>)}</div>}</div>
+    <div ref={highlightRef} style={{position:"relative"}}><button className="tool-btn" onClick={()=>{setShowHighlightPicker(!showHighlightPicker);setShowColorPicker(false);}} style={{...S.toolBtn,display:"flex",alignItems:"center",gap:2}} title="Highlight"><span style={{background:"rgba(245,158,11,.3)",padding:"0 3px",borderRadius:2,fontWeight:700}}>ab</span></button>
+      {showHighlightPicker&&<div style={{position:"absolute",top:"100%",left:0,zIndex:99,background:"rgba(13,14,20,0.95)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:8,display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4,boxShadow:"0 8px 24px rgba(0,0,0,0.4)"}}>{HIGHLIGHT_COLORS.map((c,i)=><button key={i} onClick={()=>{exec("hiliteColor",c);setShowHighlightPicker(false);}} style={{width:22,height:22,borderRadius:4,border:"1px solid rgba(255,255,255,0.1)",background:c||"repeating-conic-gradient(#808080 0% 25%, transparent 0% 50%) 50% / 8px 8px",cursor:"pointer"}}/>)}</div>}</div>
+    {sep}
+    <button className="tool-btn" onClick={()=>exec("justifyLeft")} style={S.toolBtn} title="Left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg></button>
+    <button className="tool-btn" onClick={()=>exec("justifyCenter")} style={S.toolBtn} title="Center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="18" y1="14" x2="6" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg></button>
+    <button className="tool-btn" onClick={()=>exec("justifyRight")} style={S.toolBtn} title="Right"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="7" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg></button>
+    {sep}
+    <button className="tool-btn" onClick={()=>exec("insertUnorderedList")} style={S.toolBtn} title="Bullets"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg></button>
+    <button className="tool-btn" onClick={()=>exec("insertOrderedList")} style={S.toolBtn} title="Numbered"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><text x="2" y="8" fill="currentColor" fontSize="7" fontFamily="sans-serif">1</text><text x="2" y="14" fill="currentColor" fontSize="7" fontFamily="sans-serif">2</text><text x="2" y="20" fill="currentColor" fontSize="7" fontFamily="sans-serif">3</text></svg></button>
+    <button className="tool-btn" onClick={()=>exec("indent")} style={S.toolBtn} title="Indent"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="21" y1="6" x2="11" y2="6"/><line x1="21" y1="12" x2="11" y2="12"/><line x1="21" y1="18" x2="11" y2="18"/><polyline points="3 8 7 12 3 16"/></svg></button>
+    <button className="tool-btn" onClick={()=>exec("outdent")} style={S.toolBtn} title="Outdent"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="21" y1="6" x2="11" y2="6"/><line x1="21" y1="12" x2="11" y2="12"/><line x1="21" y1="18" x2="11" y2="18"/><polyline points="7 8 3 12 7 16"/></svg></button>
+    {sep}
+    <button className="tool-btn" onClick={()=>exec("removeFormat")} style={S.toolBtn} title="Clear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 7V4h16v3"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="3" y1="21" x2="21" y2="3" strokeOpacity="0.5"/></svg></button>
+  </>);
+
+  const InsertRibbon=()=>(<>
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<table style="width:100%;border-collapse:collapse;margin:8px 0"><tr><th style="border:1px solid rgba(255,255,255,.08);padding:6px 10px;background:rgba(255,255,255,.03)">Col 1</th><th style="border:1px solid rgba(255,255,255,.08);padding:6px 10px;background:rgba(255,255,255,.03)">Col 2</th><th style="border:1px solid rgba(255,255,255,.08);padding:6px 10px;background:rgba(255,255,255,.03)">Col 3</th></tr><tr><td style="border:1px solid rgba(255,255,255,.08);padding:6px 10px">&mdash;</td><td style="border:1px solid rgba(255,255,255,.08);padding:6px 10px">&mdash;</td><td style="border:1px solid rgba(255,255,255,.08);padding:6px 10px">&mdash;</td></tr></table>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Table">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg><span style={{fontSize:9}}>Table</span>
+    </button>
+    <button className="tool-btn" onClick={()=>{const input=document.createElement("input");input.type="file";input.accept="image/*";input.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{document.execCommand("insertHTML",false,`<img src="${ev.target.result}" style="max-width:100%;border-radius:8px;margin:8px 0" />`);ref.current?.focus();onInput();};r.readAsDataURL(f);};input.click();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Pictures">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span style={{fontSize:9}}>Pictures</span>
+    </button>
+    <button className="tool-btn" onClick={()=>{const u=prompt("URL:");if(u)exec("createLink",u);}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Links">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg><span style={{fontSize:9}}>Links</span>
+    </button>
+    {sep}
+    <button className="tool-btn" onClick={()=>{setShowComments(true);setNewComment("");}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Comment">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span style={{fontSize:9}}>Comment</span>
+    </button>
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:12px 0">');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Horizontal Rule">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="2" y1="12" x2="22" y2="12"/></svg><span style={{fontSize:9}}>Line</span>
+    </button>
+    <button className="tool-btn" onClick={()=>exec("formatBlock","blockquote")} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Block Quote">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3z"/></svg><span style={{fontSize:9}}>Quote</span>
+    </button>
+    <button className="tool-btn" onClick={()=>exec("formatBlock","pre")} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Code Block">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><span style={{fontSize:9}}>Code</span>
+    </button>
+    {sep}
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<div style="text-align:center;padding:16px 0;font-size:11px;color:#64748b;border-top:1px solid rgba(255,255,255,0.06)">Header — '+new Date().toLocaleDateString()+'</div>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Header">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 7V5h18v2"/><path d="M3 19v-2h18v2" strokeOpacity="0.3"/><line x1="12" y1="5" x2="12" y2="10"/></svg><span style={{fontSize:9}}>Header</span>
+    </button>
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<div style="text-align:center;padding:16px 0;font-size:11px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.06)">Footer — Page 1</div>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Footer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 17v2h18v-2"/><path d="M3 5v2h18V5" strokeOpacity="0.3"/><line x1="12" y1="14" x2="12" y2="19"/></svg><span style={{fontSize:9}}>Footer</span>
+    </button>
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<span style="font-family:JetBrains Mono,monospace;font-size:13px;background:rgba(255,255,255,.04);padding:2px 6px;border-radius:4px;color:#667eea">E = mc²</span>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Equation">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><text x="4" y="16" fill="currentColor" fontSize="14" fontFamily="serif" fontStyle="italic">fx</text></svg><span style={{fontSize:9}}>Equation</span>
+    </button>
+    <button className="tool-btn" onClick={()=>{const sym=prompt("Enter symbol (e.g. ©, ™, §, →, ±, ≈, ∞, Σ, Δ):");if(sym)document.execCommand("insertText",false,sym);ref.current?.focus();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Symbol">
+      <span style={{fontSize:18,lineHeight:1}}>Ω</span><span style={{fontSize:9}}>Symbol</span>
+    </button>
+    {sep}
+    <button className="tool-btn" onClick={onShowFiles} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2,color:"#667eea"}} title="Files">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span style={{fontSize:9}}>Files</span>
+    </button>
+  </>);
+
+  const DrawRibbon=()=>(<>
+    <button className="tool-btn" onClick={()=>{setDrawTool("pen");if(!showCanvas)setShowCanvas(true);}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2,background:drawTool==="pen"&&showCanvas?"rgba(102,126,234,0.15)":"transparent",color:drawTool==="pen"&&showCanvas?"#667eea":"#94a3b8"}} title="Draw">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg><span style={{fontSize:9}}>Draw</span>
+    </button>
+    <button className="tool-btn" onClick={()=>{setDrawTool("eraser");if(!showCanvas)setShowCanvas(true);}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2,background:drawTool==="eraser"&&showCanvas?"rgba(102,126,234,0.15)":"transparent",color:drawTool==="eraser"&&showCanvas?"#667eea":"#94a3b8"}} title="Eraser">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20 20H7L3 16l8-8 9 9-4 4"/><path d="M6 11l4 4"/></svg><span style={{fontSize:9}}>Eraser</span>
+    </button>
+    {sep}
+    {DRAW_COLORS.map(c=><button key={c} onClick={()=>{setDrawColor(c);setDrawTool("pen");if(!showCanvas)setShowCanvas(true);}} style={{width:24,height:24,borderRadius:6,border:drawColor===c&&showCanvas?"2px solid #667eea":"2px solid transparent",background:c,cursor:"pointer",flexShrink:0,transition:"border-color 0.15s"}}/>)}
+    {sep}
+    <span style={{fontSize:10,color:"#64748b",marginRight:4}}>Size</span>
+    <input type="range" min="1" max="12" value={drawSize} onChange={e=>setDrawSize(+e.target.value)} style={{width:80,accentColor:"#667eea"}}/>
+    <span style={{fontSize:10,color:"#94a3b8",marginLeft:4,fontFamily:"'JetBrains Mono',monospace"}}>{drawSize}px</span>
+    {sep}
+    <button className="tool-btn" onClick={()=>setShowCanvas(!showCanvas)} style={{...S.toolBtn,color:showCanvas?"#667eea":"#64748b",fontWeight:600}}>{showCanvas?"Canvas ON":"Canvas OFF"}</button>
+    {showCanvas&&<button className="tool-btn" onClick={()=>{if(canvasRef.current){const c=canvasRef.current.getContext("2d");c.clearRect(0,0,canvasRef.current.width,canvasRef.current.height);}}} style={{...S.toolBtn,color:"#ff5c5c"}}>Clear Canvas</button>}
+  </>);
+
+  const ReviewRibbon=()=>(<>
+    <button className="tool-btn" onClick={()=>setShowComments(!showComments)} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2,color:showComments?"#667eea":"#94a3b8"}} title="Comments">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span style={{fontSize:9}}>Comments{comments.length>0?` (${comments.length})`:""}</span>
+    </button>
+    <button className="tool-btn" onClick={()=>{const sel=window.getSelection()?.toString();if(sel){const hl=`<mark style="background:rgba(102,126,234,0.25);padding:1px 3px;border-radius:3px">${sel}</mark>`;document.execCommand("insertHTML",false,hl);ref.current?.focus();onInput();}}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Track Changes">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span style={{fontSize:9}}>Track</span>
+    </button>
+    <button className="tool-btn" onClick={()=>{const count=(ref.current?.innerText||"").split(/\s+/).filter(Boolean).length;const chars=(ref.current?.innerText||"").length;alert(`Word count: ${count}\nCharacters: ${chars}\nParagraphs: ${(ref.current?.querySelectorAll("p,h1,h2,h3,h4,h5,h6,li")||[]).length}`);}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Word Count">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg><span style={{fontSize:9}}>Count</span>
+    </button>
+    {sep}
+    <button className="tool-btn" onClick={()=>{if(ref.current){const text=ref.current.innerText;const utterance=new SpeechSynthesisUtterance(text.slice(0,500));speechSynthesis.speak(utterance);}}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Read Aloud">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg><span style={{fontSize:9}}>Read Aloud</span>
+    </button>
+  </>);
+
+  const ReferencesRibbon=()=>(<>
+    <button className="tool-btn" onClick={()=>{const toc=[];ref.current?.querySelectorAll("h1,h2,h3").forEach((h,i)=>{toc.push(`<div style="padding:3px 0;padding-left:${(parseInt(h.tagName[1])-1)*16}px;font-size:${h.tagName==="H1"?14:h.tagName==="H2"?13:12}px;color:#94a3b8;cursor:pointer">${h.textContent}</div>`);});if(toc.length){document.execCommand("insertHTML",false,`<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 16px;margin:8px 0"><div style="font-size:11px;font-weight:700;color:#667eea;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Table of Contents</div>${toc.join("")}</div>`);ref.current?.focus();onInput();}else alert("Add headings (H1, H2, H3) to generate a table of contents.");}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Table of Contents">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6" strokeWidth="3"/><line x1="3" y1="12" x2="3.01" y2="12" strokeWidth="3"/><line x1="3" y1="18" x2="3.01" y2="18" strokeWidth="3"/></svg><span style={{fontSize:9}}>TOC</span>
+    </button>
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<sup style="color:#667eea;font-size:10px;cursor:pointer">[1]</sup>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Insert Footnote">
+      <span style={{fontSize:16,fontFamily:"serif"}}>ab<sup style={{fontSize:10,color:"#667eea"}}>1</sup></span><span style={{fontSize:9}}>Footnote</span>
+    </button>
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<div style="background:rgba(255,255,255,.03);border-left:3px solid #667eea;padding:8px 12px;margin:8px 0;border-radius:0 8px 8px 0;font-size:12px;color:#94a3b8">[Citation: Author, Year. Title. Source.]</div>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Insert Citation">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 2h12a2 2 0 012 2v16a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg><span style={{fontSize:9}}>Citation</span>
+    </button>
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 16px;margin:8px 0"><div style="font-size:11px;font-weight:700;color:#667eea;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Bibliography</div><div style="font-size:12px;color:#94a3b8;line-height:1.8">[1] Author, A. (Year). <em>Title</em>. Publisher.<br/>[2] Author, B. (Year). <em>Title</em>. Journal, Vol(Issue).</div></div>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Bibliography">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span style={{fontSize:9}}>Biblio</span>
+    </button>
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<div style="text-align:center;padding:6px;font-size:11px;color:#64748b;margin:8px 0"><em>Figure 1: [Caption text]</em></div>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Insert Caption">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="14" rx="2"/><line x1="3" y1="21" x2="21" y2="21"/></svg><span style={{fontSize:9}}>Caption</span>
+    </button>
+  </>);
+
   return(
-    <div style={{border:`1px solid ${dropOver?"rgba(102,126,234,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:20,overflow:"hidden",background:dropOver?"rgba(102,126,234,.04)":"rgba(255,255,255,0.03)",backdropFilter:"blur(12px)",flex:1,display:"flex",flexDirection:"column",transition:"border-color .2s"}} onDragStart={handleBlockDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
-      <div style={S.toolbar}>
-        <select className="tool-btn" onChange={e=>{if(e.target.value)exec("formatBlock",e.target.value);e.target.value="";}} style={{...S.toolBtn,cursor:"pointer",background:"transparent"}}><option value="">Heading</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option><option value="p">Normal</option></select>
-        <span style={{width:1,background:"rgba(255,255,255,0.06)",margin:"0 4px"}}/>
-        <button className="tool-btn" onClick={()=>exec("bold")} style={S.toolBtn}><b>B</b></button>
-        <button className="tool-btn" onClick={()=>exec("italic")} style={S.toolBtn}><i>I</i></button>
-        <button className="tool-btn" onClick={()=>exec("underline")} style={S.toolBtn}><u>U</u></button>
-        <button className="tool-btn" onClick={()=>exec("strikeThrough")} style={S.toolBtn}><s>S</s></button>
-        <span style={{width:1,background:"rgba(255,255,255,0.06)",margin:"0 4px"}}/>
-        <button className="tool-btn" onClick={()=>exec("insertUnorderedList")} style={S.toolBtn}>• List</button>
-        <button className="tool-btn" onClick={()=>exec("insertOrderedList")} style={S.toolBtn}>1.</button>
-        <button className="tool-btn" onClick={()=>exec("indent")} style={S.toolBtn}>→</button>
-        <button className="tool-btn" onClick={()=>exec("outdent")} style={S.toolBtn}>←</button>
-        <span style={{width:1,background:"rgba(255,255,255,0.06)",margin:"0 4px"}}/>
-        <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<table style="width:100%;border-collapse:collapse;margin:8px 0"><tr><th style="border:1px solid rgba(255,255,255,.08);padding:5px 8px;background:rgba(255,255,255,.03)">Col 1</th><th style="border:1px solid rgba(255,255,255,.08);padding:5px 8px;background:rgba(255,255,255,.03)">Col 2</th></tr><tr><td style="border:1px solid rgba(255,255,255,.08);padding:5px 8px">\u2014</td><td style="border:1px solid rgba(255,255,255,.08);padding:5px 8px">\u2014</td></tr></table>');ref.current?.focus();onInput();}} style={S.toolBtn}>Table</button>
-        <button className="tool-btn" onClick={()=>exec("formatBlock","blockquote")} style={S.toolBtn}>Quote</button>
-        <button className="tool-btn" onClick={()=>exec("formatBlock","pre")} style={S.toolBtn}>Code</button>
-        <button className="tool-btn" onClick={()=>{const u=prompt("URL:");if(u)exec("createLink",u);}} style={S.toolBtn}>Link</button>
-        <button className="tool-btn" onClick={()=>exec("removeFormat")} style={S.toolBtn}>Clear</button>
-        <span style={{width:1,background:"rgba(255,255,255,0.06)",margin:"0 4px"}}/>
-        <button className="tool-btn" onClick={onShowFiles} style={{...S.toolBtn,color:"#667eea",fontWeight:600}}>Show in Files</button>
+    <div style={{border:`1px solid ${dropOver?"rgba(102,126,234,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:20,overflow:"hidden",background:dropOver?"rgba(102,126,234,.04)":"rgba(255,255,255,0.03)",backdropFilter:"blur(12px)",flex:1,display:"flex",flexDirection:"column",transition:"border-color .2s",boxShadow:"0 4px 24px rgba(0,0,0,0.2)"}} onDragStart={handleBlockDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+      {/* ── Ribbon Tab Bar ── */}
+      <div style={{display:"flex",alignItems:"center",padding:"0 10px",borderBottom:"1px solid rgba(255,255,255,0.06)",background:"rgba(8,9,13,0.5)",gap:0}}>
+        {[["home","Home"],["insert","Insert"],["draw","Draw"],["references","References"],["review","Review"]].map(([k,lb])=>(<button key={k} onClick={()=>setRibbonTab(k)} style={tabStyle(k)}>{lb}</button>))}
+        <div style={{flex:1}}/>
+        {/* Share button in ribbon bar */}
+        <button className="tool-btn" onClick={()=>setShowShare(true)} style={{...S.toolBtn,background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",borderRadius:8,padding:"5px 14px",fontWeight:600,fontSize:11,marginRight:4}}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight:4}}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share
+        </button>
+        {/* Collaborator avatars */}
+        <div style={{display:"flex",marginLeft:4}}>
+          {collaborators.map((c,i)=>(<div key={i} style={{width:24,height:24,borderRadius:"50%",background:c.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff",marginLeft:i>0?-6:0,border:"2px solid rgba(8,9,13,0.8)",position:"relative",zIndex:collaborators.length-i}} title={c.name}>
+            {c.name[0].toUpperCase()}
+            {c.online&&<span style={{position:"absolute",bottom:-1,right:-1,width:7,height:7,borderRadius:"50%",background:"#22c55e",border:"1.5px solid rgba(8,9,13,0.8)"}}/>}
+          </div>))}
+        </div>
       </div>
-      <div style={{flex:1,overflowY:"auto",position:"relative"}}>
-        <div ref={ref} contentEditable suppressContentEditableWarning onInput={onInput} onKeyDown={onKey} style={S.editor}/>
-        {loading&&<div style={{position:"absolute",bottom:6,right:12,fontSize:10,color:T.a2,fontFamily:"'JetBrains Mono',monospace",opacity:.6,pointerEvents:"none",background:"rgba(0,0,0,.3)",padding:"2px 7px",borderRadius:5}}>AI thinking…</div>}
-        {ghostData&&!loading&&<div style={{position:"absolute",bottom:6,left:18,fontSize:10,color:T.txt2,fontFamily:"'JetBrains Mono',monospace",opacity:.5,pointerEvents:"none"}}>TAB to accept · ESC to dismiss</div>}
+      {/* ── Ribbon Content ── */}
+      <div style={{...S.toolbar,padding:"4px 10px",minHeight:38}}>
+        {ribbonTab==="home"&&<HomeRibbon/>}
+        {ribbonTab==="insert"&&<InsertRibbon/>}
+        {ribbonTab==="draw"&&<DrawRibbon/>}
+        {ribbonTab==="references"&&<ReferencesRibbon/>}
+        {ribbonTab==="review"&&<ReviewRibbon/>}
       </div>
+      {/* ── Editor + Canvas + Comments ── */}
+      <div style={{flex:1,display:"flex",overflow:"hidden"}}>
+        <div style={{flex:1,overflowY:"auto",position:"relative"}}>
+          <div ref={ref} contentEditable suppressContentEditableWarning onInput={onInput} onKeyDown={onKey} style={{...S.editor,display:showCanvas?"block":"block"}}/>
+          {showCanvas&&<canvas ref={canvasRef} width={800} height={600} onMouseDown={startDraw} onMouseMove={moveDraw} onMouseUp={endDraw} onMouseLeave={endDraw}
+            style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",cursor:drawTool==="eraser"?"cell":"crosshair",pointerEvents:"auto",zIndex:2}}/>}
+          {loading&&<div style={{position:"absolute",bottom:8,right:14,fontSize:11,color:T.a2,fontFamily:"'JetBrains Mono',monospace",opacity:.7,pointerEvents:"none",background:"rgba(0,0,0,.4)",padding:"4px 10px",borderRadius:8,backdropFilter:"blur(8px)",zIndex:5}}>AI thinking...</div>}
+          {ghostData&&!loading&&!showCanvas&&<div style={{position:"absolute",bottom:8,left:20,fontSize:11,color:T.txt2,fontFamily:"'JetBrains Mono',monospace",opacity:.6,pointerEvents:"none",background:"rgba(0,0,0,.3)",padding:"3px 10px",borderRadius:8,zIndex:5}}>TAB to accept  ·  ESC to dismiss</div>}
+        </div>
+        {/* ── Comments Panel ── */}
+        {showComments&&<div style={{width:260,minWidth:260,borderLeft:"1px solid rgba(255,255,255,0.06)",background:"rgba(8,9,13,0.6)",overflowY:"auto",padding:14,display:"flex",flexDirection:"column"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <span style={{fontSize:12,fontWeight:700,color:"#667eea",textTransform:"uppercase",letterSpacing:"0.5px"}}>Comments</span>
+            <button onClick={()=>setShowComments(false)} style={{border:"none",background:"transparent",color:"#64748b",cursor:"pointer",fontSize:16}}>{"\u00d7"}</button>
+          </div>
+          <div style={{display:"flex",gap:4,marginBottom:12}}>
+            <input className="nq-input" value={newComment} onChange={e=>setNewComment(e.target.value)} placeholder="Add a comment..." style={{flex:1,padding:"8px 10px",borderRadius:8,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#e2e8f0",fontSize:12,outline:"none",transition:"border-color 0.2s"}} onKeyDown={e=>{if(e.key==="Enter")addComment();}}/>
+            <button className="grad-btn" onClick={addComment} style={{padding:"8px 12px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>+</button>
+          </div>
+          {comments.length===0&&<div style={{fontSize:12,color:"#64748b",textAlign:"center",padding:20}}>No comments yet. Select text and add a comment.</div>}
+          {comments.map(c=>(<div key={c.id} style={{padding:10,borderRadius:10,background:c.resolved?"rgba(34,197,94,0.05)":"rgba(255,255,255,0.03)",border:`1px solid ${c.resolved?"rgba(34,197,94,0.15)":"rgba(255,255,255,0.06)"}`,marginBottom:6}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+              <span style={{fontSize:11,fontWeight:600,color:"#e2e8f0"}}>{c.author}</span>
+              <span style={{fontSize:9,color:"#64748b"}}>{c.time}</span>
+            </div>
+            {c.selection&&<div style={{fontSize:10,color:"#667eea",background:"rgba(102,126,234,0.08)",padding:"3px 6px",borderRadius:4,marginBottom:4,fontStyle:"italic"}}>"{c.selection.slice(0,60)}{c.selection.length>60?"...":""}"</div>}
+            <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.5}}>{c.text}</div>
+            <div style={{display:"flex",gap:6,marginTop:6}}>
+              <button onClick={()=>setComments(p=>p.map(x=>x.id===c.id?{...x,resolved:!x.resolved}:x))} style={{fontSize:10,color:c.resolved?"#22c55e":"#64748b",background:"transparent",border:"none",cursor:"pointer"}}>{c.resolved?"Resolved":"Resolve"}</button>
+              <button onClick={()=>setComments(p=>p.filter(x=>x.id!==c.id))} style={{fontSize:10,color:"#ff5c5c",background:"transparent",border:"none",cursor:"pointer"}}>Delete</button>
+            </div>
+          </div>))}
+        </div>}
+      </div>
+      {/* ── Share Modal ── */}
+      {showShare&&<div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.6)",backdropFilter:"blur(8px)"}} onClick={e=>{if(e.target===e.currentTarget)setShowShare(false);}}>
+        <div style={{width:440,background:"rgba(13,14,20,0.98)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:24,padding:28,boxShadow:"0 24px 80px rgba(0,0,0,0.5)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+            <h3 style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:"#e2e8f0",margin:0}}>Share Note</h3>
+            <button onClick={()=>setShowShare(false)} style={{border:"none",background:"transparent",color:"#64748b",cursor:"pointer",fontSize:20}}>{"\u00d7"}</button>
+          </div>
+          {/* Invite */}
+          <label style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Invite People</label>
+          <div style={{display:"flex",gap:6,marginBottom:16}}>
+            <input className="nq-input" value={shareEmail} onChange={e=>setShareEmail(e.target.value)} placeholder="Email address..." style={{flex:1,padding:"10px 14px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.04)",color:"#e2e8f0",fontSize:13,outline:"none",fontFamily:"'Inter',sans-serif"}} onKeyDown={e=>{if(e.key==="Enter")addCollab();}}/>
+            <button className="grad-btn" onClick={addCollab} style={{padding:"10px 20px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>Invite</button>
+          </div>
+          {/* Share link */}
+          <label style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Share Link</label>
+          <div style={{display:"flex",gap:6,marginBottom:20}}>
+            <div style={{flex:1,padding:"10px 14px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#94a3b8",fontSize:12,fontFamily:"'JetBrains Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{shareLink}</div>
+            <button onClick={copyLink} style={{padding:"10px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.04)",color:copied?"#22c55e":"#94a3b8",fontSize:12,fontWeight:600,cursor:"pointer",transition:"color 0.2s"}}>{copied?"Copied!":"Copy"}</button>
+          </div>
+          {/* Collaborators */}
+          <label style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8,display:"block"}}>People with Access</label>
+          {collaborators.map((c,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<collaborators.length-1?"1px solid rgba(255,255,255,0.04)":"none"}}>
+            <div style={{width:32,height:32,borderRadius:"50%",background:c.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#fff",position:"relative"}}>
+              {c.name[0].toUpperCase()}
+              {c.online&&<span style={{position:"absolute",bottom:0,right:0,width:8,height:8,borderRadius:"50%",background:"#22c55e",border:"2px solid rgba(13,14,20,0.98)"}}/>}
+            </div>
+            <div style={{flex:1}}><div style={{fontSize:13,color:"#e2e8f0",fontWeight:500}}>{c.name}</div><div style={{fontSize:11,color:"#64748b"}}>{c.email==="owner"?"Owner":c.email}</div></div>
+            <span style={{fontSize:11,color:c.online?"#22c55e":"#64748b"}}>{c.online?"Online":"Invited"}</span>
+            {c.email!=="owner"&&<button onClick={()=>setCollaborators(p=>p.filter((_,j)=>j!==i))} style={{border:"none",background:"transparent",color:"#64748b",cursor:"pointer",fontSize:14}}>{"\u00d7"}</button>}
+          </div>))}
+        </div>
+      </div>}
     </div>
   );
 }
@@ -1073,29 +1361,151 @@ function NotiqLogo({size=24,animated=false,style={}}){
 }
 
 // ══════════════════════════════════════════════════════════════
+// SECTION 5B: NEW NOTE MODAL (with context + file upload for RAG)
+// ══════════════════════════════════════════════════════════════
+function NewNoteModal({folders,activeFolder,activeSubfolder,onClose,onCreate}){
+  const[name,setName]=useState("");const[context,setContext]=useState("");
+  const[subfolder,setSubfolder]=useState(activeSubfolder||"");const[files,setFiles]=useState([]);
+  const[parsing,setParsing]=useState(false);
+  const handleFiles=async(fileList)=>{
+    setParsing(true);
+    const parsed=[];
+    for(const f of [...fileList]){
+      const text=await new Promise(res=>{
+        const r=new FileReader();
+        r.onload=e=>{
+          if(f.type.startsWith("text/")||f.name.endsWith(".md")||f.name.endsWith(".csv")||f.name.endsWith(".txt")){
+            res(e.target.result);
+          }else if(f.type==="application/pdf"){
+            // For PDFs, store the data URL and extract what we can
+            res("[PDF file: "+f.name+"] — Content will be used as context for AI features.");
+          }else{
+            res(e.target.result);
+          }
+        };
+        if(f.type.startsWith("text/")||f.name.endsWith(".md")||f.name.endsWith(".csv")||f.name.endsWith(".txt")){
+          r.readAsText(f);
+        }else{
+          r.readAsDataURL(f);
+        }
+      });
+      parsed.push({name:f.name,type:f.type,size:f.size,text:typeof text==="string"&&!text.startsWith("data:")?text:"",dataUrl:typeof text==="string"&&text.startsWith("data:")?text:null});
+    }
+    setFiles(p=>[...p,...parsed]);
+    setParsing(false);
+  };
+  const submit=()=>{
+    if(!name.trim())return;
+    // Combine all file text into RAG context
+    const ragText=files.filter(f=>f.text).map(f=>`--- ${f.name} ---\n${f.text}`).join("\n\n");
+    const fullContext=(context.trim()+(ragText?"\n\n[Uploaded Reference Materials]\n"+ragText:"")).trim();
+    const filesMeta=files.map(f=>({name:f.name,type:f.type,size:f.size,text:f.text,dataUrl:f.dataUrl}));
+    onCreate(name.trim(),subfolder,fullContext,filesMeta);
+    onClose();
+  };
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.6)",backdropFilter:"blur(8px)"}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div style={{width:520,maxHeight:"85vh",overflowY:"auto",background:"rgba(13,14,20,0.98)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:24,padding:32,boxShadow:"0 24px 80px rgba(0,0,0,0.5)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+          <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:"#e2e8f0",margin:0,letterSpacing:"-0.5px"}}>Create New Note</h2>
+          <button onClick={onClose} style={{border:"none",background:"transparent",color:"#64748b",cursor:"pointer",fontSize:20,padding:4}}>{"\u00d7"}</button>
+        </div>
+
+        {/* Note Name */}
+        <label style={{fontSize:12,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Note Title</label>
+        <input className="nq-input" autoFocus value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Prototyping Class Notes" style={{width:"100%",padding:"12px 16px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#e2e8f0",fontSize:15,outline:"none",fontFamily:"'Inter',sans-serif",marginBottom:18,transition:"border-color 0.2s, box-shadow 0.2s",boxSizing:"border-box"}}
+          onKeyDown={e=>{if(e.key==="Enter")submit();}}/>
+
+        {/* Folder */}
+        <label style={{fontSize:12,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Subfolder</label>
+        <select value={subfolder} onChange={e=>setSubfolder(e.target.value)} style={{width:"100%",padding:"10px 14px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#e2e8f0",fontSize:14,outline:"none",fontFamily:"'Inter',sans-serif",marginBottom:18,cursor:"pointer",boxSizing:"border-box"}}>
+          <option value="">Select a subfolder...</option>
+          {folders.map(f=>(f.children||[]).map(sub=><option key={sub.id} value={sub.id}>{f.name} / {sub.name}</option>))}
+        </select>
+
+        {/* Context */}
+        <label style={{fontSize:12,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Context / Description</label>
+        <textarea className="nq-input" value={context} onChange={e=>setContext(e.target.value)} placeholder="Describe what this note is about — e.g. 'Notes for my prototyping class. We cover wireframing, user testing, and Figma. The final project is designing a mobile app prototype.'" rows={4} style={{width:"100%",padding:"12px 16px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#e2e8f0",fontSize:14,outline:"none",fontFamily:"'Inter',sans-serif",lineHeight:1.6,resize:"vertical",marginBottom:18,transition:"border-color 0.2s, box-shadow 0.2s",boxSizing:"border-box"}}/>
+
+        {/* File Upload */}
+        <label style={{fontSize:12,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Reference Files (slides, PDFs, documents)</label>
+        <div onClick={()=>document.getElementById("newNoteFileInput")?.click()}
+          onDragOver={e=>{e.preventDefault();e.currentTarget.style.borderColor="rgba(102,126,234,0.5)";}}
+          onDragLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";}}
+          onDrop={e=>{e.preventDefault();e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";handleFiles(e.dataTransfer.files);}}
+          style={{border:"2px dashed rgba(255,255,255,0.1)",borderRadius:14,padding:20,textAlign:"center",cursor:"pointer",marginBottom:12,transition:"border-color 0.2s",background:"rgba(255,255,255,0.02)"}}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="1.5" style={{marginBottom:6}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div style={{fontSize:13,color:"#94a3b8"}}>Drop files here or click to browse</div>
+          <div style={{fontSize:11,color:"#64748b",marginTop:4}}>PDF, text, markdown, CSV — content used as AI context</div>
+          <input id="newNoteFileInput" type="file" multiple accept=".pdf,.txt,.md,.csv,.doc,.docx,.pptx" style={{display:"none"}} onChange={e=>handleFiles(e.target.files)}/>
+        </div>
+        {parsing&&<div style={{fontSize:12,color:"#667eea",marginBottom:8}}>Parsing files...</div>}
+        {files.length>0&&<div style={{marginBottom:18}}>
+          {files.map((f,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",marginBottom:4}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span style={{flex:1,fontSize:12,color:"#e2e8f0"}}>{f.name}</span>
+            <span style={{fontSize:10,color:"#64748b"}}>{(f.size/1024).toFixed(0)}KB</span>
+            {f.text&&<span style={{fontSize:9,color:"#667eea",padding:"1px 6px",borderRadius:4,background:"rgba(102,126,234,0.1)"}}>parsed</span>}
+            <button onClick={()=>setFiles(p=>p.filter((_,j)=>j!==i))} style={{border:"none",background:"transparent",color:"#64748b",cursor:"pointer",fontSize:14,padding:2}}>{"\u00d7"}</button>
+          </div>))}
+        </div>}
+
+        {/* Actions */}
+        <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+          <button onClick={onClose} style={{padding:"10px 20px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"transparent",color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>Cancel</button>
+          <button className="grad-btn" onClick={submit} disabled={!name.trim()} style={{padding:"10px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",opacity:name.trim()?1:0.5}}>Create Note</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
 // SECTION 6: SIDEBAR (hierarchical)
 // ══════════════════════════════════════════════════════════════
-function Sidebar({folders,notes,activeNote,activeFolder,onSelect,onSelectFolder,onCreate,onCreateFolder,onSelectParent,onSelectFolderView}){
-  const[nt,setNt]=useState("");const[nf,setNf]=useState(false);const[fn,setFn]=useState("");
+function Sidebar({folders,notes,activeNote,activeFolder,activeSubfolder,onSelect,onSelectFolder,onSelectSubfolder,onCreateFolder,onCreateSubfolder,onSelectParent,onSelectFolderView,onSelectSubfolderView,onOpenNewNote}){
+  const[nf,setNf]=useState(false);const[fn,setFn]=useState("");
+  const[nsf,setNsf]=useState(null);const[sfn,setSfn]=useState("");
+  const[expanded,setExpanded]=useState(()=>{const m={};folders.forEach(f=>m[f.id]=true);return m;});
+  const toggleExpand=id=>setExpanded(p=>({...p,[id]:!p[id]}));
   return(
     <div style={S.sidebar}>
-      <div style={{padding:"16px 16px 0"}}><NotiqLogo size={22}/><div style={{fontSize:10,color:T.txt2,marginBottom:12,marginTop:4}}>AI-powered notes</div></div>
-      <div style={{padding:"0 14px 8px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-        <div style={{display:"flex",gap:4}}>
-          <input className="nq-input" value={nt} onChange={e=>setNt(e.target.value)} placeholder="New note..." style={{flex:1,padding:"8px 12px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#e2e8f0",fontSize:12,outline:"none",fontFamily:"'Inter',sans-serif",transition:"border-color 0.2s, box-shadow 0.2s"}} onKeyDown={e=>{if(e.key==="Enter"&&nt.trim()){onCreate(nt.trim(),activeFolder);setNt("");}}}/>
-          <button className="grad-btn" onClick={()=>{if(nt.trim()){onCreate(nt.trim(),activeFolder);setNt("");}}} style={{padding:"8px 14px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>+</button>
-        </div>
+      <div style={{padding:"18px 18px 0"}}><NotiqLogo size={24}/><div style={{fontSize:11,color:T.txt2,marginBottom:14,marginTop:4}}>AI-powered notes</div></div>
+      <div style={{padding:"0 14px 10px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+        <button className="grad-btn" onClick={onOpenNewNote} style={{width:"100%",padding:"10px 16px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Note
+        </button>
       </div>
       <div style={S.sideScroll}>
         {folders.map(f=>(<div key={f.id}>
-          <div className="folder-title" style={{fontSize:11,fontWeight:700,color:f.id===activeFolder?"#667eea":"#64748b",padding:"12px 0 5px",cursor:"pointer",letterSpacing:"0.5px",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace"}} onClick={()=>{onSelectFolder(f.id);onSelectFolderView(f.id);}}>{f.name}</div>
-          {f.notes.map(nid=>{const n=notes[nid];if(!n||n.parent)return null;const ch=n.children?.length>0;return(<div key={nid}>
-            <button className="note-btn" style={S.noteBtn(nid===activeNote,0)} onClick={()=>{ch?onSelectParent(nid):onSelect(nid);onSelectFolder(f.id);}}>{ch?"\u25b8 ":""}{n.title}</button>
-            {ch&&n.children.map(cid=>{const cn=notes[cid];if(!cn)return null;return <button key={cid} className="note-btn" style={S.noteBtn(cid===activeNote,1)} onClick={()=>{onSelect(cid);onSelectFolder(f.id);}}>{cn.title}</button>;})}
-          </div>);})}
+          {/* Root folder */}
+          <div style={{display:"flex",alignItems:"center",gap:4,padding:"12px 0 4px",cursor:"pointer"}} onClick={()=>{toggleExpand(f.id);onSelectFolder(f.id);onSelectFolderView(f.id);}}>
+            <span style={{fontSize:9,color:"#64748b",transition:"transform 0.2s",transform:expanded[f.id]?"rotate(90deg)":"rotate(0)",display:"inline-block"}}>{"\u25b6"}</span>
+            <span className="folder-title" style={{fontSize:11,fontWeight:700,color:f.id===activeFolder&&!activeSubfolder?"#667eea":"#64748b",letterSpacing:"0.5px",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace"}}>{f.name}</span>
+            <span style={{fontSize:9,color:"#64748b",marginLeft:"auto",fontFamily:"'JetBrains Mono',monospace"}}>{getAllFolderNoteIds(f).length}</span>
+          </div>
+          {/* Subfolders */}
+          {expanded[f.id]&&f.children?.map(sub=>(<div key={sub.id} style={{paddingLeft:8}}>
+            <div style={{display:"flex",alignItems:"center",gap:4,padding:"5px 0 3px",cursor:"pointer"}} onClick={()=>{onSelectFolder(f.id);onSelectSubfolder(sub.id);onSelectSubfolderView(sub.id);}}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={activeSubfolder===sub.id?"#667eea":"#64748b"} strokeWidth="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+              <span style={{fontSize:12,fontWeight:activeSubfolder===sub.id?600:400,color:activeSubfolder===sub.id?"#667eea":"#94a3b8",flex:1}}>{sub.name}</span>
+              <span style={{fontSize:9,color:"#64748b",fontFamily:"'JetBrains Mono',monospace"}}>{(sub.notes||[]).length}</span>
+            </div>
+            {/* Notes in subfolder */}
+            {(sub.notes||[]).map(nid=>{const n=notes[nid];if(!n||n.parent)return null;const ch=n.children?.length>0;return(<div key={nid}>
+              <button className="note-btn" style={S.noteBtn(nid===activeNote,1)} onClick={()=>{ch?onSelectParent(nid):onSelect(nid);onSelectFolder(f.id);onSelectSubfolder(sub.id);}}>{ch?"\u25b8 ":""}{n.title.length>28?n.title.slice(0,28)+"\u2026":n.title}</button>
+              {ch&&n.children.map(cid=>{const cn=notes[cid];if(!cn)return null;return <button key={cid} className="note-btn" style={S.noteBtn(cid===activeNote,2)} onClick={()=>{onSelect(cid);onSelectFolder(f.id);onSelectSubfolder(sub.id);}}>{cn.title}</button>;})}
+            </div>);})}
+            {/* Add subfolder note button */}
+          </div>))}
+          {/* Add subfolder */}
+          {expanded[f.id]&&<div style={{paddingLeft:8,marginTop:2}}>
+            {nsf===f.id?(<div style={{display:"flex",gap:3,padding:"2px 0"}}><input className="nq-input" value={sfn} onChange={e=>setSfn(e.target.value)} placeholder="Subfolder..." autoFocus style={{flex:1,padding:"5px 8px",borderRadius:8,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#e2e8f0",fontSize:10,outline:"none"}} onKeyDown={e=>{if(e.key==="Enter"&&sfn.trim()){onCreateSubfolder(f.id,sfn.trim());setSfn("");setNsf(null);}if(e.key==="Escape")setNsf(null);}}/><button className="grad-btn" onClick={()=>{if(sfn.trim()){onCreateSubfolder(f.id,sfn.trim());setSfn("");setNsf(null);}}} style={{padding:"5px 8px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:9,fontWeight:600,cursor:"pointer"}}>+</button></div>):(<button onClick={()=>setNsf(f.id)} style={{...S.noteBtn(false,1),color:"#64748b",fontSize:10}}>+ Subfolder</button>)}
+          </div>}
         </div>))}
         <div style={{marginTop:10}}>
-          {nf?(<div style={{display:"flex",gap:4}}><input className="nq-input" value={fn} onChange={e=>setFn(e.target.value)} placeholder="Folder name..." autoFocus style={{flex:1,padding:"7px 12px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#e2e8f0",fontSize:11,outline:"none",transition:"border-color 0.2s, box-shadow 0.2s"}} onKeyDown={e=>{if(e.key==="Enter"&&fn.trim()){onCreateFolder(fn.trim());setFn("");setNf(false);}}}/><button className="grad-btn" onClick={()=>{if(fn.trim()){onCreateFolder(fn.trim());setFn("");setNf(false);}}} style={{padding:"7px 12px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:10,fontWeight:600,cursor:"pointer",transition:"opacity 0.15s"}}>+</button></div>):(<button onClick={()=>setNf(true)} style={{...S.noteBtn(false,0),color:"#64748b",fontSize:11}}>+ New Folder</button>)}
+          {nf?(<div style={{display:"flex",gap:4}}><input className="nq-input" value={fn} onChange={e=>setFn(e.target.value)} placeholder="Root folder..." autoFocus style={{flex:1,padding:"7px 12px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#e2e8f0",fontSize:11,outline:"none"}} onKeyDown={e=>{if(e.key==="Enter"&&fn.trim()){onCreateFolder(fn.trim());setFn("");setNf(false);}if(e.key==="Escape")setNf(false);}}/><button className="grad-btn" onClick={()=>{if(fn.trim()){onCreateFolder(fn.trim());setFn("");setNf(false);}}} style={{padding:"7px 12px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:10,fontWeight:600,cursor:"pointer"}}>+</button></div>):(<button onClick={()=>setNf(true)} style={{...S.noteBtn(false,0),color:"#64748b",fontSize:11}}>+ Root Folder</button>)}
         </div>
       </div>
     </div>
@@ -1143,7 +1553,7 @@ function EditableNote({id,content,onChange}){
   useEffect(()=>{if(ref.current&&!init){ref.current.innerHTML=content||"";setInit(true);}},[content,init]);
   return(<div ref={ref} contentEditable suppressContentEditableWarning
     onInput={()=>{if(ref.current)onChange(id,ref.current.innerHTML);}}
-    style={{...S.glass,padding:16,fontSize:15,lineHeight:1.75,outline:"none",minHeight:40,cursor:"text",borderRadius:14,color:"#e2e8f0"}}
+    style={{...S.glass,padding:18,fontSize:16,lineHeight:1.8,outline:"none",minHeight:40,cursor:"text",borderRadius:14,color:"#e2e8f0"}}
   />);
 }
 
@@ -1153,9 +1563,9 @@ function EditableNote({id,content,onChange}){
 function CombinedView({title,items,onSelect,onAddLesson,parentId,onChangeNote}){
   const[nt,setNt]=useState("");
   return(
-    <div style={{flex:1,overflowY:"auto",padding:"20px 28px"}}>
-      <h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:22,margin:"0 0 4px",color:"#e2e8f0",fontWeight:800,letterSpacing:"-0.5px"}}>{title}</h2>
-      <span style={{fontSize:11,color:"#64748b"}}>{items.length} note{items.length!==1?"s":""}</span>
+    <div style={{flex:1,overflowY:"auto",padding:"24px 32px"}}>
+      <h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:"0 0 6px",color:"#e2e8f0",fontWeight:800,letterSpacing:"-0.5px"}}>{title}</h2>
+      <span style={{fontSize:13,color:"#64748b"}}>{items.length} note{items.length!==1?"s":""}</span>
       {parentId&&<div style={{display:"flex",gap:6,margin:"12px 0"}}><input className="nq-input" value={nt} onChange={e=>setNt(e.target.value)} placeholder="Add new lesson..." style={{flex:1,padding:"8px 14px",borderRadius:10,border:"1px solid rgba(255,255,255,.08)",background:"rgba(255,255,255,.03)",color:"#e2e8f0",fontSize:13,outline:"none",transition:"border-color 0.2s, box-shadow 0.2s"}} onKeyDown={e=>{if(e.key==="Enter"&&nt.trim()){onAddLesson(nt.trim());setNt("");}}}/><button className="grad-btn" onClick={()=>{if(nt.trim()){onAddLesson(nt.trim());setNt("");}}} style={{padding:"8px 18px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ Lesson</button></div>}
       <div style={{...S.glass,padding:14,marginBottom:16}}><div style={S.sh}>Table of Contents</div>
         {items.map((c,i)=><div key={c.id} onClick={()=>onSelect(c.id)} style={{padding:"7px 10px",cursor:"pointer",fontSize:13,color:"#94a3b8",borderBottom:"1px solid rgba(255,255,255,.06)",transition:"color 0.15s"}}><span style={{color:"#667eea",fontWeight:600,marginRight:8}}>{i+1}.</span>{c.title}<span style={{fontSize:10,color:"#64748b",marginLeft:8}}>{c.created}</span></div>)}
@@ -1190,60 +1600,176 @@ function SugPanel({videos,ytResults,knowledge,aiInsight,loadingYT}){
 // ══════════════════════════════════════════════════════════════
 // SECTION 10: AI INSIGHTS (category-free, Gemini-powered)
 // ══════════════════════════════════════════════════════════════
-function InsightsPage({notes,knowledge,onAddTopic,geminiKey}){
+function InsightsPage({notes,folders,knowledge,onAddTopic,geminiKey,topicSections,confidence,insightsFolder,setInsightsFolder}){
   const[aiData,setAiData]=useState(null);const[ld,setLd]=useState(false);
+  const[studyPlan,setStudyPlan]=useState(null);const[spLd,setSpLd]=useState(false);
+
+  // Get notes for selected folder
+  const selFolder=folders.find(f=>f.id===insightsFolder);
+  const folderNoteIds=selFolder?getAllFolderNoteIds(selFolder):[];
+  const folderNotes=folderNoteIds.map(id=>({id,...notes[id]})).filter(n=>n&&!n.children);
   const allNotes=Object.values(notes).filter(n=>!n.children);
-  const totalWords=allNotes.reduce((s,n)=>s+(n.content||"").replace(/<[^>]+>/g,"").split(/\s+/).filter(Boolean).length,0);
+  const totalWords=folderNotes.reduce((s,n)=>s+(n.content||"").replace(/<[^>]+>/g,"").split(/\s+/).filter(Boolean).length,0);
+
+  // Build confidence data for this folder's notes
+  const confData=[];
+  folderNotes.forEach(n=>{
+    const secs=topicSections[n.id]||[];
+    secs.forEach((sec,i)=>{
+      const score=confidence[`${n.id}:${i}`]||0;
+      confData.push({noteId:n.id,noteTitle:n.title,section:sec.title,score,sectionIdx:i});
+    });
+  });
+  const scoredTopics=confData.filter(d=>d.score>0);
+  const weakTopics=scoredTopics.filter(d=>d.score<=4).sort((a,b)=>a.score-b.score);
+  const strongTopics=scoredTopics.filter(d=>d.score>=7).sort((a,b)=>b.score-a.score);
+  const avgConf=scoredTopics.length?Math.round(scoredTopics.reduce((s,d)=>s+d.score,0)/scoredTopics.length*10)/10:0;
+
+  // Bar chart data: count of each confidence level 1-10
+  const barData=Array.from({length:10},(_,i)=>({level:i+1,count:scoredTopics.filter(d=>d.score===i+1).length}));
+  const maxBar=Math.max(1,...barData.map(b=>b.count));
+
   const nxt=getNextTopics(knowledge);
   const kVals=Object.values(knowledge);
-  const avgMastery=kVals.length?Math.round(kVals.reduce((s,k)=>s+k.pct,0)/kVals.length):0;
 
   const gen=async()=>{
     if(!geminiKey)return;setLd(true);
-    const digest=allNotes.map(n=>`[${n.title}]\n${(n.content||"").replace(/<[^>]+>/g,"").slice(0,600)}`).join("\n---\n");
-    const prompt=`You are an intelligent note-analysis AI. Analyze ALL the following notes holistically. Auto-detect every theme/domain present (e.g. fitness, nutrition, study, finance, travel, ideas, social, journal — whatever is actually there).
-
+    const digest=folderNotes.map(n=>`[${n.title}]\n${(n.content||"").replace(/<[^>]+>/g,"").slice(0,600)}`).join("\n---\n");
+    const confDigest=scoredTopics.map(d=>`"${d.section}" (in ${d.noteTitle}): confidence ${d.score}/10`).join("\n");
+    const prompt=`You are an intelligent note-analysis AI. Analyze the following notes from the "${selFolder?.name||"folder"}" category.
+${confDigest?`\nUser confidence scores per topic:\n${confDigest}\n`:""}
 Return ONLY valid JSON (no markdown fences) with this exact structure:
 {
-  "themes": [
-    {"name": "Theme Name", "noteCount": 3, "icon": "emoji", "summary": "One-line summary of what these notes cover", "insights": ["insight 1", "insight 2"], "actions": ["action 1"]}
-  ],
-  "crossInsights": ["Cross-theme insight connecting multiple areas"],
+  "themes": [{"name": "Theme Name", "noteCount": 3, "icon": "emoji", "summary": "One-line summary", "insights": ["insight 1"], "actions": ["action 1"]}],
+  "crossInsights": ["Cross-theme insight"],
   "weeklyFocus": "One sentence recommendation for this week",
   "strengths": ["What the user is doing well"],
-  "gaps": ["What's missing or could be improved"]
+  "gaps": ["What's missing or could be improved based on low confidence scores"]
 }
 
-Notes:
-${digest}`;
+Notes:\n${digest}`;
     try{
       const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:1500,temperature:0.4,responseMimeType:"application/json"}})
       });
       const d=await r.json();const txt=d?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if(txt){const parsed=JSON.parse(txt);setAiData(parsed);}
+      if(txt){setAiData(JSON.parse(txt));}
     }catch(e){console.error("Insights error:",e);}
     setLd(false);
   };
 
+  const genStudyPlan=async()=>{
+    if(!geminiKey||weakTopics.length===0)return;setSpLd(true);
+    const weakDigest=weakTopics.map(d=>`"${d.section}" (confidence: ${d.score}/10, from note: ${d.noteTitle})`).join("\n");
+    const prompt=`Create a focused study plan for a student who is weak in these topics:\n${weakDigest}\n\nReturn ONLY valid JSON:\n{"plan":[{"topic":"topic name","confidence":3,"priority":"high/medium","actions":["specific action 1","specific action 2"],"timeEstimate":"2 hours","resources":["resource suggestion"]}],"summary":"One paragraph overview of the study plan","schedule":"Suggested weekly schedule"}`;
+    try{
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:1200,temperature:0.4,responseMimeType:"application/json"}})
+      });
+      const d=await r.json();const txt=d?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if(txt){setStudyPlan(JSON.parse(txt));}
+    }catch(e){console.error("Study plan error:",e);}
+    setSpLd(false);
+  };
+
   const IBox=({icon,text})=>(<div style={{...S.glassAccent,padding:"10px 14px",display:"flex",gap:10,alignItems:"flex-start",marginBottom:8}}><span style={{fontSize:14,flexShrink:0,color:"#667eea"}}>{icon}</span><div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6}}>{text}</div></div>);
 
-  return(<div style={{padding:"24px 28px",overflowY:"auto",flex:1}}>
+  return(<div style={{padding:"28px 36px",overflowY:"auto",flex:1}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-      <div><h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:22,margin:0,color:"#e2e8f0",fontWeight:800,letterSpacing:"-0.5px"}}>Insights</h2><div style={{fontSize:12,color:"#64748b",marginTop:4}}>AI-powered analysis of all your notes</div></div>
-      {geminiKey&&<button className="grad-btn" onClick={gen} disabled={ld} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:13,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>{ld?"Analyzing...":"Generate Insights"}</button>}
+      <div><h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:0,color:"#e2e8f0",fontWeight:800,letterSpacing:"-0.5px"}}>Insights</h2>
+        <div style={{fontSize:14,color:"#64748b",marginTop:4}}>Analysis for <span style={{color:"#667eea",fontWeight:600}}>{selFolder?.name||"all notes"}</span></div></div>
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        {geminiKey&&<button className="grad-btn" onClick={gen} disabled={ld} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:13,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>{ld?"Analyzing...":"Generate Insights"}</button>}
+      </div>
+    </div>
+
+    {/* Folder tabs */}
+    <div style={{display:"flex",gap:4,marginBottom:16,flexWrap:"wrap"}}>
+      {folders.map(f=>(
+        <button key={f.id} onClick={()=>{setInsightsFolder(f.id);setAiData(null);setStudyPlan(null);}} style={{padding:"6px 16px",borderRadius:10,border:`1px solid ${insightsFolder===f.id?"rgba(102,126,234,.4)":"rgba(255,255,255,.06)"}`,background:insightsFolder===f.id?"rgba(102,126,234,.1)":"transparent",color:insightsFolder===f.id?"#667eea":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer",transition:"all 0.2s"}}>{f.name}<span style={{marginLeft:6,fontSize:10,opacity:0.6}}>{getAllFolderNoteIds(f).length}</span></button>
+      ))}
     </div>
 
     {/* Quick stats */}
     <div style={{display:"flex",gap:8,marginBottom:20}}>
-      <div className="stat-card" style={S.statCard}><div style={S.statN}>{allNotes.length}</div><div style={S.statL}>Notes</div></div>
+      <div className="stat-card" style={S.statCard}><div style={S.statN}>{folderNotes.length}</div><div style={S.statL}>Notes</div></div>
       <div className="stat-card" style={S.statCard}><div style={S.statN}>{totalWords.toLocaleString()}</div><div style={S.statL}>Words</div></div>
-      <div className="stat-card" style={S.statCard}><div style={S.statN}>{kVals.length}</div><div style={S.statL}>Topics Tracked</div></div>
-      <div className="stat-card" style={S.statCard}><div style={S.statN}>{avgMastery}%</div><div style={S.statL}>Avg Mastery</div></div>
+      <div className="stat-card" style={S.statCard}><div style={S.statN}>{scoredTopics.length}</div><div style={S.statL}>Topics Rated</div></div>
+      <div className="stat-card" style={S.statCard}><div style={S.statN}>{avgConf||"—"}</div><div style={S.statL}>Avg Confidence</div></div>
     </div>
 
-    {/* Knowledge section */}
+    {/* ── Confidence Bar Graph ── */}
+    {scoredTopics.length>0&&<div style={{...S.glass,padding:18,marginBottom:16}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+        <div style={S.sh}>Confidence Distribution</div>
+        <div style={{fontSize:10,color:"#64748b"}}>{scoredTopics.length} topics rated</div>
+      </div>
+      <div style={{display:"flex",alignItems:"flex-end",gap:6,height:120,padding:"0 8px"}}>
+        {barData.map(b=>{const pct=b.count/maxBar*100;const color=b.level<=3?"#ff5c5c":b.level<=6?"#f59e0b":"#22c55e";return(
+          <div key={b.level} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+            <span style={{fontSize:9,color:"#94a3b8",fontFamily:"'JetBrains Mono',monospace"}}>{b.count||""}</span>
+            <div style={{width:"100%",height:`${Math.max(pct,2)}%`,background:color,borderRadius:"4px 4px 0 0",transition:"height 0.5s ease",minHeight:b.count?4:1,opacity:b.count?1:0.2}}/>
+            <span style={{fontSize:10,color:b.count?"#e2e8f0":"#64748b",fontWeight:b.count?600:400}}>{b.level}</span>
+          </div>
+        );})}
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",marginTop:8,fontSize:10,color:"#64748b"}}>
+        <span>Weak</span><span>Moderate</span><span>Strong</span>
+      </div>
+    </div>}
+
+    {/* ── Weakness Trends ── */}
+    {weakTopics.length>0&&<div style={{...S.glass,padding:16,marginBottom:16,borderLeft:"3px solid #ff5c5c"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+        <div style={S.sh3}>Weak Areas ({weakTopics.length})</div>
+        {geminiKey&&<button className="grad-btn" onClick={genStudyPlan} disabled={spLd} style={{padding:"6px 16px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#ff5c5c,#f59e0b)",color:"#fff",fontSize:11,fontWeight:600,cursor:spLd?"wait":"pointer",opacity:spLd?.7:1}}>{spLd?"Generating...":"Create Study Plan"}</button>}
+      </div>
+      {weakTopics.slice(0,8).map((d,i)=>(
+        <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:i<weakTopics.length-1?"1px solid rgba(255,255,255,0.04)":"none"}}>
+          <span style={{width:24,height:24,borderRadius:6,background:d.score<=2?"rgba(255,92,92,0.15)":"rgba(245,158,11,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:d.score<=2?"#ff5c5c":"#f59e0b",flexShrink:0}}>{d.score}</span>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:12,fontWeight:600,color:"#e2e8f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d.section}</div>
+            <div style={{fontSize:10,color:"#64748b"}}>{d.noteTitle}</div>
+          </div>
+        </div>
+      ))}
+    </div>}
+
+    {/* ── Strong Areas ── */}
+    {strongTopics.length>0&&<div style={{...S.glass,padding:16,marginBottom:16,borderLeft:"3px solid #22c55e"}}>
+      <div style={S.sh}>Strong Areas ({strongTopics.length})</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+        {strongTopics.slice(0,10).map((d,i)=>(
+          <span key={i} style={{padding:"4px 10px",borderRadius:8,background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.2)",fontSize:11,color:"#22c55e",fontWeight:600}}>
+            {d.section} <span style={{opacity:0.6}}>({d.score})</span>
+          </span>
+        ))}
+      </div>
+    </div>}
+
+    {/* ── Study Plan ── */}
+    {studyPlan&&<div style={{...S.glassAccent,padding:18,marginBottom:16,borderLeft:"3px solid #667eea"}}>
+      <div style={{...S.sh,marginBottom:10}}>AI Study Plan</div>
+      {studyPlan.summary&&<div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6,marginBottom:14}}>{studyPlan.summary}</div>}
+      {studyPlan.schedule&&<div style={{fontSize:12,color:"#667eea",marginBottom:12,padding:"8px 12px",background:"rgba(102,126,234,0.06)",borderRadius:8}}>{studyPlan.schedule}</div>}
+      {studyPlan.plan?.map((item,i)=>(
+        <div key={i} style={{...S.glass,padding:12,marginBottom:8}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <div style={{fontSize:13,fontWeight:600,color:"#e2e8f0"}}>{item.topic}</div>
+            <div style={{display:"flex",gap:6,alignItems:"center"}}>
+              <span style={{fontSize:10,padding:"2px 8px",borderRadius:6,background:item.priority==="high"?"rgba(255,92,92,0.15)":"rgba(245,158,11,0.15)",color:item.priority==="high"?"#ff5c5c":"#f59e0b",fontWeight:600}}>{item.priority}</span>
+              {item.timeEstimate&&<span style={{fontSize:10,color:"#64748b"}}>{item.timeEstimate}</span>}
+            </div>
+          </div>
+          {item.actions?.map((a,j)=><div key={j} style={{fontSize:12,color:"#94a3b8",paddingLeft:10,borderLeft:"2px solid rgba(255,255,255,0.06)",marginBottom:3,lineHeight:1.5}}>{a}</div>)}
+          {item.resources?.map((r,j)=><div key={j} style={{fontSize:11,color:"#667eea",marginTop:4}}>Resource: {r}</div>)}
+        </div>
+      ))}
+    </div>}
+
+    {/* Knowledge tracker */}
     {kVals.length>0&&<div style={{marginBottom:16}}>
       <div style={S.sh}>Knowledge Tracker</div>
       {kVals.map((info,i)=>(<div key={i} style={{...S.glass,padding:12,marginBottom:8}}>
@@ -1255,22 +1781,18 @@ ${digest}`;
       {nxt.length>0&&<><div style={{...S.sh,marginTop:12}}>Suggested Next Topics</div>
         {nxt.map((nt,i)=>(<div key={i} style={{...S.glass,padding:10,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div><div style={{fontSize:13,fontWeight:600}}>{nt.topic}</div><div style={{fontSize:11,color:T.txt2}}>{nt.subject} ({nt.curPct}%)</div></div>
-          <div style={{display:"flex",gap:5}}><button className="grad-btn" onClick={()=>onAddTopic(nt)} style={{padding:"4px 12px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer",transition:"opacity 0.15s"}}>Add</button><a href={nt.video} target="_blank" rel="noopener noreferrer" style={{padding:"4px 12px",borderRadius:8,border:`1px solid ${T.border}`,color:T.a2,fontSize:11,textDecoration:"none",transition:"all 0.15s"}}>Watch</a></div>
+          <div style={{display:"flex",gap:5}}><button className="grad-btn" onClick={()=>onAddTopic(nt)} style={{padding:"4px 12px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>Add</button><a href={nt.video} target="_blank" rel="noopener noreferrer" style={{padding:"4px 12px",borderRadius:8,border:`1px solid ${T.border}`,color:T.a2,fontSize:11,textDecoration:"none"}}>Watch</a></div>
         </div>))}</>}
     </div>}
 
-    {/* No API key message */}
-    {!geminiKey&&<IBox icon="!" text="Add a Gemini API key in .env to unlock AI-powered insights across all your notes."/>}
+    {!geminiKey&&<IBox icon="!" text="Add a Gemini API key in .env to unlock AI-powered insights."/>}
 
     {/* AI Analysis results */}
     {aiData&&<div>
-      {/* Weekly focus */}
       {aiData.weeklyFocus&&<div style={{...S.glassAccent,padding:14,marginBottom:14,borderLeft:`3px solid ${T.a1}`}}>
         <div style={{fontSize:10,color:T.a1,fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:4}}>This Week's Focus</div>
         <div style={{fontSize:13,color:T.txt,lineHeight:1.5}}>{aiData.weeklyFocus}</div>
       </div>}
-
-      {/* Detected themes */}
       {aiData.themes&&<div style={{marginBottom:14}}>
         <div style={S.sh}>Detected Themes</div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
@@ -1285,14 +1807,10 @@ ${digest}`;
           </div>)}
         </div>
       </div>}
-
-      {/* Cross-theme insights */}
       {aiData.crossInsights?.length>0&&<div style={{marginBottom:14}}>
         <div style={S.sh}>Cross-Theme Insights</div>
         {aiData.crossInsights.map((ci,i)=><IBox key={i} icon="↗" text={ci}/>)}
       </div>}
-
-      {/* Strengths & Gaps */}
       <div style={{display:"flex",gap:8,marginBottom:14}}>
         {aiData.strengths?.length>0&&<div style={{flex:1}}>
           <div style={S.sh}>Strengths</div>
@@ -1305,10 +1823,10 @@ ${digest}`;
       </div>
     </div>}
 
-    {!aiData&&!ld&&geminiKey&&<div style={{textAlign:"center",padding:48,color:"#64748b"}}>
+    {!aiData&&!ld&&geminiKey&&scoredTopics.length===0&&<div style={{textAlign:"center",padding:48,color:"#64748b"}}>
       <div style={{fontSize:14,marginBottom:10,color:"#667eea",fontFamily:"'JetBrains Mono',monospace"}}>---</div>
-      <div style={{fontSize:14,color:"#94a3b8"}}>Click "Generate Insights" to analyze all your notes with AI</div>
-      <div style={{fontSize:12,marginTop:6,color:"#64748b"}}>Gemini will auto-detect themes, find patterns, and give personalized recommendations</div>
+      <div style={{fontSize:14,color:"#94a3b8"}}>Rate your confidence on topics in your notes, then generate insights</div>
+      <div style={{fontSize:12,marginTop:6,color:"#64748b"}}>Open a note and rate each section 1-10 using the Topics & Confidence panel below the editor</div>
     </div>}
   </div>);
 }
@@ -1353,10 +1871,10 @@ function LinksPage({notes,geminiKey,onSelectNote}){
   const selEnt=selectedNode&&entities[selectedNode];
   const selNote=selectedNode&&notes[selectedNode];
   const selLinks=links?.filter(l=>l.from===selectedNode||l.to===selectedNode)||[];
-  return(<div style={{padding:"24px 28px",overflowY:"auto",flex:1}}>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-      <div><h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:22,margin:0,color:"#e2e8f0",fontWeight:800,letterSpacing:"-0.5px"}}>Knowledge Graph</h2>
-        <div style={{fontSize:12,color:"#64748b",marginTop:4}}>AI-discovered connections between your notes</div></div>
+  return(<div style={{padding:"28px 36px",overflowY:"auto",flex:1}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+      <div><h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:0,color:"#e2e8f0",fontWeight:800,letterSpacing:"-0.5px"}}>Knowledge Graph</h2>
+        <div style={{fontSize:14,color:"#64748b",marginTop:4}}>AI-discovered connections between your notes</div></div>
       <button className="grad-btn" onClick={analyze} disabled={loading||!geminiKey} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",opacity:loading?.6:1}}>
         {loading?"Analyzing...":links?"Re-analyze":"Build Graph"}</button>
     </div>
@@ -2047,13 +2565,19 @@ export default function App(){
 function NotiqApp(){
   const[folders,setFolders]=useState(INIT_FOLDERS);const[notes,setNotes]=useState(INIT_NOTES);
   const[activeNote,setActiveNote]=useState("n1");const[activeFolder,setActiveFolder]=useState("academics");
-  const[viewMode,setViewMode]=useState(null); // null=note, "parent:id", "folder:id"
+  const[activeSubfolder,setActiveSubfolder]=useState("ml_2026");
+  const[viewMode,setViewMode]=useState(null); // null=note, "parent:id", "folder:id", "subfolder:id"
   const[page,setPage]=useState("notes");const[showAI,setShowAI]=useState(true);const[showFiles,setShowFiles]=useState(false);
-    const[ghostData,setGhostData]=useState(null);const[ghostLoading,setGhostLoading]=useState(false);
+  const[ghostData,setGhostData]=useState(null);const[ghostLoading,setGhostLoading]=useState(false);
   const[ytResults,setYtResults]=useState([]);const[ytLoading,setYtLoading]=useState(false);const[aiInsight,setAiInsight]=useState(null);
   const[uploadedFiles,setUploadedFiles]=useState([]);const[fileSearch,setFileSearch]=useState("");
   const[isDark,setIsDark]=useState(true);
   const[showTransform,setShowTransform]=useState(false);
+  const[showNewNoteModal,setShowNewNoteModal]=useState(false);
+  // Topic sections & confidence scores
+  const[topicSections,setTopicSections]=useState({}); // noteId -> [{title,index}]
+  const[confidence,setConfidence]=useState({}); // "noteId:sectionIdx" -> 1-10
+  const[insightsFolder,setInsightsFolder]=useState("academics"); // which root folder insights are for
   const timerRef=useRef(null);const ytRef=useRef(null);const abortRef=useRef(null);const ytAbortRef=useRef(null);
   useEffect(()=>{
     let s=document.getElementById("nt-theme");
@@ -2065,87 +2589,126 @@ function NotiqApp(){
   const knowledge=useMemo(()=>calcKnow(notes),[notes]);
   const videos=useMemo(()=>active?getVideos(active.content||""):[],[active?.content]);
 
+  // Parse topic sections from note content (client-side heading detection)
+  const parseSections=useCallback((noteId,html)=>{
+    if(!html)return;
+    const div=document.createElement("div");div.innerHTML=html;
+    const headings=[...div.querySelectorAll("h2,h3")];
+    if(headings.length===0)return;
+    const sections=headings.map((h,i)=>({title:h.textContent||`Section ${i+1}`,index:i}));
+    setTopicSections(p=>{if(JSON.stringify(p[noteId])===JSON.stringify(sections))return p;return{...p,[noteId]:sections};});
+  },[]);
+
+  // Detect sections when note changes
+  useEffect(()=>{if(active?.content)parseSections(activeNote,active.content);},[activeNote,active?.content,parseSections]);
+
+  const setConfidenceScore=(noteId,sectionIdx,score)=>{
+    setConfidence(p=>({...p,[`${noteId}:${sectionIdx}`]:score}));
+  };
+
   const handleChange=useCallback(html=>{
     setNotes(p=>({...p,[activeNote]:{...p[activeNote],content:html}}));
+    // Parse sections on content change
+    parseSections(activeNote,html);
     // ── Copilot-style autocomplete: abort previous, debounce 500ms ──
     if(timerRef.current)clearTimeout(timerRef.current);
     timerRef.current=setTimeout(async()=>{
       const plain=html.replace(/<[^>]+>/g,"");if(plain.length<15)return;
-      // Show local ghost instantly as fallback
       const localGhost=getGhost(html);
       if(localGhost&&!GEMINI_KEY){setGhostData(localGhost);return;}
       if(localGhost)setGhostData(localGhost);
       if(!GEMINI_KEY)return;
-      // Cancel any in-flight Gemini request
       if(abortRef.current)abortRef.current.abort();
       const ac=new AbortController();abortRef.current=ac;
       setGhostLoading(true);
       const pLines=plain.split("\n").filter(l=>l.trim());
       const ctx=pLines.slice(-10).join("\n");
-      const r=await geminiComplete(ctx,{title:active?.title||""},GEMINI_KEY,ac.signal);
+      const ragCtx=active?.context||"";
+      const r=await geminiComplete(ctx,{title:active?.title||"",context:ragCtx},GEMINI_KEY,ac.signal);
       if(!ac.signal.aborted){setGhostData(r||localGhost);setGhostLoading(false);}
     },500);
-    // ── YouTube: LLM extracts topic → YT API search (LLM+API pipeline) ──
+    // ── YouTube pipeline ──
     if(ytRef.current)clearTimeout(ytRef.current);
     ytRef.current=setTimeout(async()=>{
       if(!YOUTUBE_KEY)return;const plain=html.replace(/<[^>]+>/g,"");if(plain.length<30)return;
       if(ytAbortRef.current)ytAbortRef.current.abort();
       const ac=new AbortController();ytAbortRef.current=ac;
       setYtLoading(true);
-      // Step 1: Ask Gemini to extract the optimal search query
       let q=null;
-      if(GEMINI_KEY)q=await geminiExtractTopic(html,GEMINI_KEY,ac.signal);
-      // Fallback: use last 2 lines if no Gemini
+      const ytCtx=active?.context?"\n\nNote context: "+active.context.slice(0,500):"";
+      if(GEMINI_KEY)q=await geminiExtractTopic(html+ytCtx,GEMINI_KEY,ac.signal);
       if(!q){q=plain.split("\n").filter(l=>l.trim()).slice(-2).join(" ").slice(0,80);}
       if(ac.signal.aborted)return;
       if(q.length<5){setYtLoading(false);return;}
-      // Step 2: Search YouTube with the refined query
       const r=await ytSearch(q,YOUTUBE_KEY,4);
       if(!ac.signal.aborted){setYtResults(r);setYtLoading(false);}
     },1800);
-    // ── AI insight ──
     if(GEMINI_KEY&&html.replace(/<[^>]+>/g,"").length>100){setTimeout(async()=>{const r=await geminiAnalyze(html,"Most important takeaway? One sentence.",GEMINI_KEY);setAiInsight(r);},3500);}
-  },[activeNote]);
+  },[activeNote,parseSections]);
 
   const acceptGhost=useCallback(()=>{setGhostData(null);},[]);
 
-  const selectNote=id=>{setActiveNote(id);setViewMode(null);setGhostData(null);setYtResults([]);setAiInsight(null);setPage("notes");};
+  const selectNote=id=>{setActiveNote(id);setViewMode(null);setGhostData(null);setYtResults([]);setAiInsight(null);setPage("notes");
+    // Auto-set active folder/subfolder
+    const loc=findNoteLocation(folders,id);
+    if(loc){setActiveFolder(loc.root.id);if(loc.sub)setActiveSubfolder(loc.sub.id);}
+  };
   const selectParent=id=>{setViewMode("parent:"+id);setActiveNote(id);setPage("notes");};
-  const selectFolderView=fid=>{setViewMode("folder:"+fid);setPage("notes");};
-  const createNote=(title,fid)=>{const id=`n_${Date.now()}`;setNotes(p=>({...p,[id]:{title,content:"",created:new Date().toISOString().slice(0,10)}}));setFolders(p=>p.map(f=>f.id===fid?{...f,notes:[...f.notes,id]}:f));selectNote(id);};
-  const createFolder=name=>{setFolders(p=>[...p,{id:`f_${Date.now()}`,name,notes:[]}]);};
+  const selectFolderView=fid=>{setViewMode("folder:"+fid);setPage("notes");setActiveSubfolder("");};
+  const selectSubfolderView=subId=>{setViewMode("subfolder:"+subId);setPage("notes");};
+  const createNote=(title,subId,context="",ragFiles=[])=>{
+    const id=`n_${Date.now()}`;
+    setNotes(p=>({...p,[id]:{title,content:"",created:new Date().toISOString().slice(0,10),context,ragFiles}}));
+    setFolders(p=>p.map(f=>({...f,children:(f.children||[]).map(sub=>sub.id===subId?{...sub,notes:[...sub.notes,id]}:sub)})));
+    selectNote(id);
+  };
+  const createFolder=name=>{setFolders(p=>[...p,{id:`f_${Date.now()}`,name,children:[]}]);};
+  const createSubfolder=(rootId,name)=>{const sid=`sf_${Date.now()}`;setFolders(p=>p.map(f=>f.id===rootId?{...f,children:[...(f.children||[]),{id:sid,name,notes:[]}]}:f));};
   const addLesson=(pid,title)=>{const id=`${pid}_l${Date.now()}`;setNotes(p=>{const pn=p[pid];return{...p,[pid]:{...pn,children:[...(pn.children||[]),id]},[id]:{title,cat:pn.cat,created:new Date().toISOString().slice(0,10),parent:pid,content:""}};});};
   const addTopic=nt=>{const tid=nt.tn;if(!notes[tid])return;setNotes(p=>({...p,[tid]:{...p[tid],content:(p[tid].content||"")+`<h3 style="color:var(--t-blue)">${nt.topic}</h3><p>${nt.desc}</p><p><a href="${nt.video}" target="_blank" style="color:var(--t-a2)">Watch \u2192</a></p>`}}));selectNote(tid);};
   const handleShowFiles=()=>{const sel=window.getSelection()?.toString()||"";setFileSearch(sel);setShowFiles(true);setShowAI(false);};
 
-  const folderName=folders.find(f=>f.notes.includes(activeNote)||f.notes.some(nid=>notes[nid]?.children?.includes(activeNote)))?.name||"";
+  // Folder/subfolder breadcrumb
+  const loc=findNoteLocation(folders,activeNote);
+  const folderName=loc?`${loc.root.name}${loc.sub?" / "+loc.sub.name:""}`:"";
 
   // Build combined view items
   let combinedTitle="",combinedItems=[],combinedParentId=null;
   if(viewMode?.startsWith("parent:")){
     const pid=viewMode.slice(7);const pn=notes[pid];
     if(pn?.children){combinedTitle=pn.title;combinedParentId=pid;combinedItems=(pn.children||[]).map(id=>({id,...notes[id]})).filter(Boolean).sort((a,b)=>(a.created||"").localeCompare(b.created||""));}
+  }else if(viewMode?.startsWith("subfolder:")){
+    const subId=viewMode.slice(10);
+    const info=findSubfolder(folders,subId);
+    if(info?.sub){combinedTitle=info.sub.name;
+      (info.sub.notes||[]).forEach(nid=>{const n=notes[nid];if(!n)return;
+        if(n.children){n.children.forEach(cid=>{if(notes[cid])combinedItems.push({id:cid,...notes[cid]});});}
+        else if(!n.parent){combinedItems.push({id:nid,...n});}
+      });combinedItems.sort((a,b)=>(a.created||"").localeCompare(b.created||""));}
   }else if(viewMode?.startsWith("folder:")){
     const fid=viewMode.slice(7);const folder=folders.find(f=>f.id===fid);
     if(folder){combinedTitle=folder.name;
-      folder.notes.forEach(nid=>{const n=notes[nid];if(!n)return;
+      getAllFolderNoteIds(folder).forEach(nid=>{const n=notes[nid];if(!n)return;
         if(n.children){n.children.forEach(cid=>{if(notes[cid])combinedItems.push({id:cid,...notes[cid]});});}
         else if(!n.parent){combinedItems.push({id:nid,...n});}
       });combinedItems.sort((a,b)=>(a.created||"").localeCompare(b.created||""));}
   }
 
+  // Current note sections for confidence panel
+  const curSections=topicSections[activeNote]||[];
+
   return(<div style={S.app}>
-    {/* Hero-style radial gradient background — same as landing page */}
     <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0}}>
       <div style={{position:"absolute",top:"10%",left:"35%",width:1000,height:800,background:"radial-gradient(circle,rgba(102,126,234,0.07) 0%,transparent 65%)"}}/>
       <div style={{position:"absolute",bottom:"15%",right:"10%",width:600,height:600,background:"radial-gradient(circle,rgba(118,75,162,0.05) 0%,transparent 65%)"}}/>
     </div>
-    <Sidebar folders={folders} notes={notes} activeNote={activeNote} activeFolder={activeFolder}
-      onSelect={selectNote} onSelectFolder={setActiveFolder} onCreate={createNote} onCreateFolder={createFolder} onSelectParent={selectParent} onSelectFolderView={selectFolderView}/>
+    {showNewNoteModal&&<NewNoteModal folders={folders} activeFolder={activeFolder} activeSubfolder={activeSubfolder} onClose={()=>setShowNewNoteModal(false)} onCreate={createNote}/>}
+    <Sidebar folders={folders} notes={notes} activeNote={activeNote} activeFolder={activeFolder} activeSubfolder={activeSubfolder}
+      onSelect={selectNote} onSelectFolder={setActiveFolder} onSelectSubfolder={setActiveSubfolder} onCreateFolder={createFolder} onCreateSubfolder={createSubfolder} onSelectParent={selectParent} onSelectFolderView={selectFolderView} onSelectSubfolderView={selectSubfolderView} onOpenNewNote={()=>setShowNewNoteModal(true)}/>
     <div style={S.main}>
       <div style={S.topBar}>
         <button className="tab-btn" style={S.tabBtn(page==="notes")} onClick={()=>setPage("notes")}>Notes</button>
-        <button className="tab-btn" style={S.tabBtn(page==="insights")} onClick={()=>setPage("insights")}>Insights</button>
+        <button className="tab-btn" style={S.tabBtn(page==="insights")} onClick={()=>{setPage("insights");setInsightsFolder(activeFolder);}}>Insights</button>
         <button className="tab-btn" style={S.tabBtn(page==="links")} onClick={()=>setPage("links")}>Links</button>
         <div style={{flex:1}}/>
         <button onClick={()=>{document.body.classList.add("theme-transition");setIsDark(d=>!d);setTimeout(()=>document.body.classList.remove("theme-transition"),400);}} style={{padding:"6px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#94a3b8",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginRight:4,transition:"all 0.2s ease"}}>{isDark?"Light":"Dark"}</button>
@@ -2164,13 +2727,41 @@ function NotiqApp(){
       {page==="notes"&&viewMode&&<CombinedView title={combinedTitle} items={combinedItems} onSelect={selectNote} onAddLesson={t=>combinedParentId&&addLesson(combinedParentId,t)} parentId={combinedParentId} onChangeNote={(id,html)=>setNotes(p=>({...p,[id]:{...p[id],content:html}}))}/>}
       {page==="notes"&&!viewMode&&active&&(
         <div style={{display:"flex",flex:1,overflow:"hidden"}}>
-          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",padding:"16px 24px"}}>
-            <div style={{marginBottom:8}}>
-              <span style={{fontSize:11,color:T.txt2,letterSpacing:"0.3px"}}>{folderName} / {active.created}</span>
-              {active.parent&&<span style={{fontSize:11,color:"#667eea",marginLeft:8,cursor:"pointer",transition:"opacity 0.15s"}} onClick={()=>selectParent(active.parent)}>{"\u2190"} {notes[active.parent]?.title}</span>}
-              <h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:22,margin:"4px 0",color:"#e2e8f0",fontWeight:800,letterSpacing:"-0.5px"}}>{active.title}</h2>
+          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",padding:"18px 28px"}}>
+            <div style={{marginBottom:10}}>
+              <span style={{fontSize:12,color:T.txt2,letterSpacing:"0.3px"}}>{folderName} / {active.created}</span>
+              {active.parent&&<span style={{fontSize:12,color:"#667eea",marginLeft:8,cursor:"pointer",transition:"opacity 0.15s"}} onClick={()=>selectParent(active.parent)}>{"\u2190"} {notes[active.parent]?.title}</span>}
+              <h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:"6px 0",color:"#e2e8f0",fontWeight:800,letterSpacing:"-0.5px"}}>{active.title}</h2>
+              {active.context&&<div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span style={{fontSize:11,color:"#667eea"}}>RAG context attached</span>
+                {active.ragFiles?.length>0&&<span style={{fontSize:10,color:"#64748b"}}>({active.ragFiles.length} file{active.ragFiles.length!==1?"s":""})</span>}
+              </div>}
             </div>
-            <RichEditor key={activeNote} content={active.content} onChange={handleChange} ghostData={ghostData} onAcceptGhost={acceptGhost} noteId={activeNote} loading={ghostLoading} onShowFiles={handleShowFiles}/>
+            <RichEditor key={activeNote} content={active.content} onChange={handleChange} ghostData={ghostData} onAcceptGhost={acceptGhost} noteId={activeNote} loading={ghostLoading} onShowFiles={handleShowFiles} sectionColors={SECTION_COLORS}/>
+            {/* Topic Sections with Confidence Scores */}
+            {curSections.length>0&&<div style={{padding:"10px 0",borderTop:"1px solid rgba(255,255,255,0.06)",marginTop:8}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#667eea",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8,fontFamily:"'JetBrains Mono',monospace"}}>Topics & Confidence</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                {curSections.map((sec,i)=>{const score=confidence[`${activeNote}:${i}`]||0;const c=SECTION_COLORS[i%SECTION_COLORS.length];return(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",borderRadius:10,background:c.bg,border:`1px solid ${c.border}33`,flex:"1 1 auto",minWidth:180}}>
+                    <div style={{width:4,height:28,borderRadius:2,background:c.border,flexShrink:0}}/>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:11,fontWeight:600,color:"#e2e8f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sec.title}</div>
+                      <div style={{display:"flex",gap:2,marginTop:3}}>
+                        {[1,2,3,4,5,6,7,8,9,10].map(n=>(
+                          <button key={n} onClick={()=>setConfidenceScore(activeNote,i,n)} style={{width:16,height:16,borderRadius:3,border:"none",cursor:"pointer",fontSize:8,fontWeight:700,
+                            background:n<=score?(score>=7?"rgba(34,197,94,0.3)":score>=4?"rgba(245,158,11,0.3)":"rgba(255,92,92,0.3)"):"rgba(255,255,255,0.05)",
+                            color:n<=score?(score>=7?"#22c55e":score>=4?"#f59e0b":"#ff5c5c"):"#64748b",
+                            transition:"all 0.15s"}}>{n}</button>
+                        ))}
+                      </div>
+                    </div>
+                    {score>0&&<span style={{fontSize:16,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",color:score>=7?"#22c55e":score>=4?"#f59e0b":"#ff5c5c"}}>{score}</span>}
+                  </div>
+                );})}
+              </div>
+            </div>}
           </div>
           {showFiles&&<FilePanel files={uploadedFiles} onUpload={f=>setUploadedFiles(p=>[...p,f])} onClose={()=>{setShowFiles(false);setShowAI(true);}} searchText={fileSearch}/>}
           {showAI&&!showFiles&&!showTransform&&<SugPanel videos={videos} ytResults={ytResults} knowledge={knowledge} aiInsight={aiInsight} loadingYT={ytLoading}/>}
@@ -2182,7 +2773,7 @@ function NotiqApp(){
         <p style={{color:"#94a3b8",fontSize:15,lineHeight:1.6,margin:"0 0 8px"}}>Select a note from the sidebar or create a new one to get started.</p>
         <p style={{color:"#64748b",fontSize:12}}>Your AI-powered writing companion is ready.</p>
       </div></div>}
-      {page==="insights"&&<InsightsPage notes={notes} knowledge={knowledge} onAddTopic={addTopic} geminiKey={GEMINI_KEY}/>}
+      {page==="insights"&&<InsightsPage notes={notes} folders={folders} knowledge={knowledge} onAddTopic={addTopic} geminiKey={GEMINI_KEY} topicSections={topicSections} confidence={confidence} insightsFolder={insightsFolder} setInsightsFolder={setInsightsFolder}/>}
       {page==="links"&&<LinksPage notes={notes} geminiKey={GEMINI_KEY} onSelectNote={selectNote}/>}
     </div>
   </div>);
