@@ -10,7 +10,7 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* fallback until JS injects theme */
-  --t-bg: #0a0a0a;
+  --t-bg: #08090d;
 }
 
 body {
@@ -35,3 +35,204 @@ button {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }
 }
+
+/* ── Landing page animations ── */
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(60px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-60px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes ghostAppear {
+  0% { opacity: 0; }
+  30% { opacity: 0.6; }
+  100% { opacity: 0.35; }
+}
+
+@keyframes cardSlide {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.landing-body {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scroll-behavior: smooth;
+}
+
+.landing-section {
+  opacity: 0;
+  animation: fadeUp 0.8s ease forwards;
+}
+
+.landing-section:nth-child(2) { animation-delay: 0.15s; }
+.landing-section:nth-child(3) { animation-delay: 0.3s; }
+.landing-section:nth-child(4) { animation-delay: 0.45s; }
+.landing-section:nth-child(5) { animation-delay: 0.6s; }
+.landing-section:nth-child(6) { animation-delay: 0.75s; }
+
+.hero-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 60%, #667eea 100%);
+  background-size: 300% 300%;
+  animation: gradientShift 6s ease infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.cta-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.35);
+}
+
+.cta-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.cta-btn:hover::after {
+  opacity: 1;
+}
+
+.feature-card {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(102, 126, 234, 0.3);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+
+/* ── App UI: hover & focus states ── */
+
+/* Custom scrollbars */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+
+/* Sidebar note buttons */
+.note-btn { transition: all 0.15s ease !important; }
+.note-btn:hover { background: rgba(102,126,234,0.08) !important; color: #e2e8f0 !important; }
+
+/* Toolbar buttons */
+.tool-btn { transition: all 0.15s ease !important; }
+.tool-btn:hover { background: rgba(255,255,255,0.06) !important; color: #e2e8f0 !important; }
+.tool-btn:active { transform: scale(0.95); }
+
+/* Tab buttons */
+.tab-btn { transition: all 0.2s ease !important; }
+.tab-btn:hover { background: rgba(102,126,234,0.06) !important; color: #94a3b8 !important; }
+
+/* Input focus glow */
+.nq-input:focus {
+  border-color: rgba(102,126,234,0.4) !important;
+  box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+}
+
+/* Glass cards hover */
+.glass-card { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.glass-card:hover {
+  border-color: rgba(255,255,255,0.12);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+/* Video/resource cards */
+.res-card { transition: all 0.2s ease !important; }
+.res-card:hover {
+  border-color: rgba(102,126,234,0.25) !important;
+  background: rgba(255,255,255,0.04) !important;
+  transform: translateY(-1px);
+}
+
+/* Gradient buttons hover lift */
+.grad-btn { transition: all 0.2s ease !important; position: relative; overflow: hidden; }
+.grad-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(102,126,234,0.3); }
+.grad-btn:active { transform: translateY(0) scale(0.98); }
+
+/* Stat cards */
+.stat-card { transition: all 0.25s ease; }
+.stat-card:hover {
+  border-color: rgba(102,126,234,0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+/* Flashcard flip */
+.flash-card { transition: all 0.3s cubic-bezier(0.4,0,0.2,1) !important; }
+.flash-card:hover { border-color: rgba(102,126,234,0.2); }
+
+/* Quiz option buttons */
+.quiz-opt { transition: all 0.15s ease !important; }
+.quiz-opt:hover:not(:disabled) {
+  background: rgba(102,126,234,0.08) !important;
+  border-color: rgba(102,126,234,0.3) !important;
+}
+
+/* Folder titles */
+.folder-title { transition: all 0.15s ease !important; }
+.folder-title:hover { color: #94a3b8 !important; }
+
+/* Theme toggle smooth transition */
+body, #root {
+  transition: background 0.4s ease, color 0.3s ease;
+}
+
+/* Smooth color transitions on theme switch */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-duration: 0s;
+}
+.theme-transition *, .theme-transition *::before, .theme-transition *::after {
+  transition-duration: 0.3s !important;
+  transition-timing-function: ease !important;
+}
+
