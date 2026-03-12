@@ -86,15 +86,87 @@ const INIT_NOTES = {
   x1:{title:"Birthdays & Gifts",cat:"social",created:"2026-02-11",content:"<table><tr><th>Person</th><th>Date</th><th>Idea</th></tr><tr><td>Mom</td><td>Mar 12</td><td>Garden tools</td></tr><tr><td>Carlos</td><td>Apr 3</td><td>PS5 controller</td></tr><tr><td>Sarah</td><td>Feb 28</td><td>Cookbook</td></tr></table>"},
   x2:{title:"Journal — Feb Wk2",cat:"social",created:"2026-02-16",content:"<p><strong>Mon:</strong> Aced finance quiz — confident</p><p><strong>Tue:</strong> Stressed ML</p><p><strong>Wed:</strong> Coffee Sarah, better</p><p><strong>Thu:</strong> Gym PR — happy</p><p><strong>Fri:</strong> Out with Carlos, tired</p><p><strong>Sat:</strong> Movies, content</p><p><strong>Sun:</strong> Planned week, motivated</p>"},
 };
-const INIT_REVIEWS = [{cat:"health",item:"Chicken Stir-Fry",rating:4,likes:["quick","high protein"],dislikes:["too salty"],date:"2026-02-10"},{cat:"health",item:"Leg Day",rating:5,likes:["strength gains"],dislikes:[],date:"2026-02-14"}];
 
 
 // ══════════════════════════════════════════════════════════════
 // SECTION 3: AI ENGINES (Gemini + YouTube + fallbacks)
 // ══════════════════════════════════════════════════════════════
-async function geminiComplete(ctx,key){if(!key)return null;try{const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"You are a copilot for note-taking. Suggest a concise continuation (4-8 lines). Only output the completion.\n\nNotes:\n"+ctx+"\n\nCompletion:"}]}],generationConfig:{maxOutputTokens:300,temperature:0.7}})});const d=await r.json();return d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}catch(e){return null;}}
-async function geminiAnalyze(content,q,key){if(!key)return null;try{const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"Notes:\n"+content.replace(/<[^>]+>/g,"")+"\n\n"+q+"\nBe concise (3-5 sentences)."}]}],generationConfig:{maxOutputTokens:200,temperature:0.5}})});const d=await r.json();return d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}catch(e){return null;}}
+const GEMINI_URL=k=>`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${k}`;
+const geminiCall=async(prompt,key,opts={},signal)=>{
+  if(!key)return null;
+  try{
+    const r=await fetch(GEMINI_URL(key),{method:"POST",signal,headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:300,temperature:0.3,...opts}})});
+    if(signal?.aborted)return null;const d=await r.json();
+    return d?.candidates?.[0]?.content?.parts?.[0]?.text||null;
+  }catch(e){return null;}
+};
+
+// ── Copilot-style autocomplete ──
+async function geminiComplete(ctx,meta,key,signal){
+  return geminiCall(
+    `You are an intelligent autocomplete engine for a note-taking app, similar to GitHub Copilot. Predict what the user will type next.\n\n`+
+    `Note title: "${meta.title}"\n\n`+
+    `Current content (end of note):\n${ctx}\n\n`+
+    `Rules:\n`+
+    `- Output ONLY the continuation text — no explanations, no quotes, no prefixes like "Here's..."\n`+
+    `- Continue from EXACTLY where the text ends, do not repeat any existing text\n`+
+    `- Match the writing style, formatting, and structure already used\n`+
+    `- If using bullet points (- or *), continue the list naturally\n`+
+    `- If using numbered items, continue the numbering\n`+
+    `- Be specific and knowledgeable about the subject matter\n`+
+    `- Suggest 1-4 lines maximum\n`+
+    `- If the last line is incomplete, complete it first then optionally add more`,
+    key,{maxOutputTokens:120,temperature:0.15,stopSequences:["\n\n\n"]},signal
+  );
+}
+
+// ── Note analysis ──
+async function geminiAnalyze(content,q,key,signal){
+  return geminiCall("Notes:\n"+content.replace(/<[^>]+>/g,"")+"\n\n"+q+"\nBe concise (3-5 sentences).",key,{maxOutputTokens:200,temperature:0.5},signal);
+}
+
+// ── YouTube search ──
 async function ytSearch(query,key,max=3){if(!key)return[];try{const r=await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=${max}&key=${key}`);const d=await r.json();if(!d.items)return[];return d.items.map(i=>({t:i.snippet.title,ch:i.snippet.channelTitle,thumb:i.snippet.thumbnails?.medium?.url||"",url:`https://www.youtube.com/watch?v=${i.id.videoId}`,ty:"youtube"}));}catch(e){return[];}}
+
+// ── LLM-powered YouTube query extraction (LLM → API pipeline) ──
+async function geminiExtractTopic(content,key,signal){
+  const plain=content.replace(/<[^>]+>/g,"").slice(-800);
+  if(plain.length<30)return null;
+  return geminiCall(
+    `Given these notes, extract the single most specific learning topic the user is currently writing about. Output ONLY a short YouTube search query (3-6 words), nothing else. No quotes.\n\n${plain}`,
+    key,{maxOutputTokens:25,temperature:0.1},signal
+  );
+}
+
+// ── Entity extraction for knowledge graph (multi-call LLM) ──
+async function geminiExtractEntities(noteTitle,noteContent,key){
+  if(!key||!noteContent.trim())return null;
+  const plain=noteContent.replace(/<[^>]+>/g,"").slice(0,1500);
+  const raw=await geminiCall(
+    `Analyze this note and extract key concepts.\n\nNote: "${noteTitle}"\n${plain}\n\n`+
+    `Return ONLY valid JSON: {"concepts":["concept1","concept2"],"summary":"one sentence summary"}\n`+
+    `Rules: 3-8 lowercase concepts (specific topics/techniques/entities). One-sentence summary. JSON only, no markdown.`,
+    key,{maxOutputTokens:200,temperature:0.1}
+  );
+  if(!raw)return null;
+  try{const m=raw.match(/\{[\s\S]*\}/);return m?JSON.parse(m[0]):null;}catch{return null;}
+}
+
+// ── Note transformer (structured JSON output → multi-format rendering) ──
+async function geminiTransformNote(noteTitle,noteContent,format,key){
+  if(!key)return null;
+  const plain=noteContent.replace(/<[^>]+>/g,"").slice(0,2000);
+  const prompts={
+    quiz:`Create a quiz. Return ONLY valid JSON:\n{"questions":[{"q":"question","options":["A","B","C","D"],"answer":0,"explanation":"why"}]}\nGenerate 4-6 questions. "answer" is 0-based index of correct option.`,
+    summary:`Create a structured summary. Return ONLY valid JSON:\n{"title":"title","keyPoints":["point1","point2"],"details":"2-3 sentence elaboration","connections":["related topic 1","related topic 2"]}`,
+    flashcards:`Create flashcards for studying. Return ONLY valid JSON:\n{"cards":[{"front":"question or term","back":"answer or definition"}]}\nGenerate 5-8 flashcards covering key concepts.`,
+    mindmap:`Create a mind map. Return ONLY valid JSON:\n{"root":"central topic","branches":[{"label":"branch","children":["sub1","sub2"]}]}\n3-5 branches with 2-4 children each.`
+  };
+  const raw=await geminiCall(`Note: "${noteTitle}"\n\n${plain}\n\n${prompts[format]}`,key,{maxOutputTokens:800,temperature:0.3});
+  if(!raw)return null;
+  try{const m=raw.match(/\{[\s\S]*\}/);return m?JSON.parse(m[0]):null;}catch{return null;}
+}
 
 const GHOST_DB = [
   // ML concepts
@@ -172,11 +244,6 @@ function calcKnow(notes){const t=Object.values(notes).filter(n=>n.cat==="study")
 const NXT={quantum_computing:[{topic:"Quantum Error Correction",desc:"Essential for practical quantum computers",video:"https://www.youtube.com/results?search_query=quantum+error+correction",tn:"s1"},{topic:"Quantum Machine Learning",desc:"Intersection of QC and ML",video:"https://www.youtube.com/results?search_query=quantum+machine+learning",tn:"s1"}],machine_learning:[{topic:"Transformers & Attention",desc:"Foundation of modern NLP / LLMs",video:"https://www.youtube.com/results?search_query=transformer+attention",tn:"s2"},{topic:"Reinforcement Learning",desc:"Agents, rewards, and policies",video:"https://www.youtube.com/results?search_query=reinforcement+learning",tn:"s2"},{topic:"MLOps & Deployment",desc:"Taking models to production",video:"https://www.youtube.com/results?search_query=mlops+deployment",tn:"s2"}],finance:[{topic:"Monte Carlo Simulation",desc:"Risk analysis and option pricing",video:"https://www.youtube.com/results?search_query=monte+carlo+finance",tn:"s3"},{topic:"LBO Modeling",desc:"Leveraged buyout valuation",video:"https://www.youtube.com/results?search_query=lbo+model",tn:"s3"}]};
 function getNextTopics(k){const r=[];for(const[key,info]of Object.entries(k)){if(info.pct<85&&NXT[key])for(const nt of NXT[key])r.push({...nt,subject:info.name,curPct:info.pct});}return r.slice(0,5);}
 
-// --- 3E: Parsers ---
-function parseCals(t){const p=t.replace(/<[^>]+>/g,"");const d={};for(const l of p.split("\n")){const m=l.match(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)[:\s]/i);if(m){const c=[...l.matchAll(/(\d+)\s*cal/gi)].map(x=>parseInt(x[1]));if(c.length)d[m[1]]=c.reduce((a,b)=>a+b,0);}}return d;}
-function parseBudget(t){const p=t.replace(/<[^>]+>/g,"");let inc=0;const exp={};const goals=[];for(const l of p.split("\n")){const ll=l.trim().toLowerCase();const im=ll.match(/income[:\s]*(\d+)/);if(im){inc=parseInt(im[1]);continue;}if(ll.startsWith("goal")){goals.push(l.trim());continue;}const em=ll.match(/^([a-z\s]+)[:\s]+(\d+)/);if(em&&!em[1].includes("income")&&!em[1].includes("goal"))exp[em[1].trim().replace(/\b\w/g,c=>c.toUpperCase())]=parseInt(em[2]);}return{income:inc,expenses:exp,goals,total:Object.values(exp).reduce((a,b)=>a+b,0)};}
-function scoreIdea(t){const c=t.replace(/<[^>]+>/g,"").toLowerCase();const n=Math.min(10,3+["unique","novel","innovative","disrupt"].filter(w=>c.includes(w)).length*2);const f=Math.min(10,4+["mvp","prototype","simple","api","build"].filter(w=>c.includes(w)).length);const m=Math.min(10,2+["market","500k","million","restaurant","revenue","saas"].filter(w=>c.includes(w)).length);return{novelty:n,feasibility:f,market:m,overall:((n+f+m)/3).toFixed(1)};}
-function parseMoods(t){const MW={great:5,amazing:5,happy:5,motivated:5,confident:5,aced:5,good:4,fun:4,better:4,content:4,organized:4,okay:3,lazy:3,tired:2,stressed:2,bad:1,sad:1};const p=t.replace(/<[^>]+>/g,"");const d=[];for(const l of p.split("\n")){const dm=l.match(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\w*/i);if(dm){let mood=3;for(const[w,s]of Object.entries(MW))if(l.toLowerCase().includes(w)){mood=s;break;}d.push({day:dm[0],mood});}}return d;}
 
 
 
@@ -219,11 +286,12 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
   useEffect(()=>{
     const old=ref.current?.querySelector("#nt-ghost");if(old)old.remove();
     if(!ghostData||!ref.current)return;
-    const text=(typeof ghostData==="string"?ghostData:ghostData.ghost).split("\n").filter(l=>l.trim()).slice(0,2).join("\n");
+    const text=(typeof ghostData==="string"?ghostData:ghostData.ghost).split("\n").filter(l=>l.trim()).slice(0,4).join("\n");
     const sel=window.getSelection();
     if(!sel||!sel.rangeCount||!ref.current.contains(sel.anchorNode))return;
     const ghost=document.createElement("span");ghost.id="nt-ghost";ghost.setAttribute("contenteditable","false");
-    ghost.textContent=text;ghost.style.cssText="color:rgba(122,191,234,.5);pointer-events:none;user-select:none;white-space:pre-wrap;font-style:italic;";
+    ghost.textContent=text;ghost.style.cssText="color:rgba(122,191,234,.45);pointer-events:none;user-select:none;white-space:pre-wrap;font-style:italic;animation:ghostIn .2s ease;";
+    if(!document.getElementById("nt-ghost-anim")){const st=document.createElement("style");st.id="nt-ghost-anim";st.textContent="@keyframes ghostIn{from{opacity:0}to{opacity:1}}";document.head.appendChild(st);}
     const r=sel.getRangeAt(0).cloneRange();r.collapse(false);r.insertNode(ghost);
     const nr=document.createRange();nr.setStartBefore(ghost);nr.collapse(true);
     sel.removeAllRanges();sel.addRange(nr);
@@ -245,6 +313,7 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
       }
     }
     if(e.key==="Tab")e.preventDefault();
+    if(e.key==="Escape"){const g=ref.current?.querySelector("#nt-ghost");if(g){g.remove();onAcceptGhost();}}
   },[onChange,onAcceptGhost]);
   // Drag-to-move video blocks already in editor
   const handleBlockDragStart=useCallback(e=>{
@@ -310,7 +379,7 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
       <div style={{flex:1,overflowY:"auto",position:"relative"}}>
         <div ref={ref} contentEditable suppressContentEditableWarning onInput={onInput} onKeyDown={onKey} style={S.editor}/>
         {loading&&<div style={{position:"absolute",bottom:6,right:12,fontSize:10,color:T.a2,fontFamily:"'JetBrains Mono',monospace",opacity:.6,pointerEvents:"none",background:"rgba(0,0,0,.3)",padding:"2px 7px",borderRadius:5}}>AI thinking…</div>}
-        {ghostData&&!loading&&<div style={{position:"absolute",bottom:6,left:18,fontSize:10,color:T.txt2,fontFamily:"'JetBrains Mono',monospace",opacity:.5,pointerEvents:"none"}}>TAB to accept</div>}
+        {ghostData&&!loading&&<div style={{position:"absolute",bottom:6,left:18,fontSize:10,color:T.txt2,fontFamily:"'JetBrains Mono',monospace",opacity:.5,pointerEvents:"none"}}>TAB to accept · ESC to dismiss</div>}
       </div>
     </div>
   );
@@ -416,7 +485,7 @@ function CombinedView({title,items,onSelect,onAddLesson,parentId,onChangeNote}){
 // ══════════════════════════════════════════════════════════════
 // SECTION 9: AI SUGGESTION PANEL
 // ══════════════════════════════════════════════════════════════
-function SugPanel({videos,ytResults,knowledge,cat,prefs,aiInsight,loadingYT}){
+function SugPanel({videos,ytResults,knowledge,aiInsight,loadingYT}){
   const all=ytResults.length>0?ytResults:videos;
   return(<div style={S.sugPanel}>
     <div style={S.sh}>Resources {ytResults.length>0&&<span style={{fontSize:9,color:T.a2}}>(live)</span>}</div>
@@ -427,251 +496,352 @@ function SugPanel({videos,ytResults,knowledge,cat,prefs,aiInsight,loadingYT}){
       <div style={{flex:1,minWidth:0}}><div style={{fontSize:11,fontWeight:600,color:T.txt,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v.t}</div><div style={{fontSize:9,color:T.txt2}}>{v.ch}{v.v?` \u00b7 ${v.v}`:""}</div></div>
     </div></a><div style={{fontSize:9,color:T.txt2,textAlign:"center",opacity:.45,paddingBottom:2}}>drag to pin</div></div>))}
     {aiInsight&&<div style={{marginTop:12}}><div style={S.sh2}>AI Insight</div><div style={{...S.glassAccent,padding:10,fontSize:12,color:T.txt3,lineHeight:1.5}}>{aiInsight}</div></div>}
-    {cat==="study"&&knowledge&&<div style={{marginTop:12}}><div style={S.sh2}>Knowledge</div>{Object.values(knowledge).map((info,i)=>(<div key={i} style={{marginBottom:8}}><div style={{display:"flex",justifyContent:"space-between",fontSize:11}}><span style={{fontWeight:600}}>{info.name}</span><span style={{color:T.a1}}>{info.pct}%</span></div><div style={S.pBar}><div style={S.pFill(info.pct,info.pct>60?T.a1:info.pct>30?T.amber:T.blue)}/></div></div>))}</div>}
-    {prefs&&(prefs.likes?.length>0||prefs.dislikes?.length>0)&&<div style={{marginTop:12}}><div style={S.sh3}>Preferences</div><div style={{display:"flex",flexWrap:"wrap",gap:2}}>{(prefs.likes||[]).map((l,i)=><span key={`l${i}`} style={{padding:"2px 6px",borderRadius:20,fontSize:10,background:"rgba(232,121,168,.1)",color:T.a1}}>{l}</span>)}{(prefs.dislikes||[]).map((d,i)=><span key={`d${i}`} style={{padding:"2px 6px",borderRadius:20,fontSize:10,background:"rgba(255,107,138,.1)",color:T.red}}>{d}</span>)}</div></div>}
+    {knowledge&&<div style={{marginTop:12}}><div style={S.sh2}>Knowledge</div>{Object.values(knowledge).map((info,i)=>(<div key={i} style={{marginBottom:8}}><div style={{display:"flex",justifyContent:"space-between",fontSize:11}}><span style={{fontWeight:600}}>{info.name}</span><span style={{color:T.a1}}>{info.pct}%</span></div><div style={S.pBar}><div style={S.pFill(info.pct,info.pct>60?T.a1:info.pct>30?T.amber:T.blue)}/></div></div>))}</div>}
   </div>);
 }
 
 // ══════════════════════════════════════════════════════════════
-// SECTION 10: SUMMARY
+// SECTION 10: AI INSIGHTS (category-free, Gemini-powered)
 // ══════════════════════════════════════════════════════════════
-function SummaryPage({notes,knowledge,onAddTopic,geminiKey}){
-  const[tab,setTab]=useState("study");const[aiSum,setAiSum]=useState(null);const[ld,setLd]=useState(false);
+function InsightsPage({notes,knowledge,onAddTopic,geminiKey}){
+  const[aiData,setAiData]=useState(null);const[ld,setLd]=useState(false);
+  const allNotes=Object.values(notes).filter(n=>!n.children);
+  const totalWords=allNotes.reduce((s,n)=>s+(n.content||"").replace(/<[^>]+>/g,"").split(/\s+/).filter(Boolean).length,0);
   const nxt=getNextTopics(knowledge);
-  const healthN=Object.values(notes).filter(n=>n.cat==="health");
-  const planN=Object.values(notes).filter(n=>n.cat==="plan");
-  const ideaN=Object.values(notes).filter(n=>n.cat==="idea");
-  const socialN=Object.values(notes).filter(n=>n.cat==="social");
-  const dailyN=Object.values(notes).filter(n=>n.cat==="daily");
-  const calD={};healthN.forEach(n=>Object.assign(calD,parseCals(n.content)));
-  const gen=async()=>{if(!geminiKey)return;setLd(true);const all=Object.values(notes).filter(n=>n.cat===tab).map(n=>(n.content||"").replace(/<[^>]+>/g,"")).join("\n");const r=await geminiAnalyze(all,`Intelligence summary of these ${CM[tab]?.lb} notes. Key insights + 2-3 actionable recommendations.`,geminiKey);setAiSum(r);setLd(false);};
-  // ── Daily analytics ──
-  let dTotal=0,dDone=0;dailyN.forEach(n=>{dTotal+=(n.content.match(/<li>/g)||[]).length;dDone+=(n.content.match(/<s>/g)||[]).length;});
-  const dRate=dTotal?Math.round(dDone/dTotal*100):0;
-  const dScore=Math.min(100,Math.round(dRate*0.7+Math.min(30,dTotal*3)));
-  // ── Study analytics ──
   const kVals=Object.values(knowledge);
   const avgMastery=kVals.length?Math.round(kVals.reduce((s,k)=>s+k.pct,0)/kVals.length):0;
-  const atRisk=kVals.filter(k=>k.pct<50);
-  const weakest=[...kVals].sort((a,b)=>a.pct-b.pct)[0];
-  const totalGaps=kVals.reduce((s,k)=>s+(k.total-k.found),0);
-  const estHours=Math.round(totalGaps*0.5);
-  // ── Health analytics ──
-  const TARGET_CAL=2000;
-  const cals=Object.values(calD);
-  const avgCal=cals.length?Math.round(cals.reduce((a,b)=>a+b,0)/cals.length):0;
-  const energyIdx=cals.length?Math.max(0,Math.round(100-Math.abs(avgCal-TARGET_CAL)/TARGET_CAL*100)):50;
-  const calStd=cals.length>1?Math.round(Math.sqrt(cals.reduce((s,c)=>s+Math.pow(c-avgCal,2),0)/cals.length)):0;
-  const consistScore=Math.max(0,Math.min(100,100-Math.round(calStd/8)));
-  const calEntries=Object.entries(calD);
-  const bestDay=calEntries.length?calEntries.reduce((a,b)=>Math.abs(b[1]-TARGET_CAL)<Math.abs(a[1]-TARGET_CAL)?b:a,calEntries[0]):null;
-  const worstDay=calEntries.length?calEntries.reduce((a,b)=>Math.abs(b[1]-TARGET_CAL)>Math.abs(a[1]-TARGET_CAL)?b:a,calEntries[0]):null;
-  // ── Finance analytics ──
-  let fIncome=0,fSpent=0,fExpenses={};
-  planN.forEach(n=>{const bg=parseBudget(n.content);if(bg.income){fIncome+=bg.income;fSpent+=bg.total;Object.entries(bg.expenses).forEach(([k,v])=>{fExpenses[k]=(fExpenses[k]||0)+v;});}});
-  const burnRate=fIncome?Math.round(fSpent/fIncome*100):0;
-  const fSaved=fIncome-fSpent;
-  const fHealthScore=Math.max(0,Math.min(100,100-burnRate+(fSaved>0?15:0)));
-  const topExp=Object.entries(fExpenses).sort((a,b)=>b[1]-a[1])[0];
-  // ── Ideas analytics ──
-  const ideaScored=ideaN.map(n=>{const sc=scoreIdea(n.content);const wc=n.content.replace(/<[^>]+>/g,"").split(/\s+/).filter(Boolean).length;const mom=Math.min(100,Math.round(wc*3+parseFloat(sc.overall)*6));const opp=Math.round((parseInt(sc.market)+parseInt(sc.novelty))/2*10);return{...n,...sc,mom,opp};}).sort((a,b)=>b.mom-a.mom);
-  // ── Social analytics ──
-  const allMoods=[];socialN.forEach(n=>allMoods.push(...parseMoods(n.content)));
-  const moodAvg=allMoods.length?allMoods.reduce((s,m)=>s+m.mood,0)/allMoods.length:0;
-  const moodStd=allMoods.length>1?Math.sqrt(allMoods.reduce((s,m)=>s+Math.pow(m.mood-moodAvg,2),0)/allMoods.length):0;
-  const moodVolatility=Math.round(moodStd*25);
-  const moodTrend=allMoods.length>=2?allMoods[allMoods.length-1].mood-allMoods[0].mood:0;
-  const moodTrendLbl=moodTrend>0.5?"Improving":moodTrend<-0.5?"Declining":"Stable";
-  const MC2={1:T.red,2:T.amber,3:T.blue,4:T.a1,5:T.cyan};
-  // ── Weekly overall ──
-  const wkScores=[dScore,avgMastery,energyIdx,fHealthScore].filter(s=>s>0);
-  const weekScore=wkScores.length?Math.round(wkScores.reduce((a,b)=>a+b,0)/wkScores.length):0;
-  // ── Reusable mini-components ──
+
+  const gen=async()=>{
+    if(!geminiKey)return;setLd(true);
+    const digest=allNotes.map(n=>`[${n.title}]\n${(n.content||"").replace(/<[^>]+>/g,"").slice(0,600)}`).join("\n---\n");
+    const prompt=`You are an intelligent note-analysis AI. Analyze ALL the following notes holistically. Auto-detect every theme/domain present (e.g. fitness, nutrition, study, finance, travel, ideas, social, journal — whatever is actually there).
+
+Return ONLY valid JSON (no markdown fences) with this exact structure:
+{
+  "themes": [
+    {"name": "Theme Name", "noteCount": 3, "icon": "emoji", "summary": "One-line summary of what these notes cover", "insights": ["insight 1", "insight 2"], "actions": ["action 1"]}
+  ],
+  "crossInsights": ["Cross-theme insight connecting multiple areas"],
+  "weeklyFocus": "One sentence recommendation for this week",
+  "strengths": ["What the user is doing well"],
+  "gaps": ["What's missing or could be improved"]
+}
+
+Notes:
+${digest}`;
+    try{
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:1500,temperature:0.4,responseMimeType:"application/json"}})
+      });
+      const d=await r.json();const txt=d?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if(txt){const parsed=JSON.parse(txt);setAiData(parsed);}
+    }catch(e){console.error("Insights error:",e);}
+    setLd(false);
+  };
+
   const IBox=({icon,text})=>(<div style={{...S.glassAccent,padding:"8px 12px",display:"flex",gap:8,alignItems:"flex-start",marginBottom:6}}><span style={{fontSize:14,flexShrink:0}}>{icon}</span><div style={{fontSize:12,color:T.txt3,lineHeight:1.5}}>{text}</div></div>);
-  const ABox=({text})=>(<div style={{...S.glass,padding:"8px 12px",borderLeft:`3px solid ${T.a2}`,marginBottom:6}}><div style={{fontSize:10,color:T.a2,fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:2}}>Recommended Action</div><div style={{fontSize:12,color:T.txt,lineHeight:1.5}}>{text}</div></div>);
+
   return(<div style={{padding:20,overflowY:"auto",flex:1}}>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-      <h2 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,margin:0}}>Intelligence Summary</h2>
-      {geminiKey&&<button onClick={gen} style={{padding:"5px 14px",borderRadius:6,border:"none",background:"var(--t-btn)",color:"var(--t-btn-txt)",fontSize:11,fontWeight:600,cursor:"pointer"}}>{ld?"...":"AI Deep Dive"}</button>}
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+      <div><h2 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,margin:0}}>Insights</h2><div style={{fontSize:11,color:T.txt2,marginTop:2}}>AI-powered analysis of all your notes</div></div>
+      {geminiKey&&<button onClick={gen} disabled={ld} style={{padding:"6px 16px",borderRadius:8,border:"none",background:"var(--t-btn)",color:"var(--t-btn-txt)",fontSize:12,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>{ld?"Analyzing...":"Generate Insights"}</button>}
     </div>
-    {/* Weekly Intelligence Card */}
-    <div style={{...S.glassAccent,padding:16,marginBottom:16,borderRadius:12}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
-        <div><div style={S.sh}>Weekly Intelligence</div><div style={{fontSize:11,color:T.txt2}}>Cross-domain performance synthesis</div></div>
-        <div style={{textAlign:"right"}}><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:28,fontWeight:700,background:T.grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{weekScore}</div><div style={{fontSize:9,color:T.txt2,textTransform:"uppercase"}}>Overall</div></div>
-      </div>
-      <div style={S.pBar}><div style={S.pFill(weekScore,T.grad)}/></div>
-      <div style={{fontSize:11,color:T.txt2,margin:"6px 0 10px"}}>{weekScore>=75?"Strong week — all systems performing well":weekScore>=50?"Good progress — a few areas need attention":"Focus week — prioritise key gaps to unlock momentum"}</div>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-        <div style={S.statCard}><div style={S.statN}>{dScore}</div><div style={S.statL}>Tasks</div></div>
-        <div style={S.statCard}><div style={S.statN}>{avgMastery}%</div><div style={S.statL}>Mastery</div></div>
-        <div style={S.statCard}><div style={S.statN}>{energyIdx}</div><div style={S.statL}>Energy</div></div>
-        <div style={S.statCard}><div style={S.statN}>{fHealthScore}</div><div style={S.statL}>Finance</div></div>
-        {allMoods.length>0&&<div style={S.statCard}><div style={S.statN}>{moodAvg.toFixed(1)}</div><div style={S.statL}>Mood</div></div>}
-      </div>
+
+    {/* Quick stats */}
+    <div style={{display:"flex",gap:8,marginBottom:16}}>
+      <div style={S.statCard}><div style={S.statN}>{allNotes.length}</div><div style={S.statL}>Notes</div></div>
+      <div style={S.statCard}><div style={S.statN}>{totalWords.toLocaleString()}</div><div style={S.statL}>Words</div></div>
+      <div style={S.statCard}><div style={S.statN}>{kVals.length}</div><div style={S.statL}>Topics Tracked</div></div>
+      <div style={S.statCard}><div style={S.statN}>{avgMastery}%</div><div style={S.statL}>Avg Mastery</div></div>
     </div>
-    {/* Tab nav */}
-    <div style={{display:"flex",gap:3,marginBottom:14,flexWrap:"wrap"}}>{Object.keys(CM).map(c=><button key={c} onClick={()=>{setTab(c);setAiSum(null);}} style={S.tabBtn(tab===c)}>{CM[c].lb}</button>)}</div>
-    {aiSum&&<div style={{...S.glassAccent,padding:14,marginBottom:14}}><div style={S.sh2}>AI Deep Dive</div><div style={{fontSize:13,color:T.txt3,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{aiSum}</div></div>}
-    {/* ── DAILY TASKS ── */}
-    {tab==="daily"&&<div>
-      <div style={{display:"flex",gap:8,marginBottom:12}}>
-        <div style={S.statCard}><div style={S.statN}>{dScore}</div><div style={S.statL}>Productivity Score</div></div>
-        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:dRate>=70?T.a1:dRate>=40?T.amber:T.red}}>{dRate}%</div><div style={S.statL}>Completion Rate</div></div>
-        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.txt3}}>{dDone}/{dTotal}</div><div style={S.statL}>Done / Total</div></div>
-      </div>
-      <div style={S.pBar}><div style={S.pFill(dRate,dRate>=70?T.a1:dRate>=40?T.amber:T.red)}/></div>
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:T.txt2,margin:"3px 0 12px"}}><span>0%</span><span>Target: 80%</span><span>100%</span></div>
-      <IBox icon="↗" text={`${dDone} of ${dTotal} tasks completed this week. ${dTotal-dDone>0?`${dTotal-dDone} remaining.`:""} ${dRate>=80?"Excellent execution — top-quartile productivity.":dRate>=50?"Solid progress — push through the final stretch.":"Below target — try time-blocking remaining tasks into focused 25-min sessions."}`}/>
-      <div style={{...S.glass,padding:"8px 12px",borderLeft:`3px solid ${dTotal-dDone>5?T.red:dTotal-dDone>2?T.amber:T.a1}`,marginBottom:6}}>
-        <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",color:dTotal-dDone>5?T.red:dTotal-dDone>2?T.amber:T.a1,marginBottom:2}}>Risk Alert</div>
-        <div style={{fontSize:12,color:T.txt}}>{dTotal-dDone>5?"High — many tasks pending, ruthless prioritisation required":dTotal-dDone>2?"Medium — a few tasks still outstanding":dTotal-dDone>0?"Low — almost there!":"None — all clear!"}</div>
-      </div>
-      <ABox text={dTotal-dDone>0?`Complete the ${dTotal-dDone} outstanding task${dTotal-dDone>1?"s":""} — focus on the highest-impact items first, defer the rest.`:"All tasks done! Plan next week now to maintain momentum."}/>
-    </div>}
-    {/* ── WORK / STUDY ── */}
-    {tab==="study"&&<div style={{display:"flex",gap:20}}><div style={{flex:2}}>
-      <div style={{display:"flex",gap:8,marginBottom:12}}>
-        <div style={S.statCard}><div style={S.statN}>{avgMastery}%</div><div style={S.statL}>Retention Score</div></div>
-        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:atRisk.length>0?T.amber:T.a1}}>{atRisk.length}</div><div style={S.statL}>At-Risk Topics</div></div>
-        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.txt3}}>{estHours}h</div><div style={S.statL}>To Mastery Est.</div></div>
-      </div>
-      <div style={S.sh}>Knowledge Radar</div>
-      {Object.values(knowledge).map((info,i)=>(<div key={i} style={{...S.glass,padding:12,marginBottom:8}}>
+
+    {/* Knowledge section */}
+    {kVals.length>0&&<div style={{marginBottom:16}}>
+      <div style={S.sh}>Knowledge Tracker</div>
+      {kVals.map((info,i)=>(<div key={i} style={{...S.glass,padding:12,marginBottom:8}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{fontSize:13,fontWeight:600}}>{info.name}</span><span style={{fontSize:12,color:T.a1,fontFamily:"'JetBrains Mono',monospace"}}>{info.pct}%</span></div>
         <div style={S.pBar}><div style={S.pFill(info.pct,info.pct>70?T.a1:info.pct>40?T.amber:T.red)}/></div>
         <div style={{fontSize:11,color:T.txt2,marginTop:2}}>{info.found}/{info.total} concepts covered</div>
-        {info.pct<50&&<div style={{fontSize:10,color:T.amber,marginTop:3}}>Forgetting risk — schedule a review session soon</div>}
         {info.missing.length>0&&<div style={{marginTop:4}}><span style={{fontSize:11,color:T.amber}}>Gaps: </span><span style={{fontSize:11,color:T.txt3}}>{info.missing.join(", ")}</span></div>}
       </div>))}
-      <IBox icon="→" text={`Average mastery: ${avgMastery}%. ${atRisk.length>0?`${atRisk.length} topic${atRisk.length>1?"s":""} below 50% — high forgetting risk.`:"All topics above 50% — good retention baseline."} Estimated ${estHours}h to close remaining concept gaps.`}/>
-      <ABox text={weakest?`Prioritise ${weakest.name} (${weakest.pct}%) — review "${weakest.missing?.[0]||"key concepts"}" first using spaced repetition (20 min sessions, every 2 days).`:"Maintain weekly reviews to prevent knowledge decay."}/>
-    </div><div style={{flex:1}}>
-      <div style={S.sh}>Next Topics</div>
-      {nxt.map((nt,i)=>(<div key={i} style={{...S.glass,padding:10,marginBottom:8}}>
-        <div style={{fontSize:13,fontWeight:600}}>{nt.topic}</div>
-        <div style={{fontSize:11,color:T.txt2,margin:"2px 0 6px"}}>{nt.subject} ({nt.curPct}%)</div>
-        <div style={{display:"flex",gap:5}}><button onClick={()=>onAddTopic(nt)} style={{padding:"3px 9px",borderRadius:6,border:"none",background:"var(--t-btn)",color:"var(--t-btn-txt)",fontSize:11,cursor:"pointer"}}>Add</button><a href={nt.video} target="_blank" rel="noopener noreferrer" style={{padding:"3px 9px",borderRadius:6,border:`1px solid ${T.border}`,color:T.a2,fontSize:11,textDecoration:"none"}}>Watch</a></div>
-      </div>))}
-    </div></div>}
-    {/* ── HEALTH ── */}
-    {tab==="health"&&<div>
-      <div style={{display:"flex",gap:8,marginBottom:12}}>
-        <div style={S.statCard}><div style={S.statN}>{energyIdx}</div><div style={S.statL}>Energy Index</div></div>
-        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:consistScore>=70?T.a1:consistScore>=40?T.amber:T.red}}>{consistScore}</div><div style={S.statL}>Consistency Score</div></div>
-        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.txt3}}>{avgCal||"—"}</div><div style={S.statL}>Avg Cal / Day</div></div>
-      </div>
-      {Object.keys(calD).length>0&&<div style={{display:"flex",gap:6,alignItems:"flex-end",marginBottom:12,height:90,paddingTop:10}}>
-        {Object.entries(calD).map(([d,c])=><div key={d} style={{flex:1,textAlign:"center"}}>
-          <div style={{height:Math.max(8,Math.round(c/18)),background:Math.abs(c-TARGET_CAL)<200?T.a1:Math.abs(c-TARGET_CAL)<400?T.amber:T.red,borderRadius:"5px 5px 0 0"}}/>
-          <div style={{fontSize:9,color:T.txt2,marginTop:2}}>{d.slice(0,3)}</div>
-          <div style={{fontSize:9,color:T.txt3}}>{c}</div>
-        </div>)}
-      </div>}
-      {bestDay&&<div style={{display:"flex",gap:8,marginBottom:12}}>
-        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.a1}}>{bestDay[0]}</div><div style={S.statL}>Best Day</div></div>
-        {worstDay&&worstDay[0]!==bestDay[0]&&<div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.red}}>{worstDay[0]}</div><div style={S.statL}>Needs Work</div></div>}
-        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.amber}}>{calStd>0?`±${calStd}`:"—"}</div><div style={S.statL}>Cal Variance</div></div>
-      </div>}
-      <IBox icon="↗" text={`Average ${avgCal||"—"} cal/day vs ${TARGET_CAL} target. ${energyIdx>=80?"Energy well-balanced — great nutritional discipline.":energyIdx>=60?"Moderate alignment — a few off days pulling the average.":"Significant deviation from target — review meal structure."} Consistency score: ${consistScore}/100 (variance ±${calStd} cal).`}/>
-      <ABox text={consistScore<60?"Aim for consistent calorie intake — meal prepping 2-3 days ahead significantly reduces day-to-day variance.":energyIdx<65?`Adjust portions closer to ${TARGET_CAL} cal/day. ${avgCal>TARGET_CAL?"Consider reducing high-calorie meals on weekends.":"Ensure adequate fuelling, especially on training days."}`:"Great consistency! Focus on meal quality, macro split, and protein targets next."}/>
+      {nxt.length>0&&<><div style={{...S.sh,marginTop:12}}>Suggested Next Topics</div>
+        {nxt.map((nt,i)=>(<div key={i} style={{...S.glass,padding:10,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div><div style={{fontSize:13,fontWeight:600}}>{nt.topic}</div><div style={{fontSize:11,color:T.txt2}}>{nt.subject} ({nt.curPct}%)</div></div>
+          <div style={{display:"flex",gap:5}}><button onClick={()=>onAddTopic(nt)} style={{padding:"3px 9px",borderRadius:6,border:"none",background:"var(--t-btn)",color:"var(--t-btn-txt)",fontSize:11,cursor:"pointer"}}>Add</button><a href={nt.video} target="_blank" rel="noopener noreferrer" style={{padding:"3px 9px",borderRadius:6,border:`1px solid ${T.border}`,color:T.a2,fontSize:11,textDecoration:"none"}}>Watch</a></div>
+        </div>))}</>}
     </div>}
-    {/* ── PLANNING / FINANCE ── */}
-    {tab==="plan"&&<div>
-      <div style={{display:"flex",gap:8,marginBottom:12}}>
-        <div style={S.statCard}><div style={S.statN}>{fHealthScore}</div><div style={S.statL}>Financial Health</div></div>
-        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:burnRate>80?T.red:burnRate>60?T.amber:T.a1}}>{burnRate}%</div><div style={S.statL}>Burn Rate</div></div>
-        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:fSaved>=0?T.a1:T.red}}>{fSaved>=0?"+":""}{fSaved}</div><div style={S.statL}>Net Saved</div></div>
-      </div>
-      {planN.map((n,i)=>{const bg=parseBudget(n.content);if(!bg.income)return null;const rem=bg.income-bg.total;const bRate=Math.round(bg.total/bg.income*100);return <div key={i} style={{marginBottom:16}}>
-        <div style={S.sh}>{n.title}</div>
-        <div style={S.pBar}><div style={S.pFill(bRate,bRate>80?T.red:bRate>60?T.amber:T.a1)}/></div>
-        <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:T.txt2,margin:"3px 0 8px"}}><span>{bRate}% of income spent</span><span style={{color:rem>=0?T.a1:T.red}}>{rem>=0?"Saved: "+rem:"Over by: "+Math.abs(rem)}</span></div>
-        {Object.entries(bg.expenses).sort((a,b)=>b[1]-a[1]).map(([c,a])=><div key={c} style={{marginBottom:5}}>
-          <div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span>{c}</span><span style={{color:T.amber}}>{a} <span style={{fontSize:9,color:T.txt2}}>({Math.round(a/bg.income*100)}%)</span></span></div>
-          <div style={S.pBar}><div style={S.pFill(a/bg.income*100,T.amber)}/></div>
-        </div>)}
-      </div>;})}
-      {topExp&&<IBox icon="→" text={`Top expense: ${topExp[0]} at ${topExp[1]}. Overall burn rate ${burnRate}% of income. ${burnRate>80?"Warning: high spend — review discretionary costs immediately.":burnRate>60?"Moderate spend — small cuts could significantly boost savings.":"Healthy financial discipline — well within budget."}`}/>}
-      <ABox text={burnRate>80?`Reduce discretionary spend urgently. A ${Math.max(0,burnRate-70)}pp reduction brings burn rate to a sustainable 70%.`:burnRate>60?`Good control. Trim ${topExp?.[0]||"top expense"} by 10-15% to boost monthly savings.`:"Excellent! Deploy surplus savings into index funds or grow your emergency buffer."}/>
-    </div>}
-    {/* ── IDEAS ── */}
-    {tab==="idea"&&<div>
-      {ideaScored.length>0&&<div style={{display:"flex",gap:8,marginBottom:12}}>
-        <div style={S.statCard}><div style={S.statN}>{ideaScored[0].mom}</div><div style={S.statL}>Top Momentum</div></div>
-        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.blue}}>{ideaScored[0].opp}</div><div style={S.statL}>Opportunity Score</div></div>
-        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:T.txt3}}>{ideaScored.length}</div><div style={S.statL}>Ideas Tracked</div></div>
+
+    {/* No API key message */}
+    {!geminiKey&&<IBox icon="!" text="Add a Gemini API key in .env to unlock AI-powered insights across all your notes."/>}
+
+    {/* AI Analysis results */}
+    {aiData&&<div>
+      {/* Weekly focus */}
+      {aiData.weeklyFocus&&<div style={{...S.glassAccent,padding:14,marginBottom:14,borderLeft:`3px solid ${T.a1}`}}>
+        <div style={{fontSize:10,color:T.a1,fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:4}}>This Week's Focus</div>
+        <div style={{fontSize:13,color:T.txt,lineHeight:1.5}}>{aiData.weeklyFocus}</div>
       </div>}
-      {ideaScored.map((n,i)=><div key={i} style={{...S.glass,padding:12,marginBottom:8}}>
-        <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-          <div><div style={{fontSize:14,fontWeight:600}}>#{i+1} {n.title}</div><div style={{fontSize:10,color:T.txt2,marginTop:1}}>Created {n.created}</div></div>
-          <div style={{textAlign:"right"}}><div style={{fontFamily:"'JetBrains Mono',monospace",color:T.a1,fontWeight:700,fontSize:16}}>{n.overall}/10</div><div style={{fontSize:9,color:T.txt2}}>Overall</div></div>
+
+      {/* Detected themes */}
+      {aiData.themes&&<div style={{marginBottom:14}}>
+        <div style={S.sh}>Detected Themes</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+          {aiData.themes.map((th,i)=><div key={i} style={{...S.glass,padding:12,flex:"1 1 calc(50% - 4px)",minWidth:200}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+              <div style={{fontSize:14,fontWeight:600}}><span style={{marginRight:6}}>{th.icon}</span>{th.name}</div>
+              <span style={{fontSize:11,color:T.a2,fontFamily:"'JetBrains Mono',monospace"}}>{th.noteCount} note{th.noteCount!==1?"s":""}</span>
+            </div>
+            <div style={{fontSize:12,color:T.txt2,marginBottom:8}}>{th.summary}</div>
+            {th.insights?.map((ins,j)=><div key={j} style={{fontSize:11,color:T.txt3,lineHeight:1.5,paddingLeft:8,borderLeft:`2px solid ${T.border}`,marginBottom:4}}>{ins}</div>)}
+            {th.actions?.map((act,j)=><div key={j} style={{fontSize:11,color:T.a2,marginTop:4}}>→ {act}</div>)}
+          </div>)}
         </div>
-        <div style={{display:"flex",gap:6}}>
-          <div style={{flex:1}}><div style={{fontSize:9,color:T.txt2,marginBottom:2}}>Momentum {n.mom}</div><div style={S.pBar}><div style={S.pFill(n.mom,T.a1)}/></div></div>
-          <div style={{flex:1}}><div style={{fontSize:9,color:T.txt2,marginBottom:2}}>Opportunity {n.opp}</div><div style={S.pBar}><div style={S.pFill(n.opp,T.blue)}/></div></div>
-          <div style={{flex:1}}><div style={{fontSize:9,color:T.txt2,marginBottom:2}}>Feasibility {parseInt(n.feasibility)*10}</div><div style={S.pBar}><div style={S.pFill(parseInt(n.feasibility)*10,T.cyan)}/></div></div>
-        </div>
-      </div>)}
-      {ideaScored.length>0&&<>
-        <IBox icon="↗" text={`${ideaScored.length} idea${ideaScored.length>1?"s":""} tracked. "${ideaScored[0].title}" leads with ${ideaScored[0].mom}/100 momentum. ${ideaScored[0].opp>60?"Strong market opportunity — time to validate with real users.":ideaScored[0].opp>30?"Moderate opportunity — sharpen the market thesis.":"Refocus on the problem statement and target user."}`}/>
-        <ABox text={`Next step for "${ideaScored[0].title}": ${parseInt(ideaScored[0].feasibility)>=7?"Build a lightweight MVP to test your core hypothesis with real users.":parseInt(ideaScored[0].market)>=7?"Run 5 customer discovery interviews to validate the market need.":"Deepen problem analysis — map the pain points and who feels them most."}`}/>
-      </>}
-      {ideaScored.length===0&&<div style={{padding:20,textAlign:"center",color:T.txt2,fontSize:13}}>Add ideas notes to see momentum analytics.</div>}
+      </div>}
+
+      {/* Cross-theme insights */}
+      {aiData.crossInsights?.length>0&&<div style={{marginBottom:14}}>
+        <div style={S.sh}>Cross-Theme Insights</div>
+        {aiData.crossInsights.map((ci,i)=><IBox key={i} icon="↗" text={ci}/>)}
+      </div>}
+
+      {/* Strengths & Gaps */}
+      <div style={{display:"flex",gap:8,marginBottom:14}}>
+        {aiData.strengths?.length>0&&<div style={{flex:1}}>
+          <div style={S.sh}>Strengths</div>
+          {aiData.strengths.map((s,i)=><div key={i} style={{...S.glass,padding:"8px 12px",marginBottom:4,borderLeft:`3px solid ${T.a1}`}}><div style={{fontSize:12,color:T.txt3}}>{s}</div></div>)}
+        </div>}
+        {aiData.gaps?.length>0&&<div style={{flex:1}}>
+          <div style={S.sh}>Areas to Improve</div>
+          {aiData.gaps.map((g,i)=><div key={i} style={{...S.glass,padding:"8px 12px",marginBottom:4,borderLeft:`3px solid ${T.amber}`}}><div style={{fontSize:12,color:T.txt3}}>{g}</div></div>)}
+        </div>}
+      </div>
     </div>}
-    {/* ── SOCIAL ── */}
-    {tab==="social"&&(allMoods.length>0?<div>
-      <div style={{display:"flex",gap:8,marginBottom:12}}>
-        <div style={S.statCard}><div style={S.statN}>{moodAvg.toFixed(1)}/5</div><div style={S.statL}>Avg Mood</div></div>
-        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:moodVolatility>50?T.amber:T.a1}}>{moodVolatility}</div><div style={S.statL}>Volatility</div></div>
-        <div style={S.statCard}><div style={{...S.statN,WebkitTextFillColor:moodTrend>0?T.a1:moodTrend<0?T.red:T.txt3}}>{moodTrendLbl}</div><div style={S.statL}>Trend</div></div>
-      </div>
-      <div style={{display:"flex",gap:4,alignItems:"flex-end",marginBottom:12,height:80}}>
-        {allMoods.map((m,i)=><div key={i} style={{flex:1,textAlign:"center"}}>
-          <div style={{height:m.mood*14,background:MC2[m.mood],borderRadius:"5px 5px 0 0",minHeight:8,transition:"height .3s"}}/>
-          <div style={{fontSize:9,color:T.txt2,marginTop:2}}>{m.day}</div>
-        </div>)}
-      </div>
-      <IBox icon="→" text={`Mood averaged ${moodAvg.toFixed(1)}/5 across ${allMoods.length} data points. Trend: ${moodTrendLbl}. ${moodVolatility>50?"High emotional volatility — identify recurring stress triggers.":"Stable emotional baseline — good mental equilibrium."}`}/>
-      <ABox text={moodTrend<-0.5?"Identify what shifted your mood downward. A quick end-of-day journal entry can surface patterns before they compound.":moodVolatility>50?"Anchor daily routines — consistent sleep, exercise, and one meaningful social interaction per day reduces volatility.":"Mood is in a great place! Capture what's working — these habits are worth protecting."}/>
-      <div style={{...S.glass,padding:12,marginTop:10}}><div style={S.sh2}>Reflection Prompt</div><div style={{fontSize:13,color:T.txt3,lineHeight:1.6,fontStyle:"italic"}}>{moodAvg>=4?"What interactions or activities energised you most this week? How can you do more of them next week?":moodAvg>=3?"What was one moment this week that shifted your mood — positively or negatively? What triggered it?":"What's one small, concrete action you could take tomorrow to improve how you feel?"}</div></div>
-    </div>:<div style={{padding:20,textAlign:"center",color:T.txt2,fontSize:13}}>Add social or journal notes with daily mood entries to see analytics.</div>)}
+
+    {!aiData&&!ld&&geminiKey&&<div style={{textAlign:"center",padding:40,color:T.txt2}}>
+      <div style={{fontSize:32,marginBottom:8}}>✦</div>
+      <div style={{fontSize:13}}>Click "Generate Insights" to analyze all your notes with AI</div>
+      <div style={{fontSize:11,marginTop:4,color:T.txt2}}>Gemini will auto-detect themes, find patterns, and give personalized recommendations</div>
+    </div>}
   </div>);
 }
 
 // ══════════════════════════════════════════════════════════════
-// SECTION 11: REVIEWS (compact)
+// SECTION 12A: KNOWLEDGE GRAPH (multi-call LLM entity extraction)
 // ══════════════════════════════════════════════════════════════
-function ReviewsPage({reviews,preferences,onSubmit}){
-  const[item,setItem]=useState("");const[cat,setCat]=useState("health");const[rating,setRating]=useState(3);const[likes,setLikes]=useState("");const[dislikes,setDislikes]=useState("");
-  const submit=()=>{if(!item.trim())return;onSubmit({cat,item:item.trim(),rating,likes:likes.split(",").map(s=>s.trim()).filter(Boolean),dislikes:dislikes.split(",").map(s=>s.trim()).filter(Boolean),date:new Date().toISOString().slice(0,10)});setItem("");setLikes("");setDislikes("");setRating(3);};
-  const inp={padding:"6px 9px",borderRadius:7,border:`1px solid ${T.border}`,background:T.glass,color:T.txt,fontSize:12,outline:"none",width:"100%",fontFamily:"'Inter',sans-serif"};
+function LinksPage({notes,geminiKey,onSelectNote}){
+  const[links,setLinks]=useState(null);const[loading,setLoading]=useState(false);
+  const[selectedNode,setSelectedNode]=useState(null);const[entities,setEntities]=useState({});
+  const[progress,setProgress]=useState("");
+  const analyze=async()=>{
+    if(!geminiKey)return;setLoading(true);setLinks(null);setEntities({});setSelectedNode(null);
+    const noteList=Object.entries(notes).filter(([_,n])=>!n.children&&(n.content||"").replace(/<[^>]+>/g,"").trim().length>20);
+    const results={};
+    // Multi-call: process notes in batches, extract entities from each
+    for(let i=0;i<noteList.length;i+=4){
+      const batch=noteList.slice(i,i+4);
+      setProgress(`Analyzing ${Math.min(i+4,noteList.length)}/${noteList.length} notes...`);
+      const promises=batch.map(([id,n])=>geminiExtractEntities(n.title,n.content||"",geminiKey).then(r=>({id,result:r})));
+      const batchResults=await Promise.all(promises);
+      batchResults.forEach(({id,result})=>{if(result)results[id]=result;});
+    }
+    setEntities(results);
+    // Post-processing: find shared concepts between every pair of notes
+    const linkMap=[];const ids=Object.keys(results);
+    for(let i=0;i<ids.length;i++){
+      for(let j=i+1;j<ids.length;j++){
+        const a=results[ids[i]].concepts.map(c=>c.toLowerCase());
+        const b=results[ids[j]].concepts.map(c=>c.toLowerCase());
+        const shared=a.filter(c=>b.some(bc=>bc.includes(c)||c.includes(bc)));
+        if(shared.length>0)linkMap.push({from:ids[i],to:ids[j],concepts:shared,strength:shared.length});
+      }
+    }
+    setLinks(linkMap);setLoading(false);setProgress("");
+  };
+  // SVG circular layout
+  const nodeIds=Object.keys(entities);
+  const cx=300,cy=250,radius=Math.min(200,Math.max(120,nodeIds.length*18));
+  const positions={};
+  nodeIds.forEach((id,i)=>{const angle=(2*Math.PI*i)/nodeIds.length-Math.PI/2;positions[id]={x:cx+radius*Math.cos(angle),y:cy+radius*Math.sin(angle)};});
+  const selEnt=selectedNode&&entities[selectedNode];
+  const selNote=selectedNode&&notes[selectedNode];
+  const selLinks=links?.filter(l=>l.from===selectedNode||l.to===selectedNode)||[];
   return(<div style={{padding:20,overflowY:"auto",flex:1}}>
-    <h2 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,margin:"0 0 12px"}}>Reviews</h2>
-    <div style={{...S.glass,padding:14,marginBottom:12}}>
-      <div style={{display:"flex",gap:6,marginBottom:6}}><select value={cat} onChange={e=>setCat(e.target.value)} style={{...inp,width:"auto",cursor:"pointer"}}>{Object.entries(CM).map(([k,v])=><option key={k} value={k}>{v.lb}</option>)}</select><input value={item} onChange={e=>setItem(e.target.value)} placeholder="What?" style={inp}/></div>
-      <div style={{display:"flex",gap:3,marginBottom:6}}>{[1,2,3,4,5].map(n=><button key={n} onClick={()=>setRating(n)} style={{padding:"5px 12px",borderRadius:6,border:"none",cursor:"pointer",fontWeight:700,background:n<=rating?"var(--t-btn)":T.glass,color:n<=rating?"#fff":T.txt2}}>{n}</button>)}</div>
-      <div style={{display:"flex",gap:6,marginBottom:6}}><input value={likes} onChange={e=>setLikes(e.target.value)} placeholder="Liked?" style={inp}/><input value={dislikes} onChange={e=>setDislikes(e.target.value)} placeholder="Disliked?" style={inp}/></div>
-      <button onClick={submit} style={{padding:"7px 18px",borderRadius:7,border:"none",background:"var(--t-btn)",color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer",width:"100%"}}>Submit</button>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+      <div><h2 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,margin:0}}>Knowledge Graph</h2>
+        <div style={{fontSize:11,color:T.txt2}}>AI-discovered connections between your notes</div></div>
+      <button onClick={analyze} disabled={loading||!geminiKey} style={{padding:"6px 16px",borderRadius:7,border:"none",background:"var(--t-btn)",color:"var(--t-btn-txt)",fontSize:12,fontWeight:600,cursor:"pointer",opacity:loading?.6:1}}>
+        {loading?"Analyzing...":links?"Re-analyze":"Build Graph"}</button>
     </div>
-    {[...reviews].reverse().map((r,i)=><div key={i} style={{...S.glass,padding:10}}><div style={{display:"flex",justifyContent:"space-between"}}><div><span style={S.tag(r.cat)}>{CM[r.cat]?.lb}</span><div style={{fontWeight:600,marginTop:2,fontSize:12}}>{r.item}</div></div><span style={{fontFamily:"'JetBrains Mono',monospace",color:T.a1}}>{r.rating}/5</span></div></div>)}
+    {!geminiKey&&<div style={{...S.glass,padding:14,color:T.txt2,fontSize:13}}>Gemini API key required for knowledge graph.</div>}
+    {loading&&<div style={{textAlign:"center",padding:40,color:T.txt2}}>
+      <div style={{fontSize:14,marginBottom:8}}>{progress}</div>
+      <div style={{fontSize:11}}>Extracting concepts with Gemini and finding connections</div>
+      <div style={{...S.pBar,width:200,margin:"12px auto"}}><div style={{height:"100%",borderRadius:7,background:T.grad,animation:"pulse 1.5s ease infinite",width:"60%"}}/></div>
+    </div>}
+    {links&&!loading&&(<>
+      <div style={{display:"flex",gap:8,marginBottom:14}}>
+        <div style={S.statCard}><div style={S.statN}>{nodeIds.length}</div><div style={S.statL}>Notes Analyzed</div></div>
+        <div style={S.statCard}><div style={S.statN}>{links.length}</div><div style={S.statL}>Connections</div></div>
+        <div style={S.statCard}><div style={S.statN}>{[...new Set(links.flatMap(l=>l.concepts))].length}</div><div style={S.statL}>Shared Concepts</div></div>
+      </div>
+      <div style={{display:"flex",gap:14}}>
+        <div style={{...S.glass,padding:0,overflow:"hidden",flex:2}}>
+          <svg width="100%" viewBox="0 0 600 500" style={{display:"block"}}>
+            {links.map((l,i)=>{const f=positions[l.from],t=positions[l.to];if(!f||!t)return null;
+              const isSel=selectedNode&&(l.from===selectedNode||l.to===selectedNode);
+              return(<g key={`l${i}`}>
+                <line x1={f.x} y1={f.y} x2={t.x} y2={t.y} stroke={isSel?"var(--t-a1)":"var(--t-a2)"} strokeWidth={Math.min(3,l.strength)+(isSel?1:0)} strokeOpacity={isSel?.6:.2}/>
+                {isSel&&<text x={(f.x+t.x)/2} y={(f.y+t.y)/2-6} textAnchor="middle" fill="var(--t-a2)" fontSize={9} fontWeight={600}>{l.concepts[0]}</text>}
+              </g>);})}
+            {nodeIds.map(id=>{const pos=positions[id];const note=notes[id];const isSel=selectedNode===id;
+              const conns=links.filter(l=>l.from===id||l.to===id).length;const r=18+conns*3;
+              return(<g key={id} onClick={()=>setSelectedNode(isSel?null:id)} style={{cursor:"pointer"}}>
+                <circle cx={pos.x} cy={pos.y} r={r} fill={"var(--t-a1)"} fillOpacity={isSel?.3:.12} stroke={isSel?"var(--t-a1)":"var(--t-a2)"} strokeWidth={isSel?2.5:1}/>
+                <text x={pos.x} y={pos.y+1} textAnchor="middle" fill="var(--t-txt)" fontSize={9} fontWeight={600}>{(note?.title||"").slice(0,12)}{(note?.title||"").length>12?"\u2026":""}</text>
+                <text x={pos.x} y={pos.y+12} textAnchor="middle" fill="var(--t-txt2)" fontSize={7}>{conns} link{conns!==1?"s":""}</text>
+              </g>);})}
+          </svg>
+        </div>
+        <div style={{flex:1,minWidth:200}}>
+          {selEnt&&selNote?(<div style={{...S.glassAccent,padding:14}}>
+            <div style={{fontSize:14,fontWeight:600,marginBottom:2}}>{selNote.title}</div>
+            
+            <div style={{fontSize:11,color:T.txt2,margin:"8px 0 6px"}}>{selEnt.summary}</div>
+            <div style={S.sh2}>Concepts</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:10}}>
+              {selEnt.concepts.map((c,i)=><span key={i} style={{padding:"2px 8px",borderRadius:20,fontSize:11,background:T.glass,color:"var(--t-a1)",border:`1px solid ${T.border}`}}>{c}</span>)}
+            </div>
+            {selLinks.length>0&&<><div style={S.sh2}>Connected To</div>
+              {selLinks.map((l,i)=>{const oid=l.from===selectedNode?l.to:l.from;return(
+                <div key={i} onClick={()=>setSelectedNode(oid)} style={{...S.glass,padding:8,marginBottom:4,cursor:"pointer",fontSize:12}}>
+                  <span style={{fontWeight:600,color:T.txt}}>{notes[oid]?.title}</span>
+                  <div style={{fontSize:10,color:T.txt2,marginTop:2}}>via <span style={{color:"var(--t-a2)"}}>{l.concepts.join(", ")}</span></div>
+                </div>);})}</>}
+            <button onClick={()=>{onSelectNote(selectedNode);}} style={{marginTop:8,padding:"5px 14px",borderRadius:6,border:"none",background:"var(--t-btn)",color:"var(--t-btn-txt)",fontSize:11,fontWeight:600,cursor:"pointer",width:"100%"}}>Open Note</button>
+          </div>):(<div style={{...S.glass,padding:14,textAlign:"center",color:T.txt2,fontSize:12}}>Click a node to see its concepts and connections</div>)}
+        </div>
+      </div>
+      {links.length===0&&<div style={{...S.glass,padding:14,textAlign:"center",color:T.txt2,fontSize:13,marginTop:12}}>No connections found. Add more detailed content to discover links between notes.</div>}
+    </>)}
+    {!links&&!loading&&<div style={{...S.glass,padding:30,textAlign:"center",color:T.txt2}}>
+      <div style={{fontSize:32,marginBottom:8,opacity:.3}}>&#9675;</div>
+      <div style={{fontSize:14,marginBottom:4}}>Discover hidden connections</div>
+      <div style={{fontSize:12}}>Click "Build Graph" to analyze all your notes with AI and find shared concepts</div>
+    </div>}
   </div>);
 }
 
 // ══════════════════════════════════════════════════════════════
-// SECTION 12: MAIN APP
+// SECTION 12B: AI NOTE TRANSFORMER (structured JSON → multi-format)
+// ══════════════════════════════════════════════════════════════
+function TransformPanel({note,geminiKey,onClose}){
+  const[format,setFormat]=useState(null);const[result,setResult]=useState(null);
+  const[loading,setLoading]=useState(false);const[quizAnswers,setQuizAnswers]=useState({});
+  const[flipped,setFlipped]=useState({});
+  const transform=async(fmt)=>{
+    setFormat(fmt);setResult(null);setLoading(true);setQuizAnswers({});setFlipped({});
+    const r=await geminiTransformNote(note.title,note.content||"",fmt,geminiKey);
+    setResult(r);setLoading(false);
+  };
+  const qLen=result?.questions?.length||0;
+  const answered=Object.keys(quizAnswers).length;
+  const quizScore=result?.questions?result.questions.reduce((s,q,i)=>s+(quizAnswers[i]===q.answer?1:0),0):0;
+  return(<div style={{...S.sugPanel,width:340,minWidth:340}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+      <div style={S.sh}>AI Transform</div>
+      <button onClick={onClose} style={{border:"none",background:"transparent",color:T.txt2,cursor:"pointer",fontSize:16}}>{"\u00d7"}</button>
+    </div>
+    <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>
+      {[["quiz","Quiz"],["summary","Summary"],["flashcards","Flashcards"],["mindmap","Mind Map"]].map(([k,lb])=>(
+        <button key={k} onClick={()=>transform(k)} disabled={loading} style={{padding:"5px 12px",borderRadius:7,border:`1px solid ${format===k?"var(--t-a2)":T.border}`,background:format===k?"rgba(37,99,235,.1)":T.glass,color:format===k?"var(--t-a1)":T.txt2,fontSize:11,fontWeight:600,cursor:"pointer"}}>{lb}</button>
+      ))}
+    </div>
+    {loading&&<div style={{textAlign:"center",padding:20,color:T.txt2,fontSize:12}}>
+      <div style={{...S.pBar,width:120,margin:"8px auto"}}><div style={{height:"100%",borderRadius:7,background:"var(--t-grad)",animation:"pulse 1.5s ease infinite",width:"70%"}}/></div>
+      Generating {format}...</div>}
+
+    {/* ── Quiz ── */}
+    {format==="quiz"&&result?.questions&&(<div>
+      {result.questions.map((q,qi)=>(<div key={qi} style={{...S.glass,padding:10,marginBottom:8}}>
+        <div style={{fontSize:12,fontWeight:600,marginBottom:6}}>{qi+1}. {q.q}</div>
+        {q.options.map((opt,oi)=>{
+          const done=quizAnswers[qi]!==undefined;const correct=oi===q.answer;const picked=quizAnswers[qi]===oi;
+          let bg=T.glass,bdr=T.border,clr=T.txt;
+          if(done&&correct){bg="rgba(39,174,96,.15)";bdr="rgba(39,174,96,.4)";clr="var(--t-a1)";}
+          else if(done&&picked&&!correct){bg="rgba(192,57,43,.1)";bdr="rgba(192,57,43,.3)";clr="var(--t-red)";}
+          return(<button key={oi} onClick={()=>{if(!done)setQuizAnswers(p=>({...p,[qi]:oi}));}}
+            style={{display:"block",width:"100%",textAlign:"left",padding:"5px 10px",marginBottom:3,borderRadius:6,border:`1px solid ${bdr}`,background:bg,color:clr,fontSize:11,cursor:done?"default":"pointer",fontFamily:"'Inter',sans-serif"}}>{String.fromCharCode(65+oi)}. {opt}</button>);
+        })}
+        {quizAnswers[qi]!==undefined&&q.explanation&&<div style={{fontSize:10,color:T.txt2,marginTop:4,fontStyle:"italic"}}>{q.explanation}</div>}
+      </div>))}
+      {answered===qLen&&qLen>0&&(<div style={{...S.glassAccent,padding:12,textAlign:"center"}}>
+        <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:22,fontWeight:700,background:T.grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{quizScore}/{qLen}</div>
+        <div style={{fontSize:11,color:T.txt2}}>{quizScore===qLen?"Perfect score!":quizScore>=qLen*.7?"Great job!":"Keep studying!"}</div>
+      </div>)}
+    </div>)}
+
+    {/* ── Summary ── */}
+    {format==="summary"&&result&&(<div>
+      {result.title&&<div style={{fontSize:14,fontWeight:600,marginBottom:8}}>{result.title}</div>}
+      {result.keyPoints&&(<div style={{...S.glass,padding:10,marginBottom:8}}>
+        <div style={S.sh2}>Key Points</div>
+        {result.keyPoints.map((p,i)=><div key={i} style={{fontSize:12,color:T.txt3,marginBottom:4,paddingLeft:8,borderLeft:`2px solid var(--t-a2)`}}>{p}</div>)}
+      </div>)}
+      {result.details&&<div style={{...S.glass,padding:10,marginBottom:8}}><div style={S.sh2}>Details</div><div style={{fontSize:12,color:T.txt3,lineHeight:1.6}}>{result.details}</div></div>}
+      {result.connections?.length>0&&(<div style={{...S.glass,padding:10}}><div style={S.sh2}>Related Topics</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:4}}>{result.connections.map((c,i)=><span key={i} style={{padding:"2px 8px",borderRadius:20,fontSize:10,background:T.glass,color:"var(--t-a2)",border:`1px solid ${T.border}`}}>{c}</span>)}</div>
+      </div>)}
+    </div>)}
+
+    {/* ── Flashcards ── */}
+    {format==="flashcards"&&result?.cards&&(<div>
+      {result.cards.map((card,i)=>(<div key={i} onClick={()=>setFlipped(p=>({...p,[i]:!p[i]}))}
+        style={{...S.glass,padding:14,marginBottom:6,cursor:"pointer",minHeight:70,display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center",transition:"all .25s",background:flipped[i]?"var(--t-glass-accent)":T.glass,transform:flipped[i]?"scale(0.98)":"scale(1)"}}>
+        <div>
+          <div style={{fontSize:9,color:T.txt2,marginBottom:4,textTransform:"uppercase",letterSpacing:".5px"}}>{flipped[i]?"Answer":"Question"} {"\u00b7"} {i+1}/{result.cards.length}</div>
+          <div style={{fontSize:13,fontWeight:flipped[i]?400:600,color:flipped[i]?T.txt3:T.txt,lineHeight:1.5}}>{flipped[i]?card.back:card.front}</div>
+        </div>
+      </div>))}
+      <div style={{fontSize:10,color:T.txt2,textAlign:"center",marginTop:4}}>Click cards to flip</div>
+    </div>)}
+
+    {/* ── Mind Map ── */}
+    {format==="mindmap"&&result&&(<div>
+      <div style={{...S.glassAccent,padding:12,textAlign:"center",marginBottom:8}}>
+        <div style={{fontSize:15,fontWeight:700,background:T.grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{result.root}</div>
+      </div>
+      {result.branches?.map((b,i)=>(<div key={i} style={{...S.glass,padding:10,marginBottom:6}}>
+        <div style={{fontSize:13,fontWeight:600,color:"var(--t-a1)",marginBottom:6,display:"flex",alignItems:"center",gap:6}}>
+          <span style={{width:8,height:8,borderRadius:"50%",background:["var(--t-blue)","var(--t-amber)","var(--t-cyan)","var(--t-purple)","var(--t-red)"][i%5],flexShrink:0}}/>{b.label}
+        </div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:4,paddingLeft:14}}>
+          {b.children?.map((c,j)=><span key={j} style={{padding:"3px 10px",borderRadius:20,fontSize:11,background:T.glass,color:T.txt3,border:`1px solid ${T.border}`}}>{c}</span>)}
+        </div>
+      </div>))}
+    </div>)}
+
+    {!format&&!loading&&<div style={{fontSize:11,color:T.txt2,textAlign:"center",padding:16}}>
+      <div style={{fontSize:24,marginBottom:6,opacity:.3}}>{"\u2728"}</div>
+      Transform "{note.title}" into a different format using AI
+    </div>}
+  </div>);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 13: MAIN APP
 // ══════════════════════════════════════════════════════════════
 export default function App(){
   const[folders,setFolders]=useState(INIT_FOLDERS);const[notes,setNotes]=useState(INIT_NOTES);
   const[activeNote,setActiveNote]=useState("s2");const[activeFolder,setActiveFolder]=useState("mban");
   const[viewMode,setViewMode]=useState(null); // null=note, "parent:id", "folder:id"
   const[page,setPage]=useState("notes");const[showAI,setShowAI]=useState(true);const[showFiles,setShowFiles]=useState(false);
-  const[reviews,setReviews]=useState(INIT_REVIEWS);const[prefs,setPrefs]=useState({health:{likes:["quick","high protein"],dislikes:["too salty"]}});
-  const[ghostData,setGhostData]=useState(null);const[ghostLoading,setGhostLoading]=useState(false);
+    const[ghostData,setGhostData]=useState(null);const[ghostLoading,setGhostLoading]=useState(false);
   const[ytResults,setYtResults]=useState([]);const[ytLoading,setYtLoading]=useState(false);const[aiInsight,setAiInsight]=useState(null);
   const[uploadedFiles,setUploadedFiles]=useState([]);const[fileSearch,setFileSearch]=useState("");
   const[isDark,setIsDark]=useState(true);
-  const timerRef=useRef(null);const ytRef=useRef(null);
+  const[showTransform,setShowTransform]=useState(false);
+  const timerRef=useRef(null);const ytRef=useRef(null);const abortRef=useRef(null);const ytAbortRef=useRef(null);
   useEffect(()=>{
     let s=document.getElementById("nt-theme");
     if(!s){s=document.createElement("style");s.id="nt-theme";document.head.appendChild(s);}
@@ -684,22 +854,44 @@ export default function App(){
 
   const handleChange=useCallback(html=>{
     setNotes(p=>({...p,[activeNote]:{...p[activeNote],content:html}}));
+    // ── Copilot-style autocomplete: abort previous, debounce 500ms ──
     if(timerRef.current)clearTimeout(timerRef.current);
     timerRef.current=setTimeout(async()=>{
       const plain=html.replace(/<[^>]+>/g,"");if(plain.length<15)return;
-      const pLines=plain.split("\n").filter(l=>l.trim());const ctx=`Note: "${active?.title||""}"
-
-${pLines.slice(-8).join("\n")}`;
-      if(GEMINI_KEY){setGhostLoading(true);const r=await geminiComplete(ctx,GEMINI_KEY);setGhostData(r||getGhost(html));setGhostLoading(false);}
-      else{setGhostData(getGhost(html));}
-    },800);
+      // Show local ghost instantly as fallback
+      const localGhost=getGhost(html);
+      if(localGhost&&!GEMINI_KEY){setGhostData(localGhost);return;}
+      if(localGhost)setGhostData(localGhost);
+      if(!GEMINI_KEY)return;
+      // Cancel any in-flight Gemini request
+      if(abortRef.current)abortRef.current.abort();
+      const ac=new AbortController();abortRef.current=ac;
+      setGhostLoading(true);
+      const pLines=plain.split("\n").filter(l=>l.trim());
+      const ctx=pLines.slice(-10).join("\n");
+      const r=await geminiComplete(ctx,{title:active?.title||""},GEMINI_KEY,ac.signal);
+      if(!ac.signal.aborted){setGhostData(r||localGhost);setGhostLoading(false);}
+    },500);
+    // ── YouTube: LLM extracts topic → YT API search (LLM+API pipeline) ──
     if(ytRef.current)clearTimeout(ytRef.current);
     ytRef.current=setTimeout(async()=>{
-      if(!YOUTUBE_KEY)return;const plain=html.replace(/<[^>]+>/g,"");if(plain.length<20)return;
-      const q=plain.split("\n").filter(l=>l.trim()).slice(-2).join(" ").slice(0,80);if(q.length<8)return;
-      setYtLoading(true);const r=await ytSearch(q+" tutorial",YOUTUBE_KEY,3);setYtResults(r);setYtLoading(false);
-    },1500);
-    if(GEMINI_KEY&&html.replace(/<[^>]+>/g,"").length>100){setTimeout(async()=>{const r=await geminiAnalyze(html,"Most important takeaway? One sentence.",GEMINI_KEY);setAiInsight(r);},3000);}
+      if(!YOUTUBE_KEY)return;const plain=html.replace(/<[^>]+>/g,"");if(plain.length<30)return;
+      if(ytAbortRef.current)ytAbortRef.current.abort();
+      const ac=new AbortController();ytAbortRef.current=ac;
+      setYtLoading(true);
+      // Step 1: Ask Gemini to extract the optimal search query
+      let q=null;
+      if(GEMINI_KEY)q=await geminiExtractTopic(html,GEMINI_KEY,ac.signal);
+      // Fallback: use last 2 lines if no Gemini
+      if(!q){q=plain.split("\n").filter(l=>l.trim()).slice(-2).join(" ").slice(0,80);}
+      if(ac.signal.aborted)return;
+      if(q.length<5){setYtLoading(false);return;}
+      // Step 2: Search YouTube with the refined query
+      const r=await ytSearch(q,YOUTUBE_KEY,4);
+      if(!ac.signal.aborted){setYtResults(r);setYtLoading(false);}
+    },1800);
+    // ── AI insight ──
+    if(GEMINI_KEY&&html.replace(/<[^>]+>/g,"").length>100){setTimeout(async()=>{const r=await geminiAnalyze(html,"Most important takeaway? One sentence.",GEMINI_KEY);setAiInsight(r);},3500);}
   },[activeNote]);
 
   const acceptGhost=useCallback(()=>{setGhostData(null);},[]);
@@ -707,11 +899,10 @@ ${pLines.slice(-8).join("\n")}`;
   const selectNote=id=>{setActiveNote(id);setViewMode(null);setGhostData(null);setYtResults([]);setAiInsight(null);setPage("notes");};
   const selectParent=id=>{setViewMode("parent:"+id);setActiveNote(id);setPage("notes");};
   const selectFolderView=fid=>{setViewMode("folder:"+fid);setPage("notes");};
-  const createNote=(title,fid)=>{const id=`n_${Date.now()}`;setNotes(p=>({...p,[id]:{title,cat:"study",content:"",created:new Date().toISOString().slice(0,10)}}));setFolders(p=>p.map(f=>f.id===fid?{...f,notes:[...f.notes,id]}:f));selectNote(id);};
+  const createNote=(title,fid)=>{const id=`n_${Date.now()}`;setNotes(p=>({...p,[id]:{title,content:"",created:new Date().toISOString().slice(0,10)}}));setFolders(p=>p.map(f=>f.id===fid?{...f,notes:[...f.notes,id]}:f));selectNote(id);};
   const createFolder=name=>{setFolders(p=>[...p,{id:`f_${Date.now()}`,name,notes:[]}]);};
   const addLesson=(pid,title)=>{const id=`${pid}_l${Date.now()}`;setNotes(p=>{const pn=p[pid];return{...p,[pid]:{...pn,children:[...(pn.children||[]),id]},[id]:{title,cat:pn.cat,created:new Date().toISOString().slice(0,10),parent:pid,content:""}};});};
   const addTopic=nt=>{const tid=nt.tn;if(!notes[tid])return;setNotes(p=>({...p,[tid]:{...p[tid],content:(p[tid].content||"")+`<h3 style="color:var(--t-blue)">${nt.topic}</h3><p>${nt.desc}</p><p><a href="${nt.video}" target="_blank" style="color:var(--t-a2)">Watch \u2192</a></p>`}}));selectNote(tid);};
-  const submitReview=r=>{setReviews(p=>[...p,r]);setPrefs(p=>{const cp={...p};if(!cp[r.cat])cp[r.cat]={likes:[],dislikes:[]};const c={...cp[r.cat],likes:[...cp[r.cat].likes],dislikes:[...cp[r.cat].dislikes]};r.likes.forEach(l=>{if(!c.likes.includes(l))c.likes.push(l);});r.dislikes.forEach(d=>{if(!c.dislikes.includes(d))c.dislikes.push(d);});return{...cp,[r.cat]:c};});};
   const handleShowFiles=()=>{const sel=window.getSelection()?.toString()||"";setFileSearch(sel);setShowFiles(true);setShowAI(false);};
 
   const folderName=folders.find(f=>f.notes.includes(activeNote)||f.notes.some(nid=>notes[nid]?.children?.includes(activeNote)))?.name||"";
@@ -736,8 +927,8 @@ ${pLines.slice(-8).join("\n")}`;
     <div style={S.main}>
       <div style={S.topBar}>
         <button style={S.tabBtn(page==="notes")} onClick={()=>setPage("notes")}>Notes</button>
-        <button style={S.tabBtn(page==="summary")} onClick={()=>setPage("summary")}>Summary</button>
-        <button style={S.tabBtn(page==="reviews")} onClick={()=>setPage("reviews")}>Reviews</button>
+        <button style={S.tabBtn(page==="insights")} onClick={()=>setPage("insights")}>Insights</button>
+        <button style={S.tabBtn(page==="links")} onClick={()=>setPage("links")}>Links</button>
         <div style={{flex:1}}/>
         <button onClick={()=>setIsDark(d=>!d)} style={{padding:"4px 12px",borderRadius:7,border:`1px solid ${T.border}`,background:T.glass,color:T.txt,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginRight:4}}>{isDark?"Dark":"Light"}</button>
         <div style={{display:"flex",gap:6,alignItems:"center",marginRight:8}}>
@@ -747,8 +938,9 @@ ${pLines.slice(-8).join("\n")}`;
           <span style={{fontSize:10,color:T.txt2}}>YT</span>
         </div>
         {page==="notes"&&!viewMode&&<>
-          <button style={{...S.tabBtn(false),fontSize:11,color:showFiles?T.a2:T.txt2}} onClick={()=>{setShowFiles(!showFiles);if(!showFiles)setShowAI(false);else setShowAI(true);}}>{showFiles?"Hide Files":"Files"}</button>
-          <button style={{...S.tabBtn(false),fontSize:11,color:T.txt2}} onClick={()=>{setShowAI(!showAI);if(showAI)setShowFiles(false);}}>{showAI?"Hide AI":"Show AI"}</button>
+          <button style={{...S.tabBtn(false),fontSize:11,color:showFiles?T.a2:T.txt2}} onClick={()=>{setShowFiles(!showFiles);if(!showFiles){setShowAI(false);setShowTransform(false);}else setShowAI(true);}}>{showFiles?"Hide Files":"Files"}</button>
+          <button style={{...S.tabBtn(false),fontSize:11,color:showTransform?"var(--t-a2)":T.txt2}} onClick={()=>{setShowTransform(!showTransform);if(!showTransform){setShowAI(false);setShowFiles(false);}}}>{showTransform?"Hide Transform":"Transform"}</button>
+          <button style={{...S.tabBtn(false),fontSize:11,color:T.txt2}} onClick={()=>{setShowAI(!showAI);if(showAI){setShowFiles(false);}else{setShowTransform(false);}}}>{showAI?"Hide AI":"Show AI"}</button>
         </>}
       </div>
       {page==="notes"&&viewMode&&<CombinedView title={combinedTitle} items={combinedItems} onSelect={selectNote} onAddLesson={t=>combinedParentId&&addLesson(combinedParentId,t)} parentId={combinedParentId} onChangeNote={(id,html)=>setNotes(p=>({...p,[id]:{...p[id],content:html}}))}/>}
@@ -759,17 +951,17 @@ ${pLines.slice(-8).join("\n")}`;
               <span style={{fontSize:10,color:T.txt2}}>{folderName} / {active.created}</span>
               {active.parent&&<span style={{fontSize:10,color:T.a2,marginLeft:6,cursor:"pointer"}} onClick={()=>selectParent(active.parent)}>{"\u2190"} {notes[active.parent]?.title}</span>}
               <h2 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:19,margin:"2px 0 3px",color:T.txt}}>{active.title}</h2>
-              <span style={S.tag(active.cat)}>{CM[active.cat]?.lb}</span>
             </div>
             <RichEditor key={activeNote} content={active.content} onChange={handleChange} ghostData={ghostData} onAcceptGhost={acceptGhost} noteId={activeNote} loading={ghostLoading} onShowFiles={handleShowFiles}/>
           </div>
           {showFiles&&<FilePanel files={uploadedFiles} onUpload={f=>setUploadedFiles(p=>[...p,f])} onClose={()=>{setShowFiles(false);setShowAI(true);}} searchText={fileSearch}/>}
-          {showAI&&!showFiles&&<SugPanel videos={videos} ytResults={ytResults} knowledge={active.cat==="study"?knowledge:null} cat={active.cat} prefs={prefs[active.cat]} aiInsight={aiInsight} loadingYT={ytLoading}/>}
+          {showAI&&!showFiles&&!showTransform&&<SugPanel videos={videos} ytResults={ytResults} knowledge={knowledge} aiInsight={aiInsight} loadingYT={ytLoading}/>}
+          {showTransform&&!showFiles&&active&&<TransformPanel note={active} geminiKey={GEMINI_KEY} onClose={()=>{setShowTransform(false);setShowAI(true);}}/>}
         </div>
       )}
       {page==="notes"&&!viewMode&&!active&&<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{textAlign:"center"}}><h1 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:28}}>Notiq</h1><p style={{color:T.txt2}}>Select or create a note.</p></div></div>}
-      {page==="summary"&&<SummaryPage notes={notes} knowledge={knowledge} onAddTopic={addTopic} geminiKey={GEMINI_KEY}/>}
-      {page==="reviews"&&<ReviewsPage reviews={reviews} preferences={prefs} onSubmit={submitReview}/>}
+      {page==="insights"&&<InsightsPage notes={notes} knowledge={knowledge} onAddTopic={addTopic} geminiKey={GEMINI_KEY}/>}
+      {page==="links"&&<LinksPage notes={notes} geminiKey={GEMINI_KEY} onSelectNote={selectNote}/>}
     </div>
   </div>);
 }
