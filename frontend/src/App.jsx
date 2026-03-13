@@ -86,15 +86,10 @@ const INIT_FOLDERS = [
 const getAllFolderNoteIds=(f)=>{const ids=[];if(f.notes)ids.push(...f.notes);if(f.children)f.children.forEach(c=>{if(c.notes)ids.push(...c.notes);});return ids;};
 const findNoteLocation=(folders,noteId)=>{for(const f of folders){if(f.children){for(const sub of f.children){if(sub.notes?.includes(noteId))return{root:f,sub};}}if(f.notes?.includes(noteId))return{root:f,sub:null};}return null;};
 const findSubfolder=(folders,subId)=>{for(const f of folders){if(f.children){const sub=f.children.find(c=>c.id===subId);if(sub)return{root:f,sub};}if(f.id===subId)return{root:f,sub:null};}return null;};
-// Section colors for topic detection
+// Section colors for topic detection — 2 alternating colors
 const SECTION_COLORS=[
-  {bg:'rgba(102,126,234,0.07)',border:'#667eea',text:'#667eea'},
-  {bg:'rgba(118,75,162,0.07)',border:'#764ba2',text:'#764ba2'},
-  {bg:'rgba(6,182,212,0.07)',border:'#06b6d4',text:'#06b6d4'},
-  {bg:'rgba(245,158,11,0.07)',border:'#f59e0b',text:'#f59e0b'},
-  {bg:'rgba(236,72,153,0.07)',border:'#ec4899',text:'#ec4899'},
-  {bg:'rgba(34,197,94,0.07)',border:'#22c55e',text:'#22c55e'},
-  {bg:'rgba(139,92,246,0.07)',border:'#8b5cf6',text:'#8b5cf6'},
+  {bg:'rgba(102,126,234,0.10)',border:'#667eea'},
+  {bg:'rgba(118,75,162,0.10)',border:'#764ba2'},
 ];
 const INIT_NOTES = {
 
@@ -956,7 +951,7 @@ const S={
 // ══════════════════════════════════════════════════════════════
 // SECTION 5: RICH EDITOR
 // ══════════════════════════════════════════════════════════════
-function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onShowFiles,sectionColors}){
+function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onShowFiles,sectionColors,confidence,onSetConfidence}){
   const ref=useRef(null);const[init,setInit]=useState(false);const prev=useRef(noteId);const[dropOver,setDropOver]=useState(false);
   const[fontSize,setFontSize]=useState("16");
   const[showColorPicker,setShowColorPicker]=useState(false);const[showHighlightPicker,setShowHighlightPicker]=useState(false);
@@ -971,32 +966,42 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
   },[]);
   useEffect(()=>{if(noteId!==prev.current){setInit(false);prev.current=noteId;}},[noteId]);
   useEffect(()=>{if(ref.current&&!init){ref.current.innerHTML=content||"";setInit(true);}},[content,init]);
-  // Section coloring: apply alternating colors to headings
+  // Section coloring: apply alternating bg colors to headings only + inject confidence dropdowns
   const applySectionColors=useCallback(()=>{
     if(!ref.current||!sectionColors)return;
     // Reset previous section coloring
-    ref.current.querySelectorAll('[data-ntsc]').forEach(el=>{el.style.borderLeft='';el.style.paddingLeft='';el.style.background='';el.style.borderRadius='';el.style.marginBottom='';el.removeAttribute('data-ntsc');});
+    ref.current.querySelectorAll('[data-ntsc]').forEach(el=>{el.style.borderLeft='';el.style.paddingLeft='';el.style.paddingRight='';el.style.background='';el.style.borderRadius='';el.style.marginBottom='';el.style.display='';el.style.alignItems='';el.style.justifyContent='';el.style.position='';el.removeAttribute('data-ntsc');});
+    // Remove old confidence dropdowns
+    ref.current.querySelectorAll('.nt-conf-wrap').forEach(el=>el.remove());
     const headings=[...ref.current.querySelectorAll('h2,h3')];
     if(!headings.length)return;
     headings.forEach((h,i)=>{
       const c=sectionColors[i%sectionColors.length];
+      h.style.background=c.bg;
       h.style.borderLeft=`3px solid ${c.border}`;
       h.style.paddingLeft='10px';
-      h.style.background=c.bg;
+      h.style.paddingRight='60px';
       h.style.borderRadius='6px';
       h.style.marginBottom='4px';
+      h.style.position='relative';
       h.setAttribute('data-ntsc','1');
-      // Color following siblings until next heading
-      let el=h.nextElementSibling;
-      while(el&&!['H2','H3'].includes(el.tagName)){
-        el.style.borderLeft=`2px solid ${c.border}33`;
-        el.style.paddingLeft='10px';
-        el.style.background=`${c.bg.replace('0.07','0.03')}`;
-        el.setAttribute('data-ntsc','1');
-        el=el.nextElementSibling;
-      }
+      // Inject confidence dropdown next to heading
+      const wrap=document.createElement('span');
+      wrap.className='nt-conf-wrap';
+      wrap.setAttribute('contenteditable','false');
+      wrap.style.cssText='position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:4px;z-index:5;';
+      const score=(confidence||{})[`${noteId}:${i}`]||0;
+      const sel=document.createElement('select');
+      sel.style.cssText=`background:${score>0?(score>=7?'rgba(34,197,94,0.15)':score>=4?'rgba(245,158,11,0.15)':'rgba(255,92,92,0.15)'):'rgba(255,255,255,0.06)'};border:1px solid ${score>0?(score>=7?'#22c55e44':score>=4?'#f59e0b44':'#ff5c5c44'):'rgba(255,255,255,0.1)'};color:${score>0?(score>=7?'#22c55e':score>=4?'#f59e0b':'#ff5c5c'):'#94a3b8'};border-radius:6px;padding:2px 4px;font-size:11px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace;outline:none;-webkit-appearance:none;appearance:none;min-width:42px;text-align:center;`;
+      const defOpt=document.createElement('option');defOpt.value='0';defOpt.textContent='—';defOpt.style.background='#12131a';sel.appendChild(defOpt);
+      for(let n=1;n<=10;n++){const o=document.createElement('option');o.value=String(n);o.textContent=String(n);o.style.background='#12131a';if(n===score)o.selected=true;sel.appendChild(o);}
+      if(score>0)defOpt.selected=false;
+      const idx=i;
+      sel.addEventListener('change',e=>{const v=parseInt(e.target.value);if(onSetConfidence)onSetConfidence(noteId,idx,v);});
+      wrap.appendChild(sel);
+      h.appendChild(wrap);
     });
-  },[sectionColors]);
+  },[sectionColors,noteId,confidence,onSetConfidence]);
   useEffect(()=>{if(init)requestAnimationFrame(applySectionColors);},[init,applySectionColors]);
   // Ghost: inject inline span at cursor, accept with TAB
   useEffect(()=>{
@@ -2407,7 +2412,7 @@ function LandingPage({onEnter}){
 
             <motion.p initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.6,duration:0.8}}
               style={{fontSize:20,color:"#94a3b8",lineHeight:1.75,maxWidth:560,margin:"0 0 48px"}}>
-              The intelligent note-taking app that understands your content. AI autocomplete, smart linking, instant video resources, and deep insights — all in one beautiful workspace.
+              The intelligent note-taking app that understands your content. AI autocomplete, topic detection with confidence scoring, smart subfolders, AI study plans, and deep insights — all in one beautiful workspace.
             </motion.p>
 
             <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.8,duration:0.6}}
@@ -2422,7 +2427,7 @@ function LandingPage({onEnter}){
 
             <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:1.2,duration:0.8}}
               style={{display:"flex",gap:40,marginTop:56}}>
-              {[["Gemini 2.0","Flash AI engine"],["Real-time","ghost text suggestions"],["Zero config","open and start writing"]].map(([n,l],i)=>(
+              {[["Gemini 2.0","Flash AI engine"],["Topic Detection","confidence scoring"],["Study Plans","AI-generated insights"]].map(([n,l],i)=>(
                 <div key={i}><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:16,fontWeight:700,color:"#667eea"}}>{n}</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>{l}</div></div>
               ))}
             </motion.div>
@@ -2443,17 +2448,19 @@ function LandingPage({onEnter}){
         </motion.div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(340px, 1fr))",gap:24}}>
           {[
-            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.912 5.813a2 2 0 001.272 1.272L21 12l-5.813 1.912a2 2 0 00-1.272 1.272L12 21l-1.912-5.813a2 2 0 00-1.272-1.272L3 12l5.813-1.912a2 2 0 001.272-1.272z"/></svg>,title:"AI Autocomplete",desc:"Copilot-style predictions that understand your context — note title, content, and writing style. Press Tab to accept, Escape to dismiss. Powered by Gemini 2.0 Flash with a 500ms debounce and AbortController.",color:"#667eea"},
-            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>,title:"Smart Video Suggestions",desc:"A two-step LLM pipeline: Gemini extracts the optimal YouTube search query from your notes, then the YouTube API returns the most relevant videos. Drag any video into your notes.",color:"#764ba2"},
-            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><circle cx="5" cy="19" r="2"/><line x1="12" y1="9" x2="12" y2="5"/><line x1="14.5" y1="13.5" x2="17.5" y2="17.5"/><line x1="9.5" y1="13.5" x2="6.5" y2="17.5"/></svg>,title:"Knowledge Graph",desc:"Multi-call entity extraction analyses every note in batches, then post-processing finds shared concepts between all note pairs. Interactive SVG visualisation.",color:"#06b6d4"},
-            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3l5 5-5 5"/><path d="M21 8H9"/><path d="M8 21l-5-5 5-5"/><path d="M3 16h12"/></svg>,title:"AI Transformer",desc:"Convert any note into interactive quizzes with scoring, structured summaries, flippable flashcards, or visual mind maps. Gemini returns structured JSON, beautifully rendered.",color:"#f59e0b"},
-            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,title:"Smart Insights",desc:"AI analyses all your notes holistically, auto-detects themes like fitness, study, finance, and surfaces cross-domain patterns and personalised recommendations.",color:"#ec4899"},
-            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>,title:"Files & Rich Editor",desc:"Drag-and-drop file uploads (PDFs, images, text), rich text editing with toolbar, sub-notes with parent/child hierarchy, folders, and text search across files.",color:"#8b5cf6"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.912 5.813a2 2 0 001.272 1.272L21 12l-5.813 1.912a2 2 0 00-1.272 1.272L12 21l-1.912-5.813a2 2 0 00-1.272-1.272L3 12l5.813-1.912a2 2 0 001.272-1.272z"/></svg>,title:"AI Autocomplete",desc:"Copilot-style predictions that understand your context — note title, content, and writing style. Press Tab to accept, Escape to dismiss. Powered by Gemini 2.0 Flash.",color:"#667eea"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>,title:"Smart Subfolders",desc:"Organise notes in a 3-level hierarchy: root folders, subfolders, and individual notes. Click a root folder to see all notes, a subfolder for its notes, or a single note to edit.",color:"#22c55e"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>,title:"Topic Detection",desc:"Headings in your notes are automatically detected as distinct topics, colour-coded with alternating blue and purple backgrounds so you can visually distinguish each section at a glance.",color:"#764ba2"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,title:"Confidence Scoring",desc:"Rate your understanding of each topic section from 1-10 using the dropdown next to each heading. Scores feed into folder-specific insights with bar charts and weakness analysis.",color:"#f59e0b"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>,title:"Smart Video Suggestions",desc:"A two-step LLM pipeline: Gemini extracts the optimal YouTube search query from your notes, then the YouTube API returns the most relevant educational videos to drag into your editor.",color:"#06b6d4"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><circle cx="5" cy="19" r="2"/><line x1="12" y1="9" x2="12" y2="5"/><line x1="14.5" y1="13.5" x2="17.5" y2="17.5"/><line x1="9.5" y1="13.5" x2="6.5" y2="17.5"/></svg>,title:"Knowledge Graph",desc:"Multi-call entity extraction analyses every note in batches, then post-processing finds shared concepts between all note pairs. Interactive SVG visualisation.",color:"#ec4899"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3l5 5-5 5"/><path d="M21 8H9"/><path d="M8 21l-5-5 5-5"/><path d="M3 16h12"/></svg>,title:"AI Transformer",desc:"Convert any note into interactive quizzes with scoring, structured summaries, flippable flashcards, or visual mind maps. Gemini returns structured JSON, beautifully rendered.",color:"#8b5cf6"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19V6l12-3v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="15" r="3"/></svg>,title:"AI Study Plans",desc:"The Insights page shows confidence distributions per folder, identifies your weakest topics, and generates a personalised AI study plan with priorities, time estimates, and resources.",color:"#f093fb"},
           ].map((f,i)=>(
             <motion.div key={i} className="feature-card"
               initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}}
               transition={{delay:i*0.06,duration:0.7,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-80px"}}
-              style={{background:"rgba(255,255,255,0.02)",borderRadius:20,padding:"36px 32px",cursor:"default"}}>
+              style={{background:i%2===1?"rgba(118,75,162,0.04)":"rgba(255,255,255,0.02)",borderRadius:20,padding:"36px 32px",cursor:"default"}}>
               <div style={{width:52,height:52,borderRadius:14,background:`${f.color}15`,display:"flex",alignItems:"center",justifyContent:"center",color:f.color,marginBottom:18}}>{f.icon}</div>
               <h3 style={{fontSize:21,fontWeight:700,margin:"0 0 10px",color:"#f1f5f9"}}>{f.title}</h3>
               <p style={{fontSize:14,color:"#94a3b8",lineHeight:1.7,margin:0}}>{f.desc}</p>
@@ -2465,13 +2472,13 @@ function LandingPage({onEnter}){
       {/* ── DEMO SECTIONS ── */}
       <section id="demo" style={{padding:"80px 0",width:"100%"}}>
 
-        {/* Autocomplete demo */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,marginBottom:140,width:"100%"}}>
+        {/* Autocomplete demo — normal bg */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,width:"100%"}}>
           <motion.div style={{padding:"80px 64px 80px 80px",display:"flex",flexDirection:"column",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             <div style={{fontSize:13,color:"#667eea",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:20,fontFamily:"'JetBrains Mono',monospace"}}>Autocomplete</div>
             <h2 style={{fontSize:"clamp(34px, 4vw, 52px)",fontWeight:800,letterSpacing:"-2px",margin:"0 0 24px",lineHeight:1.08}}>Finish your thoughts<br/>before you type them.</h2>
-            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Notiq watches what you write in real time. As you type, Gemini 2.0 Flash reads your note title, existing content, and writing style to predict what comes next. Suggestions appear inline as ghost text — press Tab to accept the full completion, Escape to dismiss, or just keep typing to ignore it.</p>
-            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:"0 0 28px"}}>Every keystroke cancels the previous request via AbortController, so the UI never blocks. A 500ms debounce ensures we only call the API when you pause, keeping latency low and responses relevant.</p>
+            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Notiq watches what you write in real time. As you type, Gemini 2.0 Flash reads your note title, existing content, and writing style to predict what comes next. Suggestions appear inline as ghost text — press Tab to accept, Escape to dismiss.</p>
+            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:"0 0 28px"}}>Every keystroke cancels the previous request via AbortController, so the UI never blocks. A 500ms debounce ensures we only call the API when you pause.</p>
             <div style={{display:"flex",gap:28}}>
               {[["Tab","accept"],["Esc","dismiss"],["Type","ignore"]].map(([k,v],i)=>(
                 <div key={i} style={{fontSize:13,color:"#64748b"}}><span style={{padding:"3px 10px",borderRadius:6,background:"rgba(102,126,234,0.12)",color:"#667eea",fontWeight:700,fontSize:12,fontFamily:"'JetBrains Mono',monospace"}}>{k}</span><span style={{marginLeft:8}}>to {v}</span></div>
@@ -2483,8 +2490,9 @@ function LandingPage({onEnter}){
           </motion.div>
         </div>
 
-        {/* YouTube demo */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,marginBottom:140,width:"100%"}}>
+        {/* YouTube demo — purple bg */}
+        <div style={{background:"rgba(118,75,162,0.04)",width:"100%"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,width:"100%"}}>
           <motion.div style={{padding:"80px 64px 80px 80px",display:"flex",alignItems:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,delay:0.12,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             <YouTubeDemo/>
           </motion.div>
@@ -2495,22 +2503,85 @@ function LandingPage({onEnter}){
             <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>Then the YouTube Data API v3 searches with that query and returns the top results ranked by relevance. Each video card shows the title, channel, and view count. Drag any result directly into your note editor to embed it as a reference link.</p>
           </motion.div>
         </div>
+        </div>
 
-        {/* Knowledge Graph demo */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,marginBottom:140,width:"100%"}}>
+        {/* Topic Detection & Confidence demo — normal bg */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,width:"100%"}}>
           <motion.div style={{padding:"80px 64px 80px 80px",display:"flex",flexDirection:"column",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
-            <div style={{fontSize:13,color:"#06b6d4",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:20,fontFamily:"'JetBrains Mono',monospace"}}>Knowledge Graph</div>
-            <h2 style={{fontSize:"clamp(34px, 4vw, 52px)",fontWeight:800,letterSpacing:"-2px",margin:"0 0 24px",lineHeight:1.08}}>See the connections<br/>you are missing.</h2>
-            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Notiq sends every note through Gemini in batches, extracting named entities, key concepts, and domain tags from each one. Then a post-processing step compares all note pairs, scoring shared concepts by semantic similarity to build a weighted adjacency graph.</p>
-            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>The result is an interactive SVG visualization where nodes are your notes and edges represent shared knowledge. Hover any node to see which concepts it shares with its neighbours. Discover that your machine learning notes connect to your startup plan through "gradient boosting" or that nutrition and fitness share "protein synthesis."</p>
+            <div style={{fontSize:13,color:"#667eea",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:20,fontFamily:"'JetBrains Mono',monospace"}}>Topic Detection</div>
+            <h2 style={{fontSize:"clamp(34px, 4vw, 52px)",fontWeight:800,letterSpacing:"-2px",margin:"0 0 24px",lineHeight:1.08}}>See your topics.<br/>Rate your knowledge.</h2>
+            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Every heading in your notes is automatically detected as a topic section. Alternating purple and transparent backgrounds make it easy to visually distinguish where one topic ends and the next begins — no manual tagging needed.</p>
+            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>Next to each heading, a confidence dropdown lets you rate your understanding from 1-10. These scores feed directly into the Insights page, where you can see your strengths, weaknesses, and generate personalised AI study plans.</p>
           </motion.div>
           <motion.div style={{padding:"80px 80px 80px 64px",display:"flex",alignItems:"center",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,delay:0.12,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
-            <GraphDemo/>
+            {/* Topic detection visual demo */}
+            <div style={{width:"100%",maxWidth:420,borderRadius:16,background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",overflow:"hidden",padding:20}}>
+              {[{title:"Linear Regression",score:8},{title:"Logistic Regression",score:5},{title:"Decision Trees",score:3},{title:"Neural Networks",score:null}].map((t,i)=>(
+                <div key={i} style={{marginBottom:i<3?12:0}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:i%2===0?"rgba(118,75,162,0.08)":"transparent",borderLeft:`3px solid ${i%2===0?"#764ba2":"rgba(255,255,255,0.06)"}`,borderRadius:6,padding:"8px 12px"}}>
+                    <span style={{fontSize:15,fontWeight:700,color:"#e2e8f0"}}>{t.title}</span>
+                    <span style={{fontSize:11,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",padding:"2px 8px",borderRadius:6,
+                      background:t.score?(t.score>=7?"rgba(34,197,94,0.15)":t.score>=4?"rgba(245,158,11,0.15)":"rgba(255,92,92,0.15)"):"rgba(255,255,255,0.06)",
+                      color:t.score?(t.score>=7?"#22c55e":t.score>=4?"#f59e0b":"#ff5c5c"):"#64748b"}}>{t.score||"—"}</span>
+                  </div>
+                  <div style={{padding:"6px 12px 2px",fontSize:13,color:"#64748b",lineHeight:1.5}}>
+                    {i===0&&"y = wx + b, minimise squared residuals..."}
+                    {i===1&&"Sigmoid function, decision boundary at 0.5..."}
+                    {i===2&&"Information gain, Gini impurity, pruning..."}
+                    {i===3&&"Activation functions, backpropagation..."}
+                  </div>
+                </div>
+              ))}
+            </div>
           </motion.div>
         </div>
 
-        {/* Transform demo */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,marginBottom:80,width:"100%"}}>
+        {/* Knowledge Graph demo — purple bg */}
+        <div style={{background:"rgba(118,75,162,0.04)",width:"100%"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,width:"100%"}}>
+          <motion.div style={{padding:"80px 64px 80px 80px",display:"flex",alignItems:"center",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,delay:0.12,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
+            <GraphDemo/>
+          </motion.div>
+          <motion.div style={{padding:"80px 80px 80px 64px",display:"flex",flexDirection:"column",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
+            <div style={{fontSize:13,color:"#06b6d4",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:20,fontFamily:"'JetBrains Mono',monospace"}}>Knowledge Graph</div>
+            <h2 style={{fontSize:"clamp(34px, 4vw, 52px)",fontWeight:800,letterSpacing:"-2px",margin:"0 0 24px",lineHeight:1.08}}>See the connections<br/>you are missing.</h2>
+            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Notiq sends every note through Gemini in batches, extracting named entities, key concepts, and domain tags from each one. Then a post-processing step compares all note pairs, scoring shared concepts by semantic similarity to build a weighted adjacency graph.</p>
+            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>The result is an interactive SVG visualization where nodes are your notes and edges represent shared knowledge. Hover any node to see which concepts it shares with its neighbours.</p>
+          </motion.div>
+        </div>
+        </div>
+
+        {/* Study Plans & Insights demo — normal bg */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,width:"100%"}}>
+          <motion.div style={{padding:"80px 64px 80px 80px",display:"flex",flexDirection:"column",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
+            <div style={{fontSize:13,color:"#f093fb",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:20,fontFamily:"'JetBrains Mono',monospace"}}>AI Study Plans</div>
+            <h2 style={{fontSize:"clamp(34px, 4vw, 52px)",fontWeight:800,letterSpacing:"-2px",margin:"0 0 24px",lineHeight:1.08}}>Focus on what<br/>you don't know.</h2>
+            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>The Insights page aggregates your confidence scores per folder, showing a bar chart of your self-rated knowledge across all topics. Weak areas are flagged automatically — no manual review needed.</p>
+            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>Hit "Create Study Plan" and Gemini generates a structured plan targeting your lowest-confidence topics, with priority levels, estimated time, specific actions, and resource suggestions. Study smarter, not harder.</p>
+          </motion.div>
+          <motion.div style={{padding:"80px 80px 80px 64px",display:"flex",alignItems:"center",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,delay:0.12,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
+            {/* Study plan visual demo */}
+            <div style={{width:"100%",maxWidth:420,borderRadius:16,background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",overflow:"hidden",padding:20}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#f093fb",textTransform:"uppercase",letterSpacing:1,marginBottom:12,fontFamily:"'JetBrains Mono',monospace"}}>Generated Study Plan</div>
+              {[{topic:"Decision Trees",conf:3,priority:"high",time:"2h"},{topic:"Logistic Regression",conf:5,priority:"medium",time:"1.5h"},{topic:"SVMs",conf:4,priority:"medium",time:"1h"}].map((p,i)=>(
+                <div key={i} style={{padding:"10px 12px",borderRadius:8,background:i%2===0?"rgba(118,75,162,0.06)":"transparent",border:`1px solid ${i%2===0?"rgba(118,75,162,0.10)":"rgba(255,255,255,0.04)"}`,marginBottom:i<2?8:0}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                    <span style={{fontSize:14,fontWeight:700,color:"#e2e8f0"}}>{p.topic}</span>
+                    <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:4,background:p.priority==="high"?"rgba(255,92,92,0.15)":"rgba(245,158,11,0.15)",color:p.priority==="high"?"#ff5c5c":"#f59e0b",textTransform:"uppercase"}}>{p.priority}</span>
+                  </div>
+                  <div style={{fontSize:12,color:"#64748b"}}>Confidence: {p.conf}/10 &middot; Est. {p.time}</div>
+                </div>
+              ))}
+              <div style={{marginTop:12,padding:"8px 12px",borderRadius:8,background:"rgba(240,147,251,0.08)",border:"1px solid rgba(240,147,251,0.15)"}}>
+                <div style={{fontSize:12,color:"#f093fb",fontWeight:600}}>Schedule: 3 sessions/week, 1.5h each</div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Transform demo — purple bg */}
+        <div style={{background:"rgba(118,75,162,0.04)",width:"100%"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,width:"100%"}}>
           <motion.div style={{padding:"80px 64px 80px 80px",display:"flex",alignItems:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,delay:0.12,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             <div style={{width:"100%"}}><TransformDemo/></div>
           </motion.div>
@@ -2520,6 +2591,7 @@ function LandingPage({onEnter}){
             <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Select any note and Notiq transforms it into four distinct study formats using a single Gemini call with structured JSON output. Interactive quizzes with multiple-choice scoring, condensed summaries with key bullet points, flippable flashcards for spaced repetition, and visual mind maps that show topic hierarchies.</p>
             <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>The prompt engineering enforces a strict JSON schema so every response parses cleanly into rich, interactive UI components — no regex post-processing needed. Switch between formats instantly with the tab bar above.</p>
           </motion.div>
+        </div>
         </div>
       </section>
 
@@ -2694,9 +2766,6 @@ function NotiqApp(){
       });combinedItems.sort((a,b)=>(a.created||"").localeCompare(b.created||""));}
   }
 
-  // Current note sections for confidence panel
-  const curSections=topicSections[activeNote]||[];
-
   return(<div style={S.app}>
     <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0}}>
       <div style={{position:"absolute",top:"10%",left:"35%",width:1000,height:800,background:"radial-gradient(circle,rgba(102,126,234,0.07) 0%,transparent 65%)"}}/>
@@ -2738,30 +2807,7 @@ function NotiqApp(){
                 {active.ragFiles?.length>0&&<span style={{fontSize:10,color:"#64748b"}}>({active.ragFiles.length} file{active.ragFiles.length!==1?"s":""})</span>}
               </div>}
             </div>
-            <RichEditor key={activeNote} content={active.content} onChange={handleChange} ghostData={ghostData} onAcceptGhost={acceptGhost} noteId={activeNote} loading={ghostLoading} onShowFiles={handleShowFiles} sectionColors={SECTION_COLORS}/>
-            {/* Topic Sections with Confidence Scores */}
-            {curSections.length>0&&<div style={{padding:"10px 0",borderTop:"1px solid rgba(255,255,255,0.06)",marginTop:8}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#667eea",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8,fontFamily:"'JetBrains Mono',monospace"}}>Topics & Confidence</div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                {curSections.map((sec,i)=>{const score=confidence[`${activeNote}:${i}`]||0;const c=SECTION_COLORS[i%SECTION_COLORS.length];return(
-                  <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",borderRadius:10,background:c.bg,border:`1px solid ${c.border}33`,flex:"1 1 auto",minWidth:180}}>
-                    <div style={{width:4,height:28,borderRadius:2,background:c.border,flexShrink:0}}/>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:11,fontWeight:600,color:"#e2e8f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sec.title}</div>
-                      <div style={{display:"flex",gap:2,marginTop:3}}>
-                        {[1,2,3,4,5,6,7,8,9,10].map(n=>(
-                          <button key={n} onClick={()=>setConfidenceScore(activeNote,i,n)} style={{width:16,height:16,borderRadius:3,border:"none",cursor:"pointer",fontSize:8,fontWeight:700,
-                            background:n<=score?(score>=7?"rgba(34,197,94,0.3)":score>=4?"rgba(245,158,11,0.3)":"rgba(255,92,92,0.3)"):"rgba(255,255,255,0.05)",
-                            color:n<=score?(score>=7?"#22c55e":score>=4?"#f59e0b":"#ff5c5c"):"#64748b",
-                            transition:"all 0.15s"}}>{n}</button>
-                        ))}
-                      </div>
-                    </div>
-                    {score>0&&<span style={{fontSize:16,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",color:score>=7?"#22c55e":score>=4?"#f59e0b":"#ff5c5c"}}>{score}</span>}
-                  </div>
-                );})}
-              </div>
-            </div>}
+            <RichEditor key={activeNote} content={active.content} onChange={handleChange} ghostData={ghostData} onAcceptGhost={acceptGhost} noteId={activeNote} loading={ghostLoading} onShowFiles={handleShowFiles} sectionColors={SECTION_COLORS} confidence={confidence} onSetConfidence={setConfidenceScore}/>
           </div>
           {showFiles&&<FilePanel files={uploadedFiles} onUpload={f=>setUploadedFiles(p=>[...p,f])} onClose={()=>{setShowFiles(false);setShowAI(true);}} searchText={fileSearch}/>}
           {showAI&&!showFiles&&!showTransform&&<SugPanel videos={videos} ytResults={ytResults} knowledge={knowledge} aiInsight={aiInsight} loadingYT={ytLoading}/>}
