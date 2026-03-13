@@ -15,24 +15,24 @@ import * as THREE from "three";
 // ══════════════════════════════════════════════════════════════
 // SECTION 1: THEME
 // ══════════════════════════════════════════════════════════════
-// Dark: matches landing page — deep navy bg, blue-purple accents, slate text
+// Dark: lifted navy bg, better contrast, softer borders
 const DARK_CSS=`
-  --t-bg:#08090d;--t-bg2:#0d0e14;--t-bg3:#12131a;
-  --t-glass:rgba(255,255,255,.03);--t-glassH:rgba(255,255,255,.06);--t-border:rgba(255,255,255,.06);
-  --t-a1:#667eea;--t-a2:#94a3b8;--t-a3:#64748b;
-  --t-txt:#e2e8f0;--t-txt2:#64748b;--t-txt3:#94a3b8;
-  --t-red:#ff5c5c;--t-amber:#f59e0b;--t-blue:#667eea;--t-purple:#764ba2;--t-cyan:#06b6d4;--t-pink:#f093fb;
-  --t-grad:linear-gradient(135deg,#667eea,#764ba2);
-  --t-btn:linear-gradient(135deg,#667eea,#764ba2);
+  --t-bg:#0f1117;--t-bg2:#151720;--t-bg3:#1a1d28;
+  --t-glass:rgba(255,255,255,.04);--t-glassH:rgba(255,255,255,.08);--t-border:rgba(255,255,255,.08);
+  --t-a1:#7b93f5;--t-a2:#b0bec5;--t-a3:#8492a6;
+  --t-txt:#f1f5f9;--t-txt2:#8492a6;--t-txt3:#b0bec5;
+  --t-red:#ff6b6b;--t-amber:#fbbf24;--t-blue:#7b93f5;--t-purple:#9571cd;--t-cyan:#22d3ee;--t-pink:#f0abfc;
+  --t-grad:linear-gradient(135deg,#7b93f5,#9571cd);
+  --t-btn:linear-gradient(135deg,#7b93f5,#9571cd);
   --t-btn-txt:#ffffff;
-  --t-sidebar:linear-gradient(180deg,#06070b,#08090d,#070810);
-  --t-tab-active:rgba(102,126,234,.12);
-  --t-note-active:rgba(102,126,234,.1);
-  --t-glass-accent:rgba(102,126,234,.06);
-  --t-panel:rgba(255,255,255,.02);
-  --t-pbar:rgba(255,255,255,.06);
-  --t-dot-off:rgba(255,255,255,.15);
-  --t-topbar:rgba(255,255,255,.02);
+  --t-sidebar:linear-gradient(180deg,#0c0e15,#0f1117,#0e1018);
+  --t-tab-active:rgba(123,147,245,.14);
+  --t-note-active:rgba(123,147,245,.12);
+  --t-glass-accent:rgba(123,147,245,.08);
+  --t-panel:rgba(255,255,255,.03);
+  --t-pbar:rgba(255,255,255,.08);
+  --t-dot-off:rgba(255,255,255,.2);
+  --t-topbar:rgba(255,255,255,.03);
 `;
 // Light: white bg, slate text, purple-blue accents matching landing
 const LIGHT_CSS=`
@@ -924,28 +924,28 @@ function getNextTopics(k){const r=[];for(const[key,info]of Object.entries(k)){if
 // SECTION 4: STYLES
 // ══════════════════════════════════════════════════════════════
 const S={
-  app:{display:"flex",height:"100vh",width:"100%",background:"#08090d",color:T.txt,fontFamily:"'Inter',system-ui,sans-serif",overflow:"hidden",position:"relative"},
-  sidebar:{width:270,minWidth:270,background:"rgba(6,7,11,0.9)",backdropFilter:"blur(24px)",borderRight:"1px solid rgba(255,255,255,0.06)",display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",zIndex:2,boxShadow:"4px 0 24px rgba(0,0,0,0.3)"},
+  app:{display:"flex",height:"100vh",width:"100%",background:"var(--t-bg)",color:T.txt,fontFamily:"'Inter',system-ui,sans-serif",overflow:"hidden",position:"relative"},
+  sidebar:{width:270,minWidth:270,background:"rgba(12,14,21,0.95)",backdropFilter:"blur(24px)",borderRight:"1px solid rgba(255,255,255,0.08)",display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",zIndex:2,boxShadow:"4px 0 20px rgba(0,0,0,0.2)"},
   sideScroll:{flex:1,overflowY:"auto",padding:"0 14px 14px"},
   main:{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",zIndex:1},
-  topBar:{display:"flex",gap:6,padding:"10px 20px",borderBottom:"1px solid rgba(255,255,255,0.08)",background:"rgba(8,9,13,0.7)",backdropFilter:"blur(16px)",alignItems:"center",boxShadow:"0 2px 12px rgba(0,0,0,0.15)"},
-  tabBtn:a=>({padding:"8px 20px",borderRadius:10,border:`1px solid ${a?"rgba(102,126,234,.3)":"transparent"}`,cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:"'Inter',sans-serif",background:a?"rgba(102,126,234,0.1)":"transparent",color:a?"#667eea":"#64748b",transition:"all 0.2s ease"}),
-  noteBtn:(a,indent=0)=>({display:"block",width:"100%",textAlign:"left",padding:`8px 12px 8px ${14+indent*14}px`,border:"none",borderRadius:8,cursor:"pointer",fontSize:indent?12:13,fontWeight:a?600:400,background:a?"rgba(102,126,234,0.1)":"transparent",color:a?"#e2e8f0":"#94a3b8",fontFamily:"'Inter',sans-serif",marginBottom:2,transition:"all 0.15s ease"}),
-  glass:{background:"rgba(255,255,255,0.03)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:20,padding:18,marginBottom:10,boxShadow:"0 2px 16px rgba(0,0,0,0.12)"},
-  glassAccent:{background:"rgba(102,126,234,0.06)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:20,padding:18,marginBottom:10,boxShadow:"0 2px 16px rgba(0,0,0,0.12)"},
-  tag:c=>({display:"inline-block",padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:600,textTransform:"uppercase",background:CM[c]?.bg||"rgba(255,255,255,0.03)",color:CM[c]?.color||"#64748b"}),
-  sh:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"#667eea",letterSpacing:".5px",textTransform:"uppercase",marginBottom:6},
-  sh2:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"#94a3b8",letterSpacing:".5px",textTransform:"uppercase",marginBottom:6},
-  sh3:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"#f59e0b",letterSpacing:".5px",textTransform:"uppercase",marginBottom:6},
-  editor:{minHeight:350,outline:"none",padding:"24px 32px",fontFamily:"'Inter',sans-serif",fontSize:16,lineHeight:1.8,color:"#e2e8f0",background:"transparent"},
-  toolbar:{display:"flex",flexWrap:"wrap",gap:2,padding:"6px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",background:"rgba(8,9,13,0.5)",backdropFilter:"blur(12px)",alignItems:"center"},
-  toolBtn:{padding:"5px 8px",border:"none",borderRadius:6,cursor:"pointer",fontSize:12,background:"transparent",color:"#94a3b8",fontFamily:"'Inter',sans-serif",transition:"all 0.15s ease",display:"inline-flex",alignItems:"center",justifyContent:"center"},
-  sugPanel:{width:320,minWidth:320,borderLeft:"1px solid rgba(255,255,255,0.08)",background:"rgba(8,9,13,0.6)",backdropFilter:"blur(16px)",overflowY:"auto",padding:18,boxShadow:"-4px 0 24px rgba(0,0,0,0.2)"},
-  statCard:{background:"rgba(255,255,255,0.03)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:18,padding:"14px 18px",textAlign:"center",flex:1,boxShadow:"0 2px 12px rgba(0,0,0,0.1)"},
-  statN:{fontFamily:"'JetBrains Mono',monospace",fontSize:26,fontWeight:700,background:"linear-gradient(135deg,#667eea,#764ba2)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"},
-  statL:{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:".7px",marginTop:3},
-  pBar:{height:6,borderRadius:6,background:"rgba(255,255,255,0.06)",overflow:"hidden",margin:"4px 0"},
-  pFill:(p,c)=>({height:"100%",borderRadius:6,width:`${p}%`,background:c||"linear-gradient(135deg,#667eea,#764ba2)",transition:"width .5s"}),
+  topBar:{display:"flex",gap:6,padding:"12px 24px",borderBottom:"1px solid rgba(255,255,255,0.08)",background:"rgba(15,17,23,0.85)",backdropFilter:"blur(16px)",alignItems:"center"},
+  tabBtn:a=>({padding:"8px 20px",borderRadius:10,border:`1px solid ${a?"rgba(123,147,245,.25)":"transparent"}`,cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:"'Inter',sans-serif",background:a?"rgba(123,147,245,0.1)":"transparent",color:a?"#7b93f5":"#8492a6",transition:"all 0.2s ease"}),
+  noteBtn:(a,indent=0)=>({display:"block",width:"100%",textAlign:"left",padding:`9px 12px 9px ${14+indent*14}px`,border:"none",borderRadius:8,cursor:"pointer",fontSize:indent?12:13,fontWeight:a?600:400,background:a?"rgba(123,147,245,0.1)":"transparent",color:a?"#f1f5f9":"#b0bec5",fontFamily:"'Inter',sans-serif",marginBottom:2,transition:"all 0.15s ease",lineHeight:1.4}),
+  glass:{background:"rgba(255,255,255,0.04)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:16,padding:18,marginBottom:10},
+  glassAccent:{background:"rgba(123,147,245,0.07)",backdropFilter:"blur(12px)",border:"1px solid rgba(123,147,245,0.12)",borderRadius:16,padding:18,marginBottom:10},
+  tag:c=>({display:"inline-block",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600,textTransform:"uppercase",background:CM[c]?.bg||"rgba(255,255,255,0.04)",color:CM[c]?.color||"#8492a6"}),
+  sh:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"#7b93f5",letterSpacing:".5px",textTransform:"uppercase",marginBottom:8,fontWeight:600},
+  sh2:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"#b0bec5",letterSpacing:".5px",textTransform:"uppercase",marginBottom:8,fontWeight:600},
+  sh3:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"#fbbf24",letterSpacing:".5px",textTransform:"uppercase",marginBottom:8,fontWeight:600},
+  editor:{minHeight:350,outline:"none",padding:"24px 32px",fontFamily:"'Inter',sans-serif",fontSize:16,lineHeight:1.85,color:"#f1f5f9",background:"transparent"},
+  toolbar:{display:"flex",flexWrap:"wrap",gap:3,padding:"8px 16px",borderBottom:"1px solid rgba(255,255,255,0.06)",background:"rgba(15,17,23,0.6)",backdropFilter:"blur(12px)",alignItems:"center"},
+  toolBtn:{padding:"6px 9px",border:"none",borderRadius:7,cursor:"pointer",fontSize:12,background:"transparent",color:"#b0bec5",fontFamily:"'Inter',sans-serif",transition:"all 0.15s ease",display:"inline-flex",alignItems:"center",justifyContent:"center"},
+  sugPanel:{width:320,minWidth:320,borderLeft:"1px solid rgba(255,255,255,0.08)",background:"rgba(15,17,23,0.75)",backdropFilter:"blur(16px)",overflowY:"auto",padding:20},
+  statCard:{background:"rgba(255,255,255,0.04)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:16,padding:"16px 20px",textAlign:"center",flex:1},
+  statN:{fontFamily:"'JetBrains Mono',monospace",fontSize:26,fontWeight:700,background:"linear-gradient(135deg,#7b93f5,#9571cd)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"},
+  statL:{fontSize:10,color:"#8492a6",textTransform:"uppercase",letterSpacing:".7px",marginTop:4},
+  pBar:{height:6,borderRadius:6,background:"rgba(255,255,255,0.08)",overflow:"hidden",margin:"4px 0"},
+  pFill:(p,c)=>({height:"100%",borderRadius:6,width:`${p}%`,background:c||"linear-gradient(135deg,#7b93f5,#9571cd)",transition:"width .5s"}),
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -956,7 +956,7 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
   const[fontSize,setFontSize]=useState("16");
   const[showColorPicker,setShowColorPicker]=useState(false);const[showHighlightPicker,setShowHighlightPicker]=useState(false);
   const colorRef=useRef(null);const highlightRef=useRef(null);
-  const FONT_COLORS=["#e2e8f0","#667eea","#f093fb","#f59e0b","#06b6d4","#ff5c5c","#22c55e","#94a3b8"];
+  const FONT_COLORS=["#f1f5f9","#7b93f5","#f0abfc","#f59e0b","#06b6d4","#ff5c5c","#22c55e","#b0bec5"];
   const HIGHLIGHT_COLORS=["transparent","rgba(102,126,234,.25)","rgba(240,147,251,.2)","rgba(245,158,11,.25)","rgba(6,182,212,.2)","rgba(255,92,92,.2)","rgba(34,197,94,.2)","rgba(148,163,184,.15)"];
   // Close color pickers on outside click
   useEffect(()=>{
@@ -992,7 +992,7 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
       wrap.style.cssText='position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:4px;z-index:5;';
       const score=(confidence||{})[`${noteId}:${i}`]||0;
       const sel=document.createElement('select');
-      sel.style.cssText=`background:${score>0?(score>=7?'rgba(34,197,94,0.15)':score>=4?'rgba(245,158,11,0.15)':'rgba(255,92,92,0.15)'):'rgba(255,255,255,0.06)'};border:1px solid ${score>0?(score>=7?'#22c55e44':score>=4?'#f59e0b44':'#ff5c5c44'):'rgba(255,255,255,0.1)'};color:${score>0?(score>=7?'#22c55e':score>=4?'#f59e0b':'#ff5c5c'):'#94a3b8'};border-radius:6px;padding:2px 4px;font-size:11px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace;outline:none;-webkit-appearance:none;appearance:none;min-width:42px;text-align:center;`;
+      sel.style.cssText=`background:${score>0?(score>=7?'rgba(34,197,94,0.15)':score>=4?'rgba(245,158,11,0.15)':'rgba(255,92,92,0.15)'):'rgba(255,255,255,0.06)'};border:1px solid ${score>0?(score>=7?'#22c55e44':score>=4?'#f59e0b44':'#ff5c5c44'):'rgba(255,255,255,0.1)'};color:${score>0?(score>=7?'#22c55e':score>=4?'#f59e0b':'#ff5c5c'):'#b0bec5'};border-radius:6px;padding:2px 4px;font-size:11px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace;outline:none;-webkit-appearance:none;appearance:none;min-width:42px;text-align:center;`;
       const defOpt=document.createElement('option');defOpt.value='0';defOpt.textContent='—';defOpt.style.background='#12131a';sel.appendChild(defOpt);
       for(let n=1;n<=10;n++){const o=document.createElement('option');o.value=String(n);o.textContent=String(n);o.style.background='#12131a';if(n===score)o.selected=true;sel.appendChild(o);}
       if(score>0)defOpt.selected=false;
@@ -1078,7 +1078,7 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
   const[ribbonTab,setRibbonTab]=useState("home");
   // ── Drawing state ──
   const canvasRef=useRef(null);const[drawing,setDrawing]=useState(false);const[drawTool,setDrawTool]=useState("pen");
-  const[drawColor,setDrawColor]=useState("#667eea");const[drawSize,setDrawSize]=useState(3);const drawCtx=useRef(null);
+  const[drawColor,setDrawColor]=useState("#7b93f5");const[drawSize,setDrawSize]=useState(3);const drawCtx=useRef(null);
   const[showCanvas,setShowCanvas]=useState(false);
   const startDraw=useCallback(e=>{if(!canvasRef.current)return;const c=drawCtx.current;if(!c)return;setDrawing(true);const r=canvasRef.current.getBoundingClientRect();c.beginPath();c.moveTo(e.clientX-r.left,e.clientY-r.top);},[]);
   const moveDraw=useCallback(e=>{if(!drawing||!drawCtx.current||!canvasRef.current)return;const r=canvasRef.current.getBoundingClientRect();const c=drawCtx.current;
@@ -1091,15 +1091,15 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
   const[comments,setComments]=useState([]);const[showComments,setShowComments]=useState(false);const[newComment,setNewComment]=useState("");
   const addComment=()=>{if(!newComment.trim())return;const sel=window.getSelection()?.toString()||"";setComments(p=>[...p,{id:Date.now(),text:newComment.trim(),selection:sel,author:"You",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),resolved:false}]);setNewComment("");};
   // ── Share state ──
-  const[showShare,setShowShare]=useState(false);const[shareEmail,setShareEmail]=useState("");const[collaborators,setCollaborators]=useState([{name:"You",email:"owner",color:"#667eea",online:true}]);
+  const[showShare,setShowShare]=useState(false);const[shareEmail,setShareEmail]=useState("");const[collaborators,setCollaborators]=useState([{name:"You",email:"owner",color:"#7b93f5",online:true}]);
   const[shareLink]=useState(()=>`notiq.app/share/${Math.random().toString(36).slice(2,10)}`);
   const[copied,setCopied]=useState(false);
-  const addCollab=()=>{if(!shareEmail.trim()||!shareEmail.includes("@"))return;const colors=["#f093fb","#06b6d4","#f59e0b","#22c55e","#ff5c5c"];
+  const addCollab=()=>{if(!shareEmail.trim()||!shareEmail.includes("@"))return;const colors=["#f0abfc","#06b6d4","#f59e0b","#22c55e","#ff5c5c"];
     setCollaborators(p=>[...p,{name:shareEmail.split("@")[0],email:shareEmail,color:colors[p.length%colors.length],online:false}]);setShareEmail("");};
   const copyLink=()=>{navigator.clipboard?.writeText("https://"+shareLink);setCopied(true);setTimeout(()=>setCopied(false),2000);};
 
-  const DRAW_COLORS=["#000000","#ff0000","#667eea","#f59e0b","#22c55e","#f093fb","#06b6d4","#e2e8f0"];
-  const tabStyle=t=>({padding:"6px 16px",fontSize:12,fontWeight:ribbonTab===t?700:500,color:ribbonTab===t?"#667eea":"#94a3b8",background:"transparent",border:"none",borderBottom:ribbonTab===t?"2px solid #667eea":"2px solid transparent",cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.15s"});
+  const DRAW_COLORS=["#000000","#ff0000","#7b93f5","#f59e0b","#22c55e","#f0abfc","#06b6d4","#f1f5f9"];
+  const tabStyle=t=>({padding:"6px 16px",fontSize:12,fontWeight:ribbonTab===t?700:500,color:ribbonTab===t?"#7b93f5":"#b0bec5",background:"transparent",border:"none",borderBottom:ribbonTab===t?"2px solid #7b93f5":"2px solid transparent",cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.15s"});
 
   // ── Ribbon content per tab ──
   const HomeRibbon=()=>(<>
@@ -1121,7 +1121,7 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
     <button className="tool-btn" onClick={()=>exec("subscript")} style={S.toolBtn} title="Sub">x<sub style={{fontSize:8}}>2</sub></button>
     <button className="tool-btn" onClick={()=>exec("superscript")} style={S.toolBtn} title="Super">x<sup style={{fontSize:8}}>2</sup></button>
     {sep}
-    <div ref={colorRef} style={{position:"relative"}}><button className="tool-btn" onClick={()=>{setShowColorPicker(!showColorPicker);setShowHighlightPicker(false);}} style={{...S.toolBtn,display:"flex",alignItems:"center",gap:2}} title="Font Color"><span style={{fontWeight:700}}>A</span><span style={{width:14,height:3,background:"linear-gradient(90deg,#667eea,#f093fb)",borderRadius:1,display:"block"}}/></button>
+    <div ref={colorRef} style={{position:"relative"}}><button className="tool-btn" onClick={()=>{setShowColorPicker(!showColorPicker);setShowHighlightPicker(false);}} style={{...S.toolBtn,display:"flex",alignItems:"center",gap:2}} title="Font Color"><span style={{fontWeight:700}}>A</span><span style={{width:14,height:3,background:"linear-gradient(90deg,#7b93f5,#f0abfc)",borderRadius:1,display:"block"}}/></button>
       {showColorPicker&&<div style={{position:"absolute",top:"100%",left:0,zIndex:99,background:"rgba(13,14,20,0.95)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:8,display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4,boxShadow:"0 8px 24px rgba(0,0,0,0.4)"}}>{FONT_COLORS.map(c=><button key={c} onClick={()=>{exec("foreColor",c);setShowColorPicker(false);}} style={{width:22,height:22,borderRadius:4,border:"1px solid rgba(255,255,255,0.1)",background:c,cursor:"pointer"}}/>)}</div>}</div>
     <div ref={highlightRef} style={{position:"relative"}}><button className="tool-btn" onClick={()=>{setShowHighlightPicker(!showHighlightPicker);setShowColorPicker(false);}} style={{...S.toolBtn,display:"flex",alignItems:"center",gap:2}} title="Highlight"><span style={{background:"rgba(245,158,11,.3)",padding:"0 3px",borderRadius:2,fontWeight:700}}>ab</span></button>
       {showHighlightPicker&&<div style={{position:"absolute",top:"100%",left:0,zIndex:99,background:"rgba(13,14,20,0.95)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:8,display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4,boxShadow:"0 8px 24px rgba(0,0,0,0.4)"}}>{HIGHLIGHT_COLORS.map((c,i)=><button key={i} onClick={()=>{exec("hiliteColor",c);setShowHighlightPicker(false);}} style={{width:22,height:22,borderRadius:4,border:"1px solid rgba(255,255,255,0.1)",background:c||"repeating-conic-gradient(#808080 0% 25%, transparent 0% 50%) 50% / 8px 8px",cursor:"pointer"}}/>)}</div>}</div>
@@ -1162,44 +1162,44 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><span style={{fontSize:9}}>Code</span>
     </button>
     {sep}
-    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<div style="text-align:center;padding:16px 0;font-size:11px;color:#64748b;border-top:1px solid rgba(255,255,255,0.06)">Header — '+new Date().toLocaleDateString()+'</div>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Header">
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<div style="text-align:center;padding:16px 0;font-size:11px;color:#8492a6;border-top:1px solid rgba(255,255,255,0.06)">Header — '+new Date().toLocaleDateString()+'</div>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Header">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 7V5h18v2"/><path d="M3 19v-2h18v2" strokeOpacity="0.3"/><line x1="12" y1="5" x2="12" y2="10"/></svg><span style={{fontSize:9}}>Header</span>
     </button>
-    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<div style="text-align:center;padding:16px 0;font-size:11px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.06)">Footer — Page 1</div>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Footer">
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<div style="text-align:center;padding:16px 0;font-size:11px;color:#8492a6;border-bottom:1px solid rgba(255,255,255,0.06)">Footer — Page 1</div>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Footer">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 17v2h18v-2"/><path d="M3 5v2h18V5" strokeOpacity="0.3"/><line x1="12" y1="14" x2="12" y2="19"/></svg><span style={{fontSize:9}}>Footer</span>
     </button>
-    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<span style="font-family:JetBrains Mono,monospace;font-size:13px;background:rgba(255,255,255,.04);padding:2px 6px;border-radius:4px;color:#667eea">E = mc²</span>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Equation">
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<span style="font-family:JetBrains Mono,monospace;font-size:13px;background:rgba(255,255,255,.04);padding:2px 6px;border-radius:4px;color:#7b93f5">E = mc²</span>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Equation">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><text x="4" y="16" fill="currentColor" fontSize="14" fontFamily="serif" fontStyle="italic">fx</text></svg><span style={{fontSize:9}}>Equation</span>
     </button>
     <button className="tool-btn" onClick={()=>{const sym=prompt("Enter symbol (e.g. ©, ™, §, →, ±, ≈, ∞, Σ, Δ):");if(sym)document.execCommand("insertText",false,sym);ref.current?.focus();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Symbol">
       <span style={{fontSize:18,lineHeight:1}}>Ω</span><span style={{fontSize:9}}>Symbol</span>
     </button>
     {sep}
-    <button className="tool-btn" onClick={onShowFiles} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2,color:"#667eea"}} title="Files">
+    <button className="tool-btn" onClick={onShowFiles} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2,color:"#7b93f5"}} title="Files">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span style={{fontSize:9}}>Files</span>
     </button>
   </>);
 
   const DrawRibbon=()=>(<>
-    <button className="tool-btn" onClick={()=>{setDrawTool("pen");if(!showCanvas)setShowCanvas(true);}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2,background:drawTool==="pen"&&showCanvas?"rgba(102,126,234,0.15)":"transparent",color:drawTool==="pen"&&showCanvas?"#667eea":"#94a3b8"}} title="Draw">
+    <button className="tool-btn" onClick={()=>{setDrawTool("pen");if(!showCanvas)setShowCanvas(true);}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2,background:drawTool==="pen"&&showCanvas?"rgba(123,147,245,0.15)":"transparent",color:drawTool==="pen"&&showCanvas?"#7b93f5":"#b0bec5"}} title="Draw">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg><span style={{fontSize:9}}>Draw</span>
     </button>
-    <button className="tool-btn" onClick={()=>{setDrawTool("eraser");if(!showCanvas)setShowCanvas(true);}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2,background:drawTool==="eraser"&&showCanvas?"rgba(102,126,234,0.15)":"transparent",color:drawTool==="eraser"&&showCanvas?"#667eea":"#94a3b8"}} title="Eraser">
+    <button className="tool-btn" onClick={()=>{setDrawTool("eraser");if(!showCanvas)setShowCanvas(true);}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2,background:drawTool==="eraser"&&showCanvas?"rgba(123,147,245,0.15)":"transparent",color:drawTool==="eraser"&&showCanvas?"#7b93f5":"#b0bec5"}} title="Eraser">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20 20H7L3 16l8-8 9 9-4 4"/><path d="M6 11l4 4"/></svg><span style={{fontSize:9}}>Eraser</span>
     </button>
     {sep}
-    {DRAW_COLORS.map(c=><button key={c} onClick={()=>{setDrawColor(c);setDrawTool("pen");if(!showCanvas)setShowCanvas(true);}} style={{width:24,height:24,borderRadius:6,border:drawColor===c&&showCanvas?"2px solid #667eea":"2px solid transparent",background:c,cursor:"pointer",flexShrink:0,transition:"border-color 0.15s"}}/>)}
+    {DRAW_COLORS.map(c=><button key={c} onClick={()=>{setDrawColor(c);setDrawTool("pen");if(!showCanvas)setShowCanvas(true);}} style={{width:24,height:24,borderRadius:6,border:drawColor===c&&showCanvas?"2px solid #7b93f5":"2px solid transparent",background:c,cursor:"pointer",flexShrink:0,transition:"border-color 0.15s"}}/>)}
     {sep}
-    <span style={{fontSize:10,color:"#64748b",marginRight:4}}>Size</span>
-    <input type="range" min="1" max="12" value={drawSize} onChange={e=>setDrawSize(+e.target.value)} style={{width:80,accentColor:"#667eea"}}/>
-    <span style={{fontSize:10,color:"#94a3b8",marginLeft:4,fontFamily:"'JetBrains Mono',monospace"}}>{drawSize}px</span>
+    <span style={{fontSize:10,color:"#8492a6",marginRight:4}}>Size</span>
+    <input type="range" min="1" max="12" value={drawSize} onChange={e=>setDrawSize(+e.target.value)} style={{width:80,accentColor:"#7b93f5"}}/>
+    <span style={{fontSize:10,color:"#b0bec5",marginLeft:4,fontFamily:"'JetBrains Mono',monospace"}}>{drawSize}px</span>
     {sep}
-    <button className="tool-btn" onClick={()=>setShowCanvas(!showCanvas)} style={{...S.toolBtn,color:showCanvas?"#667eea":"#64748b",fontWeight:600}}>{showCanvas?"Canvas ON":"Canvas OFF"}</button>
+    <button className="tool-btn" onClick={()=>setShowCanvas(!showCanvas)} style={{...S.toolBtn,color:showCanvas?"#7b93f5":"#8492a6",fontWeight:600}}>{showCanvas?"Canvas ON":"Canvas OFF"}</button>
     {showCanvas&&<button className="tool-btn" onClick={()=>{if(canvasRef.current){const c=canvasRef.current.getContext("2d");c.clearRect(0,0,canvasRef.current.width,canvasRef.current.height);}}} style={{...S.toolBtn,color:"#ff5c5c"}}>Clear Canvas</button>}
   </>);
 
   const ReviewRibbon=()=>(<>
-    <button className="tool-btn" onClick={()=>setShowComments(!showComments)} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2,color:showComments?"#667eea":"#94a3b8"}} title="Comments">
+    <button className="tool-btn" onClick={()=>setShowComments(!showComments)} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2,color:showComments?"#7b93f5":"#b0bec5"}} title="Comments">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span style={{fontSize:9}}>Comments{comments.length>0?` (${comments.length})`:""}</span>
     </button>
     <button className="tool-btn" onClick={()=>{const sel=window.getSelection()?.toString();if(sel){const hl=`<mark style="background:rgba(102,126,234,0.25);padding:1px 3px;border-radius:3px">${sel}</mark>`;document.execCommand("insertHTML",false,hl);ref.current?.focus();onInput();}}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Track Changes">
@@ -1215,19 +1215,19 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
   </>);
 
   const ReferencesRibbon=()=>(<>
-    <button className="tool-btn" onClick={()=>{const toc=[];ref.current?.querySelectorAll("h1,h2,h3").forEach((h,i)=>{toc.push(`<div style="padding:3px 0;padding-left:${(parseInt(h.tagName[1])-1)*16}px;font-size:${h.tagName==="H1"?14:h.tagName==="H2"?13:12}px;color:#94a3b8;cursor:pointer">${h.textContent}</div>`);});if(toc.length){document.execCommand("insertHTML",false,`<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 16px;margin:8px 0"><div style="font-size:11px;font-weight:700;color:#667eea;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Table of Contents</div>${toc.join("")}</div>`);ref.current?.focus();onInput();}else alert("Add headings (H1, H2, H3) to generate a table of contents.");}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Table of Contents">
+    <button className="tool-btn" onClick={()=>{const toc=[];ref.current?.querySelectorAll("h1,h2,h3").forEach((h,i)=>{toc.push(`<div style="padding:3px 0;padding-left:${(parseInt(h.tagName[1])-1)*16}px;font-size:${h.tagName==="H1"?14:h.tagName==="H2"?13:12}px;color:#b0bec5;cursor:pointer">${h.textContent}</div>`);});if(toc.length){document.execCommand("insertHTML",false,`<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 16px;margin:8px 0"><div style="font-size:11px;font-weight:700;color:#7b93f5;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Table of Contents</div>${toc.join("")}</div>`);ref.current?.focus();onInput();}else alert("Add headings (H1, H2, H3) to generate a table of contents.");}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Table of Contents">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6" strokeWidth="3"/><line x1="3" y1="12" x2="3.01" y2="12" strokeWidth="3"/><line x1="3" y1="18" x2="3.01" y2="18" strokeWidth="3"/></svg><span style={{fontSize:9}}>TOC</span>
     </button>
-    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<sup style="color:#667eea;font-size:10px;cursor:pointer">[1]</sup>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Insert Footnote">
-      <span style={{fontSize:16,fontFamily:"serif"}}>ab<sup style={{fontSize:10,color:"#667eea"}}>1</sup></span><span style={{fontSize:9}}>Footnote</span>
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<sup style="color:#7b93f5;font-size:10px;cursor:pointer">[1]</sup>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Insert Footnote">
+      <span style={{fontSize:16,fontFamily:"serif"}}>ab<sup style={{fontSize:10,color:"#7b93f5"}}>1</sup></span><span style={{fontSize:9}}>Footnote</span>
     </button>
-    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<div style="background:rgba(255,255,255,.03);border-left:3px solid #667eea;padding:8px 12px;margin:8px 0;border-radius:0 8px 8px 0;font-size:12px;color:#94a3b8">[Citation: Author, Year. Title. Source.]</div>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Insert Citation">
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<div style="background:rgba(255,255,255,.03);border-left:3px solid #7b93f5;padding:8px 12px;margin:8px 0;border-radius:0 8px 8px 0;font-size:12px;color:#b0bec5">[Citation: Author, Year. Title. Source.]</div>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Insert Citation">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 2h12a2 2 0 012 2v16a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg><span style={{fontSize:9}}>Citation</span>
     </button>
-    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 16px;margin:8px 0"><div style="font-size:11px;font-weight:700;color:#667eea;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Bibliography</div><div style="font-size:12px;color:#94a3b8;line-height:1.8">[1] Author, A. (Year). <em>Title</em>. Publisher.<br/>[2] Author, B. (Year). <em>Title</em>. Journal, Vol(Issue).</div></div>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Bibliography">
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 16px;margin:8px 0"><div style="font-size:11px;font-weight:700;color:#7b93f5;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Bibliography</div><div style="font-size:12px;color:#b0bec5;line-height:1.8">[1] Author, A. (Year). <em>Title</em>. Publisher.<br/>[2] Author, B. (Year). <em>Title</em>. Journal, Vol(Issue).</div></div>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Bibliography">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span style={{fontSize:9}}>Biblio</span>
     </button>
-    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<div style="text-align:center;padding:6px;font-size:11px;color:#64748b;margin:8px 0"><em>Figure 1: [Caption text]</em></div>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Insert Caption">
+    <button className="tool-btn" onClick={()=>{document.execCommand("insertHTML",false,'<div style="text-align:center;padding:6px;font-size:11px;color:#8492a6;margin:8px 0"><em>Figure 1: [Caption text]</em></div>');ref.current?.focus();onInput();}} style={{...S.toolBtn,flexDirection:"column",padding:"6px 12px",gap:2}} title="Insert Caption">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="14" rx="2"/><line x1="3" y1="21" x2="21" y2="21"/></svg><span style={{fontSize:9}}>Caption</span>
     </button>
   </>);
@@ -1239,7 +1239,7 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
         {[["home","Home"],["insert","Insert"],["draw","Draw"],["references","References"],["review","Review"]].map(([k,lb])=>(<button key={k} onClick={()=>setRibbonTab(k)} style={tabStyle(k)}>{lb}</button>))}
         <div style={{flex:1}}/>
         {/* Share button in ribbon bar */}
-        <button className="tool-btn" onClick={()=>setShowShare(true)} style={{...S.toolBtn,background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",borderRadius:8,padding:"5px 14px",fontWeight:600,fontSize:11,marginRight:4}}>
+        <button className="tool-btn" onClick={()=>setShowShare(true)} style={{...S.toolBtn,background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",borderRadius:8,padding:"5px 14px",fontWeight:600,fontSize:11,marginRight:4}}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight:4}}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share
         </button>
         {/* Collaborator avatars */}
@@ -1270,23 +1270,23 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
         {/* ── Comments Panel ── */}
         {showComments&&<div style={{width:260,minWidth:260,borderLeft:"1px solid rgba(255,255,255,0.06)",background:"rgba(8,9,13,0.6)",overflowY:"auto",padding:14,display:"flex",flexDirection:"column"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-            <span style={{fontSize:12,fontWeight:700,color:"#667eea",textTransform:"uppercase",letterSpacing:"0.5px"}}>Comments</span>
-            <button onClick={()=>setShowComments(false)} style={{border:"none",background:"transparent",color:"#64748b",cursor:"pointer",fontSize:16}}>{"\u00d7"}</button>
+            <span style={{fontSize:12,fontWeight:700,color:"#7b93f5",textTransform:"uppercase",letterSpacing:"0.5px"}}>Comments</span>
+            <button onClick={()=>setShowComments(false)} style={{border:"none",background:"transparent",color:"#8492a6",cursor:"pointer",fontSize:16}}>{"\u00d7"}</button>
           </div>
           <div style={{display:"flex",gap:4,marginBottom:12}}>
-            <input className="nq-input" value={newComment} onChange={e=>setNewComment(e.target.value)} placeholder="Add a comment..." style={{flex:1,padding:"8px 10px",borderRadius:8,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#e2e8f0",fontSize:12,outline:"none",transition:"border-color 0.2s"}} onKeyDown={e=>{if(e.key==="Enter")addComment();}}/>
-            <button className="grad-btn" onClick={addComment} style={{padding:"8px 12px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>+</button>
+            <input className="nq-input" value={newComment} onChange={e=>setNewComment(e.target.value)} placeholder="Add a comment..." style={{flex:1,padding:"8px 10px",borderRadius:8,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#f1f5f9",fontSize:12,outline:"none",transition:"border-color 0.2s"}} onKeyDown={e=>{if(e.key==="Enter")addComment();}}/>
+            <button className="grad-btn" onClick={addComment} style={{padding:"8px 12px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>+</button>
           </div>
-          {comments.length===0&&<div style={{fontSize:12,color:"#64748b",textAlign:"center",padding:20}}>No comments yet. Select text and add a comment.</div>}
+          {comments.length===0&&<div style={{fontSize:12,color:"#8492a6",textAlign:"center",padding:20}}>No comments yet. Select text and add a comment.</div>}
           {comments.map(c=>(<div key={c.id} style={{padding:10,borderRadius:10,background:c.resolved?"rgba(34,197,94,0.05)":"rgba(255,255,255,0.03)",border:`1px solid ${c.resolved?"rgba(34,197,94,0.15)":"rgba(255,255,255,0.06)"}`,marginBottom:6}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-              <span style={{fontSize:11,fontWeight:600,color:"#e2e8f0"}}>{c.author}</span>
-              <span style={{fontSize:9,color:"#64748b"}}>{c.time}</span>
+              <span style={{fontSize:11,fontWeight:600,color:"#f1f5f9"}}>{c.author}</span>
+              <span style={{fontSize:9,color:"#8492a6"}}>{c.time}</span>
             </div>
-            {c.selection&&<div style={{fontSize:10,color:"#667eea",background:"rgba(102,126,234,0.08)",padding:"3px 6px",borderRadius:4,marginBottom:4,fontStyle:"italic"}}>"{c.selection.slice(0,60)}{c.selection.length>60?"...":""}"</div>}
-            <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.5}}>{c.text}</div>
+            {c.selection&&<div style={{fontSize:10,color:"#7b93f5",background:"rgba(123,147,245,0.08)",padding:"3px 6px",borderRadius:4,marginBottom:4,fontStyle:"italic"}}>"{c.selection.slice(0,60)}{c.selection.length>60?"...":""}"</div>}
+            <div style={{fontSize:12,color:"#b0bec5",lineHeight:1.5}}>{c.text}</div>
             <div style={{display:"flex",gap:6,marginTop:6}}>
-              <button onClick={()=>setComments(p=>p.map(x=>x.id===c.id?{...x,resolved:!x.resolved}:x))} style={{fontSize:10,color:c.resolved?"#22c55e":"#64748b",background:"transparent",border:"none",cursor:"pointer"}}>{c.resolved?"Resolved":"Resolve"}</button>
+              <button onClick={()=>setComments(p=>p.map(x=>x.id===c.id?{...x,resolved:!x.resolved}:x))} style={{fontSize:10,color:c.resolved?"#22c55e":"#8492a6",background:"transparent",border:"none",cursor:"pointer"}}>{c.resolved?"Resolved":"Resolve"}</button>
               <button onClick={()=>setComments(p=>p.filter(x=>x.id!==c.id))} style={{fontSize:10,color:"#ff5c5c",background:"transparent",border:"none",cursor:"pointer"}}>Delete</button>
             </div>
           </div>))}
@@ -1296,31 +1296,31 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
       {showShare&&<div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.6)",backdropFilter:"blur(8px)"}} onClick={e=>{if(e.target===e.currentTarget)setShowShare(false);}}>
         <div style={{width:440,background:"rgba(13,14,20,0.98)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:24,padding:28,boxShadow:"0 24px 80px rgba(0,0,0,0.5)"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-            <h3 style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:"#e2e8f0",margin:0}}>Share Note</h3>
-            <button onClick={()=>setShowShare(false)} style={{border:"none",background:"transparent",color:"#64748b",cursor:"pointer",fontSize:20}}>{"\u00d7"}</button>
+            <h3 style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:"#f1f5f9",margin:0}}>Share Note</h3>
+            <button onClick={()=>setShowShare(false)} style={{border:"none",background:"transparent",color:"#8492a6",cursor:"pointer",fontSize:20}}>{"\u00d7"}</button>
           </div>
           {/* Invite */}
-          <label style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Invite People</label>
+          <label style={{fontSize:11,fontWeight:600,color:"#b0bec5",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Invite People</label>
           <div style={{display:"flex",gap:6,marginBottom:16}}>
-            <input className="nq-input" value={shareEmail} onChange={e=>setShareEmail(e.target.value)} placeholder="Email address..." style={{flex:1,padding:"10px 14px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.04)",color:"#e2e8f0",fontSize:13,outline:"none",fontFamily:"'Inter',sans-serif"}} onKeyDown={e=>{if(e.key==="Enter")addCollab();}}/>
-            <button className="grad-btn" onClick={addCollab} style={{padding:"10px 20px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>Invite</button>
+            <input className="nq-input" value={shareEmail} onChange={e=>setShareEmail(e.target.value)} placeholder="Email address..." style={{flex:1,padding:"10px 14px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.04)",color:"#f1f5f9",fontSize:13,outline:"none",fontFamily:"'Inter',sans-serif"}} onKeyDown={e=>{if(e.key==="Enter")addCollab();}}/>
+            <button className="grad-btn" onClick={addCollab} style={{padding:"10px 20px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>Invite</button>
           </div>
           {/* Share link */}
-          <label style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Share Link</label>
+          <label style={{fontSize:11,fontWeight:600,color:"#b0bec5",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Share Link</label>
           <div style={{display:"flex",gap:6,marginBottom:20}}>
-            <div style={{flex:1,padding:"10px 14px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#94a3b8",fontSize:12,fontFamily:"'JetBrains Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{shareLink}</div>
-            <button onClick={copyLink} style={{padding:"10px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.04)",color:copied?"#22c55e":"#94a3b8",fontSize:12,fontWeight:600,cursor:"pointer",transition:"color 0.2s"}}>{copied?"Copied!":"Copy"}</button>
+            <div style={{flex:1,padding:"10px 14px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#b0bec5",fontSize:12,fontFamily:"'JetBrains Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{shareLink}</div>
+            <button onClick={copyLink} style={{padding:"10px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.04)",color:copied?"#22c55e":"#b0bec5",fontSize:12,fontWeight:600,cursor:"pointer",transition:"color 0.2s"}}>{copied?"Copied!":"Copy"}</button>
           </div>
           {/* Collaborators */}
-          <label style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8,display:"block"}}>People with Access</label>
+          <label style={{fontSize:11,fontWeight:600,color:"#b0bec5",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8,display:"block"}}>People with Access</label>
           {collaborators.map((c,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<collaborators.length-1?"1px solid rgba(255,255,255,0.04)":"none"}}>
             <div style={{width:32,height:32,borderRadius:"50%",background:c.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#fff",position:"relative"}}>
               {c.name[0].toUpperCase()}
               {c.online&&<span style={{position:"absolute",bottom:0,right:0,width:8,height:8,borderRadius:"50%",background:"#22c55e",border:"2px solid rgba(13,14,20,0.98)"}}/>}
             </div>
-            <div style={{flex:1}}><div style={{fontSize:13,color:"#e2e8f0",fontWeight:500}}>{c.name}</div><div style={{fontSize:11,color:"#64748b"}}>{c.email==="owner"?"Owner":c.email}</div></div>
-            <span style={{fontSize:11,color:c.online?"#22c55e":"#64748b"}}>{c.online?"Online":"Invited"}</span>
-            {c.email!=="owner"&&<button onClick={()=>setCollaborators(p=>p.filter((_,j)=>j!==i))} style={{border:"none",background:"transparent",color:"#64748b",cursor:"pointer",fontSize:14}}>{"\u00d7"}</button>}
+            <div style={{flex:1}}><div style={{fontSize:13,color:"#f1f5f9",fontWeight:500}}>{c.name}</div><div style={{fontSize:11,color:"#8492a6"}}>{c.email==="owner"?"Owner":c.email}</div></div>
+            <span style={{fontSize:11,color:c.online?"#22c55e":"#8492a6"}}>{c.online?"Online":"Invited"}</span>
+            {c.email!=="owner"&&<button onClick={()=>setCollaborators(p=>p.filter((_,j)=>j!==i))} style={{border:"none",background:"transparent",color:"#8492a6",cursor:"pointer",fontSize:14}}>{"\u00d7"}</button>}
           </div>))}
         </div>
       </div>}
@@ -1412,53 +1412,53 @@ function NewNoteModal({folders,activeFolder,activeSubfolder,onClose,onCreate}){
     <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.6)",backdropFilter:"blur(8px)"}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div style={{width:520,maxHeight:"85vh",overflowY:"auto",background:"rgba(13,14,20,0.98)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:24,padding:32,boxShadow:"0 24px 80px rgba(0,0,0,0.5)"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-          <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:"#e2e8f0",margin:0,letterSpacing:"-0.5px"}}>Create New Note</h2>
-          <button onClick={onClose} style={{border:"none",background:"transparent",color:"#64748b",cursor:"pointer",fontSize:20,padding:4}}>{"\u00d7"}</button>
+          <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:"#f1f5f9",margin:0,letterSpacing:"-0.5px"}}>Create New Note</h2>
+          <button onClick={onClose} style={{border:"none",background:"transparent",color:"#8492a6",cursor:"pointer",fontSize:20,padding:4}}>{"\u00d7"}</button>
         </div>
 
         {/* Note Name */}
-        <label style={{fontSize:12,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Note Title</label>
-        <input className="nq-input" autoFocus value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Prototyping Class Notes" style={{width:"100%",padding:"12px 16px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#e2e8f0",fontSize:15,outline:"none",fontFamily:"'Inter',sans-serif",marginBottom:18,transition:"border-color 0.2s, box-shadow 0.2s",boxSizing:"border-box"}}
+        <label style={{fontSize:12,fontWeight:600,color:"#b0bec5",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Note Title</label>
+        <input className="nq-input" autoFocus value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Prototyping Class Notes" style={{width:"100%",padding:"12px 16px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#f1f5f9",fontSize:15,outline:"none",fontFamily:"'Inter',sans-serif",marginBottom:18,transition:"border-color 0.2s, box-shadow 0.2s",boxSizing:"border-box"}}
           onKeyDown={e=>{if(e.key==="Enter")submit();}}/>
 
         {/* Folder */}
-        <label style={{fontSize:12,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Subfolder</label>
-        <select value={subfolder} onChange={e=>setSubfolder(e.target.value)} style={{width:"100%",padding:"10px 14px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#e2e8f0",fontSize:14,outline:"none",fontFamily:"'Inter',sans-serif",marginBottom:18,cursor:"pointer",boxSizing:"border-box"}}>
+        <label style={{fontSize:12,fontWeight:600,color:"#b0bec5",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Subfolder</label>
+        <select value={subfolder} onChange={e=>setSubfolder(e.target.value)} style={{width:"100%",padding:"10px 14px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#f1f5f9",fontSize:14,outline:"none",fontFamily:"'Inter',sans-serif",marginBottom:18,cursor:"pointer",boxSizing:"border-box"}}>
           <option value="">Select a subfolder...</option>
           {folders.map(f=>(f.children||[]).map(sub=><option key={sub.id} value={sub.id}>{f.name} / {sub.name}</option>))}
         </select>
 
         {/* Context */}
-        <label style={{fontSize:12,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Context / Description</label>
-        <textarea className="nq-input" value={context} onChange={e=>setContext(e.target.value)} placeholder="Describe what this note is about — e.g. 'Notes for my prototyping class. We cover wireframing, user testing, and Figma. The final project is designing a mobile app prototype.'" rows={4} style={{width:"100%",padding:"12px 16px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#e2e8f0",fontSize:14,outline:"none",fontFamily:"'Inter',sans-serif",lineHeight:1.6,resize:"vertical",marginBottom:18,transition:"border-color 0.2s, box-shadow 0.2s",boxSizing:"border-box"}}/>
+        <label style={{fontSize:12,fontWeight:600,color:"#b0bec5",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Context / Description</label>
+        <textarea className="nq-input" value={context} onChange={e=>setContext(e.target.value)} placeholder="Describe what this note is about — e.g. 'Notes for my prototyping class. We cover wireframing, user testing, and Figma. The final project is designing a mobile app prototype.'" rows={4} style={{width:"100%",padding:"12px 16px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#f1f5f9",fontSize:14,outline:"none",fontFamily:"'Inter',sans-serif",lineHeight:1.6,resize:"vertical",marginBottom:18,transition:"border-color 0.2s, box-shadow 0.2s",boxSizing:"border-box"}}/>
 
         {/* File Upload */}
-        <label style={{fontSize:12,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Reference Files (slides, PDFs, documents)</label>
+        <label style={{fontSize:12,fontWeight:600,color:"#b0bec5",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Reference Files (slides, PDFs, documents)</label>
         <div onClick={()=>document.getElementById("newNoteFileInput")?.click()}
-          onDragOver={e=>{e.preventDefault();e.currentTarget.style.borderColor="rgba(102,126,234,0.5)";}}
+          onDragOver={e=>{e.preventDefault();e.currentTarget.style.borderColor="rgba(123,147,245,0.5)";}}
           onDragLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";}}
           onDrop={e=>{e.preventDefault();e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";handleFiles(e.dataTransfer.files);}}
           style={{border:"2px dashed rgba(255,255,255,0.1)",borderRadius:14,padding:20,textAlign:"center",cursor:"pointer",marginBottom:12,transition:"border-color 0.2s",background:"rgba(255,255,255,0.02)"}}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="1.5" style={{marginBottom:6}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <div style={{fontSize:13,color:"#94a3b8"}}>Drop files here or click to browse</div>
-          <div style={{fontSize:11,color:"#64748b",marginTop:4}}>PDF, text, markdown, CSV — content used as AI context</div>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7b93f5" strokeWidth="1.5" style={{marginBottom:6}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div style={{fontSize:13,color:"#b0bec5"}}>Drop files here or click to browse</div>
+          <div style={{fontSize:11,color:"#8492a6",marginTop:4}}>PDF, text, markdown, CSV — content used as AI context</div>
           <input id="newNoteFileInput" type="file" multiple accept=".pdf,.txt,.md,.csv,.doc,.docx,.pptx" style={{display:"none"}} onChange={e=>handleFiles(e.target.files)}/>
         </div>
-        {parsing&&<div style={{fontSize:12,color:"#667eea",marginBottom:8}}>Parsing files...</div>}
+        {parsing&&<div style={{fontSize:12,color:"#7b93f5",marginBottom:8}}>Parsing files...</div>}
         {files.length>0&&<div style={{marginBottom:18}}>
           {files.map((f,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",marginBottom:4}}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <span style={{flex:1,fontSize:12,color:"#e2e8f0"}}>{f.name}</span>
-            <span style={{fontSize:10,color:"#64748b"}}>{(f.size/1024).toFixed(0)}KB</span>
-            {f.text&&<span style={{fontSize:9,color:"#667eea",padding:"1px 6px",borderRadius:4,background:"rgba(102,126,234,0.1)"}}>parsed</span>}
-            <button onClick={()=>setFiles(p=>p.filter((_,j)=>j!==i))} style={{border:"none",background:"transparent",color:"#64748b",cursor:"pointer",fontSize:14,padding:2}}>{"\u00d7"}</button>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7b93f5" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span style={{flex:1,fontSize:12,color:"#f1f5f9"}}>{f.name}</span>
+            <span style={{fontSize:10,color:"#8492a6"}}>{(f.size/1024).toFixed(0)}KB</span>
+            {f.text&&<span style={{fontSize:9,color:"#7b93f5",padding:"1px 6px",borderRadius:4,background:"rgba(123,147,245,0.1)"}}>parsed</span>}
+            <button onClick={()=>setFiles(p=>p.filter((_,j)=>j!==i))} style={{border:"none",background:"transparent",color:"#8492a6",cursor:"pointer",fontSize:14,padding:2}}>{"\u00d7"}</button>
           </div>))}
         </div>}
 
         {/* Actions */}
         <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
-          <button onClick={onClose} style={{padding:"10px 20px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"transparent",color:"#94a3b8",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>Cancel</button>
-          <button className="grad-btn" onClick={submit} disabled={!name.trim()} style={{padding:"10px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",opacity:name.trim()?1:0.5}}>Create Note</button>
+          <button onClick={onClose} style={{padding:"10px 20px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"transparent",color:"#b0bec5",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>Cancel</button>
+          <button className="grad-btn" onClick={submit} disabled={!name.trim()} style={{padding:"10px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",opacity:name.trim()?1:0.5}}>Create Note</button>
         </div>
       </div>
     </div>
@@ -1475,9 +1475,9 @@ function Sidebar({folders,notes,activeNote,activeFolder,activeSubfolder,onSelect
   const toggleExpand=id=>setExpanded(p=>({...p,[id]:!p[id]}));
   return(
     <div style={S.sidebar}>
-      <div style={{padding:"18px 18px 0"}}><NotiqLogo size={24}/><div style={{fontSize:11,color:T.txt2,marginBottom:14,marginTop:4}}>AI-powered notes</div></div>
-      <div style={{padding:"0 14px 10px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-        <button className="grad-btn" onClick={onOpenNewNote} style={{width:"100%",padding:"10px 16px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+      <div style={{padding:"20px 18px 0"}}><NotiqLogo size={24}/><div style={{fontSize:11,color:"#8492a6",marginBottom:16,marginTop:4}}>AI-powered notes</div></div>
+      <div style={{padding:"0 14px 12px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+        <button className="grad-btn" onClick={onOpenNewNote} style={{width:"100%",padding:"11px 16px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New Note
         </button>
@@ -1485,17 +1485,17 @@ function Sidebar({folders,notes,activeNote,activeFolder,activeSubfolder,onSelect
       <div style={S.sideScroll}>
         {folders.map(f=>(<div key={f.id}>
           {/* Root folder */}
-          <div style={{display:"flex",alignItems:"center",gap:4,padding:"12px 0 4px",cursor:"pointer"}} onClick={()=>{toggleExpand(f.id);onSelectFolder(f.id);onSelectFolderView(f.id);}}>
-            <span style={{fontSize:9,color:"#64748b",transition:"transform 0.2s",transform:expanded[f.id]?"rotate(90deg)":"rotate(0)",display:"inline-block"}}>{"\u25b6"}</span>
-            <span className="folder-title" style={{fontSize:11,fontWeight:700,color:f.id===activeFolder&&!activeSubfolder?"#667eea":"#64748b",letterSpacing:"0.5px",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace"}}>{f.name}</span>
-            <span style={{fontSize:9,color:"#64748b",marginLeft:"auto",fontFamily:"'JetBrains Mono',monospace"}}>{getAllFolderNoteIds(f).length}</span>
+          <div style={{display:"flex",alignItems:"center",gap:6,padding:"14px 0 5px",cursor:"pointer"}} onClick={()=>{toggleExpand(f.id);onSelectFolder(f.id);onSelectFolderView(f.id);}}>
+            <span style={{fontSize:9,color:"#8492a6",transition:"transform 0.2s",transform:expanded[f.id]?"rotate(90deg)":"rotate(0)",display:"inline-block"}}>{"\u25b6"}</span>
+            <span className="folder-title" style={{fontSize:11,fontWeight:700,color:f.id===activeFolder&&!activeSubfolder?"#7b93f5":"#8492a6",letterSpacing:"0.5px",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace"}}>{f.name}</span>
+            <span style={{fontSize:9,color:"#8492a6",marginLeft:"auto",fontFamily:"'JetBrains Mono',monospace"}}>{getAllFolderNoteIds(f).length}</span>
           </div>
           {/* Subfolders */}
           {expanded[f.id]&&f.children?.map(sub=>(<div key={sub.id} style={{paddingLeft:8}}>
-            <div style={{display:"flex",alignItems:"center",gap:4,padding:"5px 0 3px",cursor:"pointer"}} onClick={()=>{onSelectFolder(f.id);onSelectSubfolder(sub.id);onSelectSubfolderView(sub.id);}}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={activeSubfolder===sub.id?"#667eea":"#64748b"} strokeWidth="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
-              <span style={{fontSize:12,fontWeight:activeSubfolder===sub.id?600:400,color:activeSubfolder===sub.id?"#667eea":"#94a3b8",flex:1}}>{sub.name}</span>
-              <span style={{fontSize:9,color:"#64748b",fontFamily:"'JetBrains Mono',monospace"}}>{(sub.notes||[]).length}</span>
+            <div style={{display:"flex",alignItems:"center",gap:5,padding:"6px 0 4px",cursor:"pointer"}} onClick={()=>{onSelectFolder(f.id);onSelectSubfolder(sub.id);onSelectSubfolderView(sub.id);}}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={activeSubfolder===sub.id?"#7b93f5":"#8492a6"} strokeWidth="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+              <span style={{fontSize:12,fontWeight:activeSubfolder===sub.id?600:400,color:activeSubfolder===sub.id?"#7b93f5":"#b0bec5",flex:1}}>{sub.name}</span>
+              <span style={{fontSize:9,color:"#8492a6",fontFamily:"'JetBrains Mono',monospace"}}>{(sub.notes||[]).length}</span>
             </div>
             {/* Notes in subfolder */}
             {(sub.notes||[]).map(nid=>{const n=notes[nid];if(!n||n.parent)return null;const ch=n.children?.length>0;return(<div key={nid}>
@@ -1506,11 +1506,11 @@ function Sidebar({folders,notes,activeNote,activeFolder,activeSubfolder,onSelect
           </div>))}
           {/* Add subfolder */}
           {expanded[f.id]&&<div style={{paddingLeft:8,marginTop:2}}>
-            {nsf===f.id?(<div style={{display:"flex",gap:3,padding:"2px 0"}}><input className="nq-input" value={sfn} onChange={e=>setSfn(e.target.value)} placeholder="Subfolder..." autoFocus style={{flex:1,padding:"5px 8px",borderRadius:8,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#e2e8f0",fontSize:10,outline:"none"}} onKeyDown={e=>{if(e.key==="Enter"&&sfn.trim()){onCreateSubfolder(f.id,sfn.trim());setSfn("");setNsf(null);}if(e.key==="Escape")setNsf(null);}}/><button className="grad-btn" onClick={()=>{if(sfn.trim()){onCreateSubfolder(f.id,sfn.trim());setSfn("");setNsf(null);}}} style={{padding:"5px 8px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:9,fontWeight:600,cursor:"pointer"}}>+</button></div>):(<button onClick={()=>setNsf(f.id)} style={{...S.noteBtn(false,1),color:"#64748b",fontSize:10}}>+ Subfolder</button>)}
+            {nsf===f.id?(<div style={{display:"flex",gap:3,padding:"2px 0"}}><input className="nq-input" value={sfn} onChange={e=>setSfn(e.target.value)} placeholder="Subfolder..." autoFocus style={{flex:1,padding:"5px 8px",borderRadius:8,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#f1f5f9",fontSize:10,outline:"none"}} onKeyDown={e=>{if(e.key==="Enter"&&sfn.trim()){onCreateSubfolder(f.id,sfn.trim());setSfn("");setNsf(null);}if(e.key==="Escape")setNsf(null);}}/><button className="grad-btn" onClick={()=>{if(sfn.trim()){onCreateSubfolder(f.id,sfn.trim());setSfn("");setNsf(null);}}} style={{padding:"5px 8px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:9,fontWeight:600,cursor:"pointer"}}>+</button></div>):(<button onClick={()=>setNsf(f.id)} style={{...S.noteBtn(false,1),color:"#8492a6",fontSize:10}}>+ Subfolder</button>)}
           </div>}
         </div>))}
         <div style={{marginTop:10}}>
-          {nf?(<div style={{display:"flex",gap:4}}><input className="nq-input" value={fn} onChange={e=>setFn(e.target.value)} placeholder="Root folder..." autoFocus style={{flex:1,padding:"7px 12px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#e2e8f0",fontSize:11,outline:"none"}} onKeyDown={e=>{if(e.key==="Enter"&&fn.trim()){onCreateFolder(fn.trim());setFn("");setNf(false);}if(e.key==="Escape")setNf(false);}}/><button className="grad-btn" onClick={()=>{if(fn.trim()){onCreateFolder(fn.trim());setFn("");setNf(false);}}} style={{padding:"7px 12px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:10,fontWeight:600,cursor:"pointer"}}>+</button></div>):(<button onClick={()=>setNf(true)} style={{...S.noteBtn(false,0),color:"#64748b",fontSize:11}}>+ Root Folder</button>)}
+          {nf?(<div style={{display:"flex",gap:4}}><input className="nq-input" value={fn} onChange={e=>setFn(e.target.value)} placeholder="Root folder..." autoFocus style={{flex:1,padding:"7px 12px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#f1f5f9",fontSize:11,outline:"none"}} onKeyDown={e=>{if(e.key==="Enter"&&fn.trim()){onCreateFolder(fn.trim());setFn("");setNf(false);}if(e.key==="Escape")setNf(false);}}/><button className="grad-btn" onClick={()=>{if(fn.trim()){onCreateFolder(fn.trim());setFn("");setNf(false);}}} style={{padding:"7px 12px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:10,fontWeight:600,cursor:"pointer"}}>+</button></div>):(<button onClick={()=>setNf(true)} style={{...S.noteBtn(false,0),color:"#8492a6",fontSize:11}}>+ Root Folder</button>)}
         </div>
       </div>
     </div>
@@ -1526,12 +1526,12 @@ function FilePanel({files,onUpload,onClose,searchText}){
   const cur=files[active];
   return(
     <div style={S.sugPanel}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={S.sh}>Files & Resources</div><button onClick={onClose} style={{border:"none",background:"transparent",color:"#64748b",cursor:"pointer",fontSize:16,transition:"color 0.15s"}}>\u00d7</button></div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={S.sh}>Files & Resources</div><button onClick={onClose} style={{border:"none",background:"transparent",color:"#8492a6",cursor:"pointer",fontSize:16,transition:"color 0.15s"}}>\u00d7</button></div>
       <div onDragOver={e=>{e.preventDefault();setDragOver(true);}} onDragLeave={()=>setDragOver(false)} onDrop={e=>{e.preventDefault();setDragOver(false);handle(e.dataTransfer.files);}}
-        style={{border:`2px dashed ${dragOver?"#667eea":"rgba(255,255,255,.06)"}`,borderRadius:12,padding:18,textAlign:"center",marginBottom:12,background:dragOver?"rgba(102,126,234,.06)":"transparent",cursor:"pointer",transition:"all 0.2s"}}
+        style={{border:`2px dashed ${dragOver?"#7b93f5":"rgba(255,255,255,.06)"}`,borderRadius:12,padding:18,textAlign:"center",marginBottom:12,background:dragOver?"rgba(123,147,245,.06)":"transparent",cursor:"pointer",transition:"all 0.2s"}}
         onClick={()=>document.getElementById("fInput")?.click()}>
-        <div style={{fontSize:12,color:dragOver?"#667eea":"#64748b"}}>Drop files here</div>
-        <div style={{fontSize:10,color:"#64748b"}}>PDF, images, text</div>
+        <div style={{fontSize:12,color:dragOver?"#7b93f5":"#8492a6"}}>Drop files here</div>
+        <div style={{fontSize:10,color:"#8492a6"}}>PDF, images, text</div>
         <input id="fInput" type="file" multiple accept="image/*,.pdf,.txt,.md,.csv" style={{display:"none"}} onChange={e=>handle(e.target.files)}/>
       </div>
       {files.length>0&&<div style={{display:"flex",gap:2,flexWrap:"wrap",marginBottom:8}}>
@@ -1558,7 +1558,7 @@ function EditableNote({id,content,onChange}){
   useEffect(()=>{if(ref.current&&!init){ref.current.innerHTML=content||"";setInit(true);}},[content,init]);
   return(<div ref={ref} contentEditable suppressContentEditableWarning
     onInput={()=>{if(ref.current)onChange(id,ref.current.innerHTML);}}
-    style={{...S.glass,padding:18,fontSize:16,lineHeight:1.8,outline:"none",minHeight:40,cursor:"text",borderRadius:14,color:"#e2e8f0"}}
+    style={{...S.glass,padding:18,fontSize:16,lineHeight:1.8,outline:"none",minHeight:40,cursor:"text",borderRadius:14,color:"#f1f5f9"}}
   />);
 }
 
@@ -1569,14 +1569,14 @@ function CombinedView({title,items,onSelect,onAddLesson,parentId,onChangeNote}){
   const[nt,setNt]=useState("");
   return(
     <div style={{flex:1,overflowY:"auto",padding:"24px 32px"}}>
-      <h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:"0 0 6px",color:"#e2e8f0",fontWeight:800,letterSpacing:"-0.5px"}}>{title}</h2>
-      <span style={{fontSize:13,color:"#64748b"}}>{items.length} note{items.length!==1?"s":""}</span>
-      {parentId&&<div style={{display:"flex",gap:6,margin:"12px 0"}}><input className="nq-input" value={nt} onChange={e=>setNt(e.target.value)} placeholder="Add new lesson..." style={{flex:1,padding:"8px 14px",borderRadius:10,border:"1px solid rgba(255,255,255,.08)",background:"rgba(255,255,255,.03)",color:"#e2e8f0",fontSize:13,outline:"none",transition:"border-color 0.2s, box-shadow 0.2s"}} onKeyDown={e=>{if(e.key==="Enter"&&nt.trim()){onAddLesson(nt.trim());setNt("");}}}/><button className="grad-btn" onClick={()=>{if(nt.trim()){onAddLesson(nt.trim());setNt("");}}} style={{padding:"8px 18px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ Lesson</button></div>}
-      <div style={{...S.glass,padding:14,marginBottom:16}}><div style={S.sh}>Table of Contents</div>
-        {items.map((c,i)=><div key={c.id} onClick={()=>onSelect(c.id)} style={{padding:"7px 10px",cursor:"pointer",fontSize:13,color:"#94a3b8",borderBottom:"1px solid rgba(255,255,255,.06)",transition:"color 0.15s"}}><span style={{color:"#667eea",fontWeight:600,marginRight:8}}>{i+1}.</span>{c.title}<span style={{fontSize:10,color:"#64748b",marginLeft:8}}>{c.created}</span></div>)}
+      <h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:28,margin:"0 0 6px",color:"#f1f5f9",fontWeight:800,letterSpacing:"-0.5px"}}>{title}</h2>
+      <span style={{fontSize:13,color:"#8492a6"}}>{items.length} note{items.length!==1?"s":""}</span>
+      {parentId&&<div style={{display:"flex",gap:6,margin:"12px 0"}}><input className="nq-input" value={nt} onChange={e=>setNt(e.target.value)} placeholder="Add new lesson..." style={{flex:1,padding:"8px 14px",borderRadius:10,border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.04)",color:"#f1f5f9",fontSize:13,outline:"none",transition:"border-color 0.2s, box-shadow 0.2s"}} onKeyDown={e=>{if(e.key==="Enter"&&nt.trim()){onAddLesson(nt.trim());setNt("");}}}/><button className="grad-btn" onClick={()=>{if(nt.trim()){onAddLesson(nt.trim());setNt("");}}} style={{padding:"8px 18px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ Lesson</button></div>}
+      <div style={{...S.glass,padding:16,marginBottom:16}}><div style={S.sh}>Table of Contents</div>
+        {items.map((c,i)=><div key={c.id} onClick={()=>onSelect(c.id)} style={{padding:"8px 10px",cursor:"pointer",fontSize:13,color:"#b0bec5",borderBottom:"1px solid rgba(255,255,255,.06)",transition:"color 0.15s"}}><span style={{color:"#7b93f5",fontWeight:600,marginRight:8}}>{i+1}.</span>{c.title}<span style={{fontSize:10,color:"#8492a6",marginLeft:8}}>{c.created}</span></div>)}
       </div>
       {items.map(c=>(<div key={c.id} style={{marginBottom:20}}>
-        <h3 style={{fontSize:15,color:"#667eea",margin:"0 0 8px",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",fontWeight:600}} onClick={()=>onSelect(c.id)}>{c.title}</h3>
+        <h3 style={{fontSize:15,color:"#7b93f5",margin:"0 0 8px",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",fontWeight:600}} onClick={()=>onSelect(c.id)}>{c.title}</h3>
         <EditableNote id={c.id} content={c.content||""} onChange={onChangeNote}/>
       </div>))}
     </div>
@@ -1590,15 +1590,15 @@ function CombinedView({title,items,onSelect,onAddLesson,parentId,onChangeNote}){
 function SugPanel({videos,ytResults,knowledge,aiInsight,loadingYT}){
   const all=ytResults.length>0?ytResults:videos;
   return(<div style={S.sugPanel}>
-    <div style={S.sh}>Resources {ytResults.length>0&&<span style={{fontSize:9,color:"#667eea"}}>(live)</span>}</div>
-    {loadingYT&&<div style={{fontSize:12,color:"#667eea",marginBottom:8}}>Searching YouTube...</div>}
-    {all.length===0&&!loadingYT&&<p style={{fontSize:12,color:"#64748b"}}>Type to get suggestions.</p>}
+    <div style={S.sh}>Resources {ytResults.length>0&&<span style={{fontSize:9,color:"#7b93f5"}}>(live)</span>}</div>
+    {loadingYT&&<div style={{fontSize:12,color:"#7b93f5",marginBottom:8}}>Searching YouTube...</div>}
+    {all.length===0&&!loadingYT&&<p style={{fontSize:12,color:"#8492a6"}}>Type to get suggestions.</p>}
     {all.map((v,i)=>(<div key={i} draggable onDragStart={e=>{e.dataTransfer.setData("application/json",JSON.stringify({type:"youtube-video",t:v.t,ch:v.ch,v:v.v||"",url:v.url,thumb:v.thumb||""}));e.dataTransfer.effectAllowed="copy";}} style={{marginBottom:6}}><a href={v.url} target="_blank" rel="noopener noreferrer" style={{textDecoration:"none"}}><div className="res-card" style={{display:"flex",gap:8,alignItems:"center",padding:"7px 8px",borderRadius:10,border:"1px solid rgba(255,255,255,.06)",background:"rgba(255,255,255,.02)",cursor:"grab"}}>
-      {v.thumb?<img src={v.thumb} alt="" style={{width:64,height:44,borderRadius:6,objectFit:"cover",flexShrink:0}}/>:<div style={{width:44,height:32,borderRadius:6,background:"linear-gradient(135deg,rgba(102,126,234,.15),rgba(118,75,162,.15))",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:8,color:"#667eea",fontWeight:700}}>{(v.ty||"VID").toUpperCase()}</span></div>}
-      <div style={{flex:1,minWidth:0}}><div style={{fontSize:12,fontWeight:600,color:"#e2e8f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v.t}</div><div style={{fontSize:10,color:"#64748b"}}>{v.ch}{v.v?` \u00b7 ${v.v}`:""}</div></div>
-    </div></a><div style={{fontSize:9,color:"#64748b",textAlign:"center",opacity:.45,paddingBottom:2}}>drag to pin</div></div>))}
-    {aiInsight&&<div style={{marginTop:14}}><div style={S.sh2}>AI Insight</div><div style={{...S.glassAccent,padding:12,fontSize:13,color:"#94a3b8",lineHeight:1.6}}>{aiInsight}</div></div>}
-    {knowledge&&<div style={{marginTop:14}}><div style={S.sh2}>Knowledge</div>{Object.values(knowledge).map((info,i)=>(<div key={i} style={{marginBottom:8}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span style={{fontWeight:600,color:"#e2e8f0"}}>{info.name}</span><span style={{color:"#667eea",fontFamily:"'JetBrains Mono',monospace"}}>{info.pct}%</span></div><div style={S.pBar}><div style={S.pFill(info.pct)}/></div></div>))}</div>}
+      {v.thumb?<img src={v.thumb} alt="" style={{width:64,height:44,borderRadius:6,objectFit:"cover",flexShrink:0}}/>:<div style={{width:44,height:32,borderRadius:6,background:"linear-gradient(135deg,rgba(123,147,245,.15),rgba(149,113,205,.15))",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:8,color:"#7b93f5",fontWeight:700}}>{(v.ty||"VID").toUpperCase()}</span></div>}
+      <div style={{flex:1,minWidth:0}}><div style={{fontSize:12,fontWeight:600,color:"#f1f5f9",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v.t}</div><div style={{fontSize:10,color:"#8492a6"}}>{v.ch}{v.v?` \u00b7 ${v.v}`:""}</div></div>
+    </div></a><div style={{fontSize:9,color:"#8492a6",textAlign:"center",opacity:.45,paddingBottom:2}}>drag to pin</div></div>))}
+    {aiInsight&&<div style={{marginTop:14}}><div style={S.sh2}>AI Insight</div><div style={{...S.glassAccent,padding:12,fontSize:13,color:"#b0bec5",lineHeight:1.6}}>{aiInsight}</div></div>}
+    {knowledge&&<div style={{marginTop:14}}><div style={S.sh2}>Knowledge</div>{Object.values(knowledge).map((info,i)=>(<div key={i} style={{marginBottom:8}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span style={{fontWeight:600,color:"#f1f5f9"}}>{info.name}</span><span style={{color:"#7b93f5",fontFamily:"'JetBrains Mono',monospace"}}>{info.pct}%</span></div><div style={S.pBar}><div style={S.pFill(info.pct)}/></div></div>))}</div>}
   </div>);
 }
 
@@ -1679,21 +1679,21 @@ Notes:\n${digest}`;
     setSpLd(false);
   };
 
-  const IBox=({icon,text})=>(<div style={{...S.glassAccent,padding:"10px 14px",display:"flex",gap:10,alignItems:"flex-start",marginBottom:8}}><span style={{fontSize:14,flexShrink:0,color:"#667eea"}}>{icon}</span><div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6}}>{text}</div></div>);
+  const IBox=({icon,text})=>(<div style={{...S.glassAccent,padding:"10px 14px",display:"flex",gap:10,alignItems:"flex-start",marginBottom:8}}><span style={{fontSize:14,flexShrink:0,color:"#7b93f5"}}>{icon}</span><div style={{fontSize:13,color:"#b0bec5",lineHeight:1.6}}>{text}</div></div>);
 
   return(<div style={{padding:"28px 36px",overflowY:"auto",flex:1}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-      <div><h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:0,color:"#e2e8f0",fontWeight:800,letterSpacing:"-0.5px"}}>Insights</h2>
-        <div style={{fontSize:14,color:"#64748b",marginTop:4}}>Analysis for <span style={{color:"#667eea",fontWeight:600}}>{selFolder?.name||"all notes"}</span></div></div>
+      <div><h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:0,color:"#f1f5f9",fontWeight:800,letterSpacing:"-0.5px"}}>Insights</h2>
+        <div style={{fontSize:14,color:"#8492a6",marginTop:4}}>Analysis for <span style={{color:"#7b93f5",fontWeight:600}}>{selFolder?.name||"all notes"}</span></div></div>
       <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        {geminiKey&&<button className="grad-btn" onClick={gen} disabled={ld} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:13,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>{ld?"Analyzing...":"Generate Insights"}</button>}
+        {geminiKey&&<button className="grad-btn" onClick={gen} disabled={ld} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:600,cursor:ld?"wait":"pointer",opacity:ld?.7:1}}>{ld?"Analyzing...":"Generate Insights"}</button>}
       </div>
     </div>
 
     {/* Folder tabs */}
     <div style={{display:"flex",gap:4,marginBottom:16,flexWrap:"wrap"}}>
       {folders.map(f=>(
-        <button key={f.id} onClick={()=>{setInsightsFolder(f.id);setAiData(null);setStudyPlan(null);}} style={{padding:"6px 16px",borderRadius:10,border:`1px solid ${insightsFolder===f.id?"rgba(102,126,234,.4)":"rgba(255,255,255,.06)"}`,background:insightsFolder===f.id?"rgba(102,126,234,.1)":"transparent",color:insightsFolder===f.id?"#667eea":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer",transition:"all 0.2s"}}>{f.name}<span style={{marginLeft:6,fontSize:10,opacity:0.6}}>{getAllFolderNoteIds(f).length}</span></button>
+        <button key={f.id} onClick={()=>{setInsightsFolder(f.id);setAiData(null);setStudyPlan(null);}} style={{padding:"6px 16px",borderRadius:10,border:`1px solid ${insightsFolder===f.id?"rgba(123,147,245,.4)":"rgba(255,255,255,.06)"}`,background:insightsFolder===f.id?"rgba(123,147,245,.1)":"transparent",color:insightsFolder===f.id?"#7b93f5":"#8492a6",fontSize:12,fontWeight:600,cursor:"pointer",transition:"all 0.2s"}}>{f.name}<span style={{marginLeft:6,fontSize:10,opacity:0.6}}>{getAllFolderNoteIds(f).length}</span></button>
       ))}
     </div>
 
@@ -1709,18 +1709,18 @@ Notes:\n${digest}`;
     {scoredTopics.length>0&&<div style={{...S.glass,padding:18,marginBottom:16}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
         <div style={S.sh}>Confidence Distribution</div>
-        <div style={{fontSize:10,color:"#64748b"}}>{scoredTopics.length} topics rated</div>
+        <div style={{fontSize:10,color:"#8492a6"}}>{scoredTopics.length} topics rated</div>
       </div>
       <div style={{display:"flex",alignItems:"flex-end",gap:6,height:120,padding:"0 8px"}}>
         {barData.map(b=>{const pct=b.count/maxBar*100;const color=b.level<=3?"#ff5c5c":b.level<=6?"#f59e0b":"#22c55e";return(
           <div key={b.level} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-            <span style={{fontSize:9,color:"#94a3b8",fontFamily:"'JetBrains Mono',monospace"}}>{b.count||""}</span>
+            <span style={{fontSize:9,color:"#b0bec5",fontFamily:"'JetBrains Mono',monospace"}}>{b.count||""}</span>
             <div style={{width:"100%",height:`${Math.max(pct,2)}%`,background:color,borderRadius:"4px 4px 0 0",transition:"height 0.5s ease",minHeight:b.count?4:1,opacity:b.count?1:0.2}}/>
-            <span style={{fontSize:10,color:b.count?"#e2e8f0":"#64748b",fontWeight:b.count?600:400}}>{b.level}</span>
+            <span style={{fontSize:10,color:b.count?"#f1f5f9":"#8492a6",fontWeight:b.count?600:400}}>{b.level}</span>
           </div>
         );})}
       </div>
-      <div style={{display:"flex",justifyContent:"space-between",marginTop:8,fontSize:10,color:"#64748b"}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginTop:8,fontSize:10,color:"#8492a6"}}>
         <span>Weak</span><span>Moderate</span><span>Strong</span>
       </div>
     </div>}
@@ -1735,8 +1735,8 @@ Notes:\n${digest}`;
         <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:i<weakTopics.length-1?"1px solid rgba(255,255,255,0.04)":"none"}}>
           <span style={{width:24,height:24,borderRadius:6,background:d.score<=2?"rgba(255,92,92,0.15)":"rgba(245,158,11,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:d.score<=2?"#ff5c5c":"#f59e0b",flexShrink:0}}>{d.score}</span>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:12,fontWeight:600,color:"#e2e8f0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d.section}</div>
-            <div style={{fontSize:10,color:"#64748b"}}>{d.noteTitle}</div>
+            <div style={{fontSize:12,fontWeight:600,color:"#f1f5f9",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d.section}</div>
+            <div style={{fontSize:10,color:"#8492a6"}}>{d.noteTitle}</div>
           </div>
         </div>
       ))}
@@ -1755,21 +1755,21 @@ Notes:\n${digest}`;
     </div>}
 
     {/* ── Study Plan ── */}
-    {studyPlan&&<div style={{...S.glassAccent,padding:18,marginBottom:16,borderLeft:"3px solid #667eea"}}>
+    {studyPlan&&<div style={{...S.glassAccent,padding:18,marginBottom:16,borderLeft:"3px solid #7b93f5"}}>
       <div style={{...S.sh,marginBottom:10}}>AI Study Plan</div>
-      {studyPlan.summary&&<div style={{fontSize:13,color:"#94a3b8",lineHeight:1.6,marginBottom:14}}>{studyPlan.summary}</div>}
-      {studyPlan.schedule&&<div style={{fontSize:12,color:"#667eea",marginBottom:12,padding:"8px 12px",background:"rgba(102,126,234,0.06)",borderRadius:8}}>{studyPlan.schedule}</div>}
+      {studyPlan.summary&&<div style={{fontSize:13,color:"#b0bec5",lineHeight:1.6,marginBottom:14}}>{studyPlan.summary}</div>}
+      {studyPlan.schedule&&<div style={{fontSize:12,color:"#7b93f5",marginBottom:12,padding:"8px 12px",background:"rgba(123,147,245,0.06)",borderRadius:8}}>{studyPlan.schedule}</div>}
       {studyPlan.plan?.map((item,i)=>(
         <div key={i} style={{...S.glass,padding:12,marginBottom:8}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-            <div style={{fontSize:13,fontWeight:600,color:"#e2e8f0"}}>{item.topic}</div>
+            <div style={{fontSize:13,fontWeight:600,color:"#f1f5f9"}}>{item.topic}</div>
             <div style={{display:"flex",gap:6,alignItems:"center"}}>
               <span style={{fontSize:10,padding:"2px 8px",borderRadius:6,background:item.priority==="high"?"rgba(255,92,92,0.15)":"rgba(245,158,11,0.15)",color:item.priority==="high"?"#ff5c5c":"#f59e0b",fontWeight:600}}>{item.priority}</span>
-              {item.timeEstimate&&<span style={{fontSize:10,color:"#64748b"}}>{item.timeEstimate}</span>}
+              {item.timeEstimate&&<span style={{fontSize:10,color:"#8492a6"}}>{item.timeEstimate}</span>}
             </div>
           </div>
-          {item.actions?.map((a,j)=><div key={j} style={{fontSize:12,color:"#94a3b8",paddingLeft:10,borderLeft:"2px solid rgba(255,255,255,0.06)",marginBottom:3,lineHeight:1.5}}>{a}</div>)}
-          {item.resources?.map((r,j)=><div key={j} style={{fontSize:11,color:"#667eea",marginTop:4}}>Resource: {r}</div>)}
+          {item.actions?.map((a,j)=><div key={j} style={{fontSize:12,color:"#b0bec5",paddingLeft:10,borderLeft:"2px solid rgba(255,255,255,0.06)",marginBottom:3,lineHeight:1.5}}>{a}</div>)}
+          {item.resources?.map((r,j)=><div key={j} style={{fontSize:11,color:"#7b93f5",marginTop:4}}>Resource: {r}</div>)}
         </div>
       ))}
     </div>}
@@ -1786,7 +1786,7 @@ Notes:\n${digest}`;
       {nxt.length>0&&<><div style={{...S.sh,marginTop:12}}>Suggested Next Topics</div>
         {nxt.map((nt,i)=>(<div key={i} style={{...S.glass,padding:10,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div><div style={{fontSize:13,fontWeight:600}}>{nt.topic}</div><div style={{fontSize:11,color:T.txt2}}>{nt.subject} ({nt.curPct}%)</div></div>
-          <div style={{display:"flex",gap:5}}><button className="grad-btn" onClick={()=>onAddTopic(nt)} style={{padding:"4px 12px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>Add</button><a href={nt.video} target="_blank" rel="noopener noreferrer" style={{padding:"4px 12px",borderRadius:8,border:`1px solid ${T.border}`,color:T.a2,fontSize:11,textDecoration:"none"}}>Watch</a></div>
+          <div style={{display:"flex",gap:5}}><button className="grad-btn" onClick={()=>onAddTopic(nt)} style={{padding:"4px 12px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>Add</button><a href={nt.video} target="_blank" rel="noopener noreferrer" style={{padding:"4px 12px",borderRadius:8,border:`1px solid ${T.border}`,color:T.a2,fontSize:11,textDecoration:"none"}}>Watch</a></div>
         </div>))}</>}
     </div>}
 
@@ -1828,10 +1828,10 @@ Notes:\n${digest}`;
       </div>
     </div>}
 
-    {!aiData&&!ld&&geminiKey&&scoredTopics.length===0&&<div style={{textAlign:"center",padding:48,color:"#64748b"}}>
-      <div style={{fontSize:14,marginBottom:10,color:"#667eea",fontFamily:"'JetBrains Mono',monospace"}}>---</div>
-      <div style={{fontSize:14,color:"#94a3b8"}}>Rate your confidence on topics in your notes, then generate insights</div>
-      <div style={{fontSize:12,marginTop:6,color:"#64748b"}}>Open a note and rate each section 1-10 using the Topics & Confidence panel below the editor</div>
+    {!aiData&&!ld&&geminiKey&&scoredTopics.length===0&&<div style={{textAlign:"center",padding:48,color:"#8492a6"}}>
+      <div style={{fontSize:14,marginBottom:10,color:"#7b93f5",fontFamily:"'JetBrains Mono',monospace"}}>---</div>
+      <div style={{fontSize:14,color:"#b0bec5"}}>Rate your confidence on topics in your notes, then generate insights</div>
+      <div style={{fontSize:12,marginTop:6,color:"#8492a6"}}>Open a note and rate each section 1-10 using the Topics & Confidence panel below the editor</div>
     </div>}
   </div>);
 }
@@ -1878,16 +1878,16 @@ function LinksPage({notes,geminiKey,onSelectNote}){
   const selLinks=links?.filter(l=>l.from===selectedNode||l.to===selectedNode)||[];
   return(<div style={{padding:"28px 36px",overflowY:"auto",flex:1}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-      <div><h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:0,color:"#e2e8f0",fontWeight:800,letterSpacing:"-0.5px"}}>Knowledge Graph</h2>
-        <div style={{fontSize:14,color:"#64748b",marginTop:4}}>AI-discovered connections between your notes</div></div>
-      <button className="grad-btn" onClick={analyze} disabled={loading||!geminiKey} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",opacity:loading?.6:1}}>
+      <div><h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:0,color:"#f1f5f9",fontWeight:800,letterSpacing:"-0.5px"}}>Knowledge Graph</h2>
+        <div style={{fontSize:14,color:"#8492a6",marginTop:4}}>AI-discovered connections between your notes</div></div>
+      <button className="grad-btn" onClick={analyze} disabled={loading||!geminiKey} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",opacity:loading?.6:1}}>
         {loading?"Analyzing...":links?"Re-analyze":"Build Graph"}</button>
     </div>
-    {!geminiKey&&<div style={{...S.glass,padding:16,color:"#94a3b8",fontSize:13}}>Gemini API key required for knowledge graph.</div>}
-    {loading&&<div style={{textAlign:"center",padding:48,color:"#64748b"}}>
-      <div style={{fontSize:14,marginBottom:8,color:"#94a3b8"}}>{progress}</div>
+    {!geminiKey&&<div style={{...S.glass,padding:16,color:"#b0bec5",fontSize:13}}>Gemini API key required for knowledge graph.</div>}
+    {loading&&<div style={{textAlign:"center",padding:48,color:"#8492a6"}}>
+      <div style={{fontSize:14,marginBottom:8,color:"#b0bec5"}}>{progress}</div>
       <div style={{fontSize:12}}>Extracting concepts with Gemini and finding connections</div>
-      <div style={{...S.pBar,width:200,margin:"14px auto"}}><div style={{height:"100%",borderRadius:6,background:"linear-gradient(135deg,#667eea,#764ba2)",animation:"pulse 1.5s ease infinite",width:"60%"}}/></div>
+      <div style={{...S.pBar,width:200,margin:"14px auto"}}><div style={{height:"100%",borderRadius:6,background:"linear-gradient(135deg,#7b93f5,#9571cd)",animation:"pulse 1.5s ease infinite",width:"60%"}}/></div>
     </div>}
     {links&&!loading&&(<>
       <div style={{display:"flex",gap:8,marginBottom:16}}>
@@ -1928,15 +1928,15 @@ function LinksPage({notes,geminiKey,onSelectNote}){
                   <span style={{fontWeight:600,color:T.txt}}>{notes[oid]?.title}</span>
                   <div style={{fontSize:10,color:T.txt2,marginTop:2}}>via <span style={{color:"var(--t-a2)"}}>{l.concepts.join(", ")}</span></div>
                 </div>);})}</>}
-            <button className="grad-btn" onClick={()=>{onSelectNote(selectedNode);}} style={{marginTop:8,padding:"5px 14px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer",width:"100%",transition:"opacity 0.15s"}}>Open Note</button>
+            <button className="grad-btn" onClick={()=>{onSelectNote(selectedNode);}} style={{marginTop:8,padding:"5px 14px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer",width:"100%",transition:"opacity 0.15s"}}>Open Note</button>
           </div>):(<div style={{...S.glass,padding:14,textAlign:"center",color:T.txt2,fontSize:12}}>Click a node to see its concepts and connections</div>)}
         </div>
       </div>
       {links.length===0&&<div style={{...S.glass,padding:14,textAlign:"center",color:T.txt2,fontSize:13,marginTop:12}}>No connections found. Add more detailed content to discover links between notes.</div>}
     </>)}
-    {!links&&!loading&&<div style={{...S.glass,padding:40,textAlign:"center",color:"#64748b"}}>
-      <div style={{fontSize:32,marginBottom:10,opacity:.25,color:"#667eea"}}>&#9675;</div>
-      <div style={{fontSize:15,marginBottom:6,color:"#94a3b8"}}>Discover hidden connections</div>
+    {!links&&!loading&&<div style={{...S.glass,padding:40,textAlign:"center",color:"#8492a6"}}>
+      <div style={{fontSize:32,marginBottom:10,opacity:.25,color:"#7b93f5"}}>&#9675;</div>
+      <div style={{fontSize:15,marginBottom:6,color:"#b0bec5"}}>Discover hidden connections</div>
       <div style={{fontSize:12}}>Click "Build Graph" to analyze all your notes with AI and find shared concepts</div>
     </div>}
   </div>);
@@ -1960,11 +1960,11 @@ function TransformPanel({note,geminiKey,onClose}){
   return(<div style={{...S.sugPanel,width:340,minWidth:340}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
       <div style={S.sh}>AI Transform</div>
-      <button onClick={onClose} style={{border:"none",background:"transparent",color:"#64748b",cursor:"pointer",fontSize:16,transition:"color 0.15s"}}>{"\u00d7"}</button>
+      <button onClick={onClose} style={{border:"none",background:"transparent",color:"#8492a6",cursor:"pointer",fontSize:16,transition:"color 0.15s"}}>{"\u00d7"}</button>
     </div>
     <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:14}}>
       {[["quiz","Quiz"],["summary","Summary"],["flashcards","Flashcards"],["mindmap","Mind Map"]].map(([k,lb])=>(
-        <button key={k} onClick={()=>transform(k)} disabled={loading} style={{padding:"6px 14px",borderRadius:10,border:`1px solid ${format===k?"rgba(102,126,234,.4)":"rgba(255,255,255,.06)"}`,background:format===k?"rgba(102,126,234,.1)":"transparent",color:format===k?"#667eea":"#64748b",fontSize:12,fontWeight:600,cursor:"pointer",transition:"all 0.2s ease"}}>{lb}</button>
+        <button key={k} onClick={()=>transform(k)} disabled={loading} style={{padding:"6px 14px",borderRadius:10,border:`1px solid ${format===k?"rgba(123,147,245,.4)":"rgba(255,255,255,.06)"}`,background:format===k?"rgba(123,147,245,.1)":"transparent",color:format===k?"#7b93f5":"#8492a6",fontSize:12,fontWeight:600,cursor:"pointer",transition:"all 0.2s ease"}}>{lb}</button>
       ))}
     </div>
     {loading&&<div style={{textAlign:"center",padding:20,color:T.txt2,fontSize:12}}>
@@ -2031,8 +2031,8 @@ function TransformPanel({note,geminiKey,onClose}){
       </div>))}
     </div>)}
 
-    {!format&&!loading&&<div style={{fontSize:12,color:"#64748b",textAlign:"center",padding:24}}>
-      <div style={{fontSize:24,marginBottom:8,opacity:.3,color:"#667eea"}}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4l-6.4 4.8L8 14 2 9.2h7.6z"/></svg></div>
+    {!format&&!loading&&<div style={{fontSize:12,color:"#8492a6",textAlign:"center",padding:24}}>
+      <div style={{fontSize:24,marginBottom:8,opacity:.3,color:"#7b93f5"}}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4l-6.4 4.8L8 14 2 9.2h7.6z"/></svg></div>
       Transform "{note.title}" into a different format using AI
     </div>}
   </div>);
@@ -2446,7 +2446,7 @@ function LandingPage({onEnter}){
           <div style={{fontSize:14,color:"#667eea",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:16,fontFamily:"'JetBrains Mono',monospace"}}>Features</div>
           <h2 style={{fontSize:"clamp(36px, 5vw, 64px)",fontWeight:800,letterSpacing:"-2px",margin:0}}>Everything you need.<br/><span style={{color:"#475569"}}>Nothing you don't.</span></h2>
         </motion.div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(340px, 1fr))",gap:24}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4, 1fr)",gap:24}}>
           {[
             {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.912 5.813a2 2 0 001.272 1.272L21 12l-5.813 1.912a2 2 0 00-1.272 1.272L12 21l-1.912-5.813a2 2 0 00-1.272-1.272L3 12l5.813-1.912a2 2 0 001.272-1.272z"/></svg>,title:"AI Autocomplete",desc:"Copilot-style predictions that understand your context — note title, content, and writing style. Press Tab to accept, Escape to dismiss. Powered by Gemini 2.0 Flash.",color:"#667eea"},
             {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>,title:"Smart Subfolders",desc:"Organise notes in a 3-level hierarchy: root folders, subfolders, and individual notes. Click a root folder to see all notes, a subfolder for its notes, or a single note to edit.",color:"#22c55e"},
@@ -2472,7 +2472,8 @@ function LandingPage({onEnter}){
       {/* ── DEMO SECTIONS ── */}
       <section id="demo" style={{padding:"80px 0",width:"100%"}}>
 
-        {/* Autocomplete demo — normal bg */}
+        {/* Autocomplete demo — purple bg */}
+        <div style={{background:"rgba(118,75,162,0.04)",width:"100%"}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,width:"100%"}}>
           <motion.div style={{padding:"80px 64px 80px 80px",display:"flex",flexDirection:"column",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             <div style={{fontSize:13,color:"#667eea",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:20,fontFamily:"'JetBrains Mono',monospace"}}>Autocomplete</div>
@@ -2489,9 +2490,9 @@ function LandingPage({onEnter}){
             <TypingDemo/>
           </motion.div>
         </div>
+        </div>
 
-        {/* YouTube demo — purple bg */}
-        <div style={{background:"rgba(118,75,162,0.04)",width:"100%"}}>
+        {/* YouTube demo — normal bg */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,width:"100%"}}>
           <motion.div style={{padding:"80px 64px 80px 80px",display:"flex",alignItems:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,delay:0.12,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             <YouTubeDemo/>
@@ -2503,9 +2504,9 @@ function LandingPage({onEnter}){
             <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>Then the YouTube Data API v3 searches with that query and returns the top results ranked by relevance. Each video card shows the title, channel, and view count. Drag any result directly into your note editor to embed it as a reference link.</p>
           </motion.div>
         </div>
-        </div>
 
-        {/* Topic Detection & Confidence demo — normal bg */}
+        {/* Topic Detection & Confidence demo — purple bg */}
+        <div style={{background:"rgba(118,75,162,0.04)",width:"100%"}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,width:"100%"}}>
           <motion.div style={{padding:"80px 64px 80px 80px",display:"flex",flexDirection:"column",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             <div style={{fontSize:13,color:"#667eea",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:20,fontFamily:"'JetBrains Mono',monospace"}}>Topic Detection</div>
@@ -2535,9 +2536,9 @@ function LandingPage({onEnter}){
             </div>
           </motion.div>
         </div>
+        </div>
 
-        {/* Knowledge Graph demo — purple bg */}
-        <div style={{background:"rgba(118,75,162,0.04)",width:"100%"}}>
+        {/* Knowledge Graph demo — normal bg */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,width:"100%"}}>
           <motion.div style={{padding:"80px 64px 80px 80px",display:"flex",alignItems:"center",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,delay:0.12,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             <GraphDemo/>
@@ -2549,9 +2550,9 @@ function LandingPage({onEnter}){
             <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>The result is an interactive SVG visualization where nodes are your notes and edges represent shared knowledge. Hover any node to see which concepts it shares with its neighbours.</p>
           </motion.div>
         </div>
-        </div>
 
-        {/* Study Plans & Insights demo — normal bg */}
+        {/* Study Plans & Insights demo — purple bg */}
+        <div style={{background:"rgba(118,75,162,0.04)",width:"100%"}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,width:"100%"}}>
           <motion.div style={{padding:"80px 64px 80px 80px",display:"flex",flexDirection:"column",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             <div style={{fontSize:13,color:"#f093fb",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:20,fontFamily:"'JetBrains Mono',monospace"}}>AI Study Plans</div>
@@ -2578,9 +2579,9 @@ function LandingPage({onEnter}){
             </div>
           </motion.div>
         </div>
+        </div>
 
-        {/* Transform demo — purple bg */}
-        <div style={{background:"rgba(118,75,162,0.04)",width:"100%"}}>
+        {/* Transform demo — normal bg */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,width:"100%"}}>
           <motion.div style={{padding:"80px 64px 80px 80px",display:"flex",alignItems:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,delay:0.12,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             <div style={{width:"100%"}}><TransformDemo/></div>
@@ -2591,7 +2592,6 @@ function LandingPage({onEnter}){
             <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Select any note and Notiq transforms it into four distinct study formats using a single Gemini call with structured JSON output. Interactive quizzes with multiple-choice scoring, condensed summaries with key bullet points, flippable flashcards for spaced repetition, and visual mind maps that show topic hierarchies.</p>
             <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>The prompt engineering enforces a strict JSON schema so every response parses cleanly into rich, interactive UI components — no regex post-processing needed. Switch between formats instantly with the tab bar above.</p>
           </motion.div>
-        </div>
         </div>
       </section>
 
@@ -2768,8 +2768,8 @@ function NotiqApp(){
 
   return(<div style={S.app}>
     <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0}}>
-      <div style={{position:"absolute",top:"10%",left:"35%",width:1000,height:800,background:"radial-gradient(circle,rgba(102,126,234,0.07) 0%,transparent 65%)"}}/>
-      <div style={{position:"absolute",bottom:"15%",right:"10%",width:600,height:600,background:"radial-gradient(circle,rgba(118,75,162,0.05) 0%,transparent 65%)"}}/>
+      <div style={{position:"absolute",top:"10%",left:"35%",width:1000,height:800,background:"radial-gradient(circle,rgba(123,147,245,0.07) 0%,transparent 65%)"}}/>
+      <div style={{position:"absolute",bottom:"15%",right:"10%",width:600,height:600,background:"radial-gradient(circle,rgba(149,113,205,0.05) 0%,transparent 65%)"}}/>
     </div>
     {showNewNoteModal&&<NewNoteModal folders={folders} activeFolder={activeFolder} activeSubfolder={activeSubfolder} onClose={()=>setShowNewNoteModal(false)} onCreate={createNote}/>}
     <Sidebar folders={folders} notes={notes} activeNote={activeNote} activeFolder={activeFolder} activeSubfolder={activeSubfolder}
@@ -2780,12 +2780,12 @@ function NotiqApp(){
         <button className="tab-btn" style={S.tabBtn(page==="insights")} onClick={()=>{setPage("insights");setInsightsFolder(activeFolder);}}>Insights</button>
         <button className="tab-btn" style={S.tabBtn(page==="links")} onClick={()=>setPage("links")}>Links</button>
         <div style={{flex:1}}/>
-        <button onClick={()=>{document.body.classList.add("theme-transition");setIsDark(d=>!d);setTimeout(()=>document.body.classList.remove("theme-transition"),400);}} style={{padding:"6px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#94a3b8",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginRight:4,transition:"all 0.2s ease"}}>{isDark?"Light":"Dark"}</button>
+        <button onClick={()=>{document.body.classList.add("theme-transition");setIsDark(d=>!d);setTimeout(()=>document.body.classList.remove("theme-transition"),400);}} style={{padding:"7px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#b0bec5",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginRight:4,transition:"all 0.2s ease"}}>{isDark?"Light":"Dark"}</button>
         <div style={{display:"flex",gap:8,alignItems:"center",marginRight:10}}>
-          <span style={{width:6,height:6,borderRadius:"50%",background:GEMINI_KEY?"#667eea":"var(--t-dot-off)"}}/>
-          <span style={{fontSize:10,color:T.txt2}}>Gemini</span>
-          <span style={{width:6,height:6,borderRadius:"50%",background:YOUTUBE_KEY?"#667eea":"var(--t-dot-off)"}}/>
-          <span style={{fontSize:10,color:T.txt2}}>YT</span>
+          <span style={{width:6,height:6,borderRadius:"50%",background:GEMINI_KEY?"#7b93f5":"var(--t-dot-off)"}}/>
+          <span style={{fontSize:10,color:"#8492a6"}}>Gemini</span>
+          <span style={{width:6,height:6,borderRadius:"50%",background:YOUTUBE_KEY?"#7b93f5":"var(--t-dot-off)"}}/>
+          <span style={{fontSize:10,color:"#8492a6"}}>YT</span>
         </div>
         {page==="notes"&&!viewMode&&<>
           <button className="tab-btn" style={{...S.tabBtn(showFiles),fontSize:12}} onClick={()=>{setShowFiles(!showFiles);if(!showFiles){setShowAI(false);setShowTransform(false);}else setShowAI(true);}}>Files</button>
@@ -2796,15 +2796,15 @@ function NotiqApp(){
       {page==="notes"&&viewMode&&<CombinedView title={combinedTitle} items={combinedItems} onSelect={selectNote} onAddLesson={t=>combinedParentId&&addLesson(combinedParentId,t)} parentId={combinedParentId} onChangeNote={(id,html)=>setNotes(p=>({...p,[id]:{...p[id],content:html}}))}/>}
       {page==="notes"&&!viewMode&&active&&(
         <div style={{display:"flex",flex:1,overflow:"hidden"}}>
-          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",padding:"18px 28px"}}>
-            <div style={{marginBottom:10}}>
-              <span style={{fontSize:12,color:T.txt2,letterSpacing:"0.3px"}}>{folderName} / {active.created}</span>
-              {active.parent&&<span style={{fontSize:12,color:"#667eea",marginLeft:8,cursor:"pointer",transition:"opacity 0.15s"}} onClick={()=>selectParent(active.parent)}>{"\u2190"} {notes[active.parent]?.title}</span>}
-              <h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:"6px 0",color:"#e2e8f0",fontWeight:800,letterSpacing:"-0.5px"}}>{active.title}</h2>
-              {active.context&&<div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <span style={{fontSize:11,color:"#667eea"}}>RAG context attached</span>
-                {active.ragFiles?.length>0&&<span style={{fontSize:10,color:"#64748b"}}>({active.ragFiles.length} file{active.ragFiles.length!==1?"s":""})</span>}
+          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",padding:"20px 32px"}}>
+            <div style={{marginBottom:12}}>
+              <span style={{fontSize:12,color:"#8492a6",letterSpacing:"0.3px"}}>{folderName} / {active.created}</span>
+              {active.parent&&<span style={{fontSize:12,color:"#7b93f5",marginLeft:8,cursor:"pointer",transition:"opacity 0.15s"}} onClick={()=>selectParent(active.parent)}>{"\u2190"} {notes[active.parent]?.title}</span>}
+              <h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:28,margin:"8px 0",color:"#f1f5f9",fontWeight:800,letterSpacing:"-0.5px"}}>{active.title}</h2>
+              {active.context&&<div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7b93f5" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span style={{fontSize:11,color:"#7b93f5"}}>RAG context attached</span>
+                {active.ragFiles?.length>0&&<span style={{fontSize:10,color:"#8492a6"}}>({active.ragFiles.length} file{active.ragFiles.length!==1?"s":""})</span>}
               </div>}
             </div>
             <RichEditor key={activeNote} content={active.content} onChange={handleChange} ghostData={ghostData} onAcceptGhost={acceptGhost} noteId={activeNote} loading={ghostLoading} onShowFiles={handleShowFiles} sectionColors={SECTION_COLORS} confidence={confidence} onSetConfidence={setConfidenceScore}/>
@@ -2814,10 +2814,10 @@ function NotiqApp(){
           {showTransform&&!showFiles&&active&&<TransformPanel note={active} geminiKey={GEMINI_KEY} onClose={()=>{setShowTransform(false);setShowAI(true);}}/>}
         </div>
       )}
-      {page==="notes"&&!viewMode&&!active&&<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{textAlign:"center",maxWidth:320}}>
+      {page==="notes"&&!viewMode&&!active&&<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{textAlign:"center",maxWidth:340}}>
         <NotiqLogo size={44} style={{marginBottom:16}}/>
-        <p style={{color:"#94a3b8",fontSize:15,lineHeight:1.6,margin:"0 0 8px"}}>Select a note from the sidebar or create a new one to get started.</p>
-        <p style={{color:"#64748b",fontSize:12}}>Your AI-powered writing companion is ready.</p>
+        <p style={{color:"#b0bec5",fontSize:15,lineHeight:1.6,margin:"0 0 8px"}}>Select a note from the sidebar or create a new one to get started.</p>
+        <p style={{color:"#8492a6",fontSize:12}}>Your AI-powered writing companion is ready.</p>
       </div></div>}
       {page==="insights"&&<InsightsPage notes={notes} folders={folders} knowledge={knowledge} onAddTopic={addTopic} geminiKey={GEMINI_KEY} topicSections={topicSections} confidence={confidence} insightsFolder={insightsFolder} setInsightsFolder={setInsightsFolder}/>}
       {page==="links"&&<LinksPage notes={notes} geminiKey={GEMINI_KEY} onSelectNote={selectNote}/>}
