@@ -987,7 +987,7 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
       h.setAttribute('data-ntsc','1');
       // Inject confidence dropdown next to heading
       const wrap=document.createElement('span');
-      wrap.className='nt-conf-wrap';
+      wrap.className='nt-conf-wrap';if(i===0)wrap.setAttribute('data-tut','confidence');
       wrap.setAttribute('contenteditable','false');
       wrap.style.cssText='position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:4px;z-index:5;';
       const score=(confidence||{})[`${noteId}:${i}`]||0;
@@ -1233,7 +1233,7 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
   </>);
 
   return(
-    <div style={{border:`1px solid ${dropOver?"rgba(102,126,234,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:20,overflow:"hidden",background:dropOver?"rgba(102,126,234,.04)":"rgba(255,255,255,0.03)",backdropFilter:"blur(12px)",flex:1,display:"flex",flexDirection:"column",transition:"border-color .2s",boxShadow:"0 4px 24px rgba(0,0,0,0.2)"}} onDragStart={handleBlockDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+    <div data-tut="editor" style={{border:`1px solid ${dropOver?"rgba(102,126,234,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:20,overflow:"hidden",background:dropOver?"rgba(102,126,234,.04)":"rgba(255,255,255,0.03)",backdropFilter:"blur(12px)",flex:1,display:"flex",flexDirection:"column",transition:"border-color .2s",boxShadow:"0 4px 24px rgba(0,0,0,0.2)"}} onDragStart={handleBlockDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
       {/* ── Ribbon Tab Bar ── */}
       <div style={{display:"flex",alignItems:"center",padding:"0 10px",borderBottom:"1px solid rgba(255,255,255,0.06)",background:"var(--t-topbar)",gap:0}}>
         {[["home","Home"],["insert","Insert"],["draw","Draw"],["references","References"],["review","Review"]].map(([k,lb])=>(<button key={k} onClick={()=>setRibbonTab(k)} style={tabStyle(k)}>{lb}</button>))}
@@ -1448,10 +1448,10 @@ function Sidebar({folders,notes,activeNote,activeFolder,activeSubfolder,onSelect
   const[expanded,setExpanded]=useState(()=>{const m={};folders.forEach(f=>m[f.id]=true);return m;});
   const toggleExpand=id=>setExpanded(p=>({...p,[id]:!p[id]}));
   return(
-    <div style={S.sidebar}>
+    <div data-tut="sidebar" style={S.sidebar}>
       <div style={{padding:"20px 18px 0"}}><NotiqLogo size={24}/><div style={{fontSize:11,color:"#8492a6",marginBottom:16,marginTop:4}}>AI-powered notes</div></div>
       <div style={{padding:"0 14px 12px",borderBottom:"1px solid var(--t-border)"}}>
-        <button className="grad-btn" onClick={onOpenNewNote} style={{width:"100%",padding:"11px 16px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+        <button data-tut="new-note" className="grad-btn" onClick={onOpenNewNote} style={{width:"100%",padding:"11px 16px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New Note
         </button>
@@ -1563,7 +1563,7 @@ function CombinedView({title,items,onSelect,onAddLesson,parentId,onChangeNote,hi
 // ══════════════════════════════════════════════════════════════
 function SugPanel({videos,ytResults,knowledge,aiInsight,loadingYT}){
   const all=ytResults.length>0?ytResults:videos;
-  return(<div style={S.sugPanel}>
+  return(<div data-tut="ai-panel" style={S.sugPanel}>
     <div style={S.sh}>Resources {ytResults.length>0&&<span style={{fontSize:9,color:"#7b93f5"}}>(live)</span>}</div>
     {loadingYT&&<div style={{fontSize:12,color:"#7b93f5",marginBottom:8}}>Searching YouTube...</div>}
     {all.length===0&&!loadingYT&&<p style={{fontSize:12,color:"#8492a6"}}>Type to get suggestions.</p>}
@@ -2649,7 +2649,7 @@ function LandingPage({onEnter}){
       {/* ── NAV ── */}
       <nav style={{position:"fixed",top:0,left:0,right:0,zIndex:100,padding:"20px 48px",display:"flex",alignItems:"center",justifyContent:"space-between",background:scrollY>50?"rgba(8,9,13,0.92)":"transparent",backdropFilter:scrollY>50?"blur(24px)":"none",borderBottom:"1px solid",borderColor:scrollY>50?"rgba(255,255,255,0.06)":"transparent",transition:"background 0.3s, border-color 0.3s, backdrop-filter 0.3s"}}>
         <NotiqLogo size={30} animated/>
-        <button onClick={enter} className="cta-btn" style={{padding:"10px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>Sign In</button>
+        <button onClick={enter} className="cta-btn" style={{padding:"10px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>Get Started</button>
       </nav>
 
       {/* ── HERO with Floating Paths ── */}
@@ -2936,7 +2936,7 @@ function Tutorial({onComplete}){
     {id:"new-note",title:"Create a Note",desc:"Start here to create notes. Add a title, choose a subfolder, describe the context for smarter AI, and attach reference files like PDFs or slides."},
     {id:"editor",title:"Editor & Ribbon",desc:"A full rich text editor with 5 ribbon tabs: Home (formatting), Insert (tables, images, links), Draw (freehand canvas), References (TOC, citations), and Review (comments, read aloud)."},
     {id:"autocomplete",title:"AI Autocomplete",desc:"As you type, the AI suggests completions as ghost text. Press TAB to accept or ESC to dismiss. Suggestions are context-aware based on your note and uploaded files."},
-    {id:"confidence",title:"Confidence Scoring",desc:"Each heading gets a 1-10 confidence dropdown. Rate how well you understand each topic — these scores drive your personalized insights and study plans."},
+    {id:"confidence",title:"Confidence Scoring",desc:"See this small dropdown next to each heading? Rate your understanding from 1-10. These scores power your personalized insights and study plans."},
     {id:"insights",title:"Insights",desc:"View your confidence analysis: overall stats, a distribution graph, weak and strong areas, plus an AI-generated study plan targeting your weakest topics."},
     {id:"transform",title:"Transform",desc:"Highlight text and click Transform to convert your notes into a Quiz, Summary, Flashcards, or Mind Map. The AI restructures your content instantly."},
     {id:"ai-panel",title:"AI Panel",desc:"The right panel shows YouTube videos relevant to your note, plus a knowledge tracker showing your coverage of each subject. Toggle it from the top bar."},
@@ -2949,42 +2949,59 @@ function Tutorial({onComplete}){
   const total=steps.length;
   const next=()=>{if(step<total-1)setStep(step+1);else onComplete();};
 
-  // Highlight regions matched to actual UI layout
-  // Sidebar=310px wide, topbar ~50px tall, insights/transform buttons below title ~150px from top
+  // Dynamically query actual DOM element positions via data-tut attributes
   const getHighlight=()=>{
-    switch(cur.id){
-      case"sidebar":return{top:0,left:0,width:310,height:"100vh"};
-      case"new-note":return{top:68,left:14,width:282,height:48};
-      case"editor":return{top:190,left:342,width:"calc(100vw - 700px)",height:"calc(100vh - 210px)"};
-      case"autocomplete":return{top:300,left:342,width:"calc(100vw - 700px)",height:200};
-      case"confidence":return{top:300,left:342,width:"calc(100vw - 700px)",height:200};
-      case"insights":return{top:150,left:342,width:130,height:44};
-      case"transform":return{top:150,left:482,width:140,height:44};
-      case"ai-panel":return{top:50,right:0,width:320,height:"calc(100vh - 50px)"};
-      case"summary":return{top:0,left:370,width:90,height:50};
-      case"links":return{top:0,left:462,width:65,height:50};
-      case"theme":return{top:5,right:120,width:60,height:40};
-      default:return null;
-    }
+    const id=cur.id;
+    if(id==="welcome"||id==="done")return null;
+    // For autocomplete, reuse editor highlight
+    const tutId=id==="autocomplete"?"editor":id;
+    const el=document.querySelector(`[data-tut="${tutId}"]`);
+    if(!el)return null;
+    const r=el.getBoundingClientRect();
+    const pad=4; // slight padding around element
+    return{top:r.top-pad,left:r.left-pad,width:r.width+pad*2,height:r.height+pad*2};
   };
 
-  // Card position: aligned to the highlighted element
+  // Card position: dynamically placed near the highlighted element, always within viewport
   const getCardPos=()=>{
-    switch(cur.id){
-      case"welcome":case"done":return{top:"50%",left:"50%",transform:"translate(-50%,-50%)"};
-      case"sidebar":return{top:"50%",left:324,transform:"translateY(-50%)"};
-      case"new-note":return{top:130,left:324};
-      case"editor":return{top:60,left:"50%",transform:"translateX(-50%)"};
-      case"autocomplete":return{top:520,left:"50%",transform:"translateX(-50%)"};
-      case"confidence":return{top:520,left:"50%",transform:"translateX(-50%)"};
-      case"insights":return{top:208,left:342};
-      case"transform":return{top:208,left:482};
-      case"ai-panel":return{top:"50%",right:334,transform:"translateY(-50%)"};
-      case"summary":return{top:58,left:340};
-      case"links":return{top:58,left:430};
-      case"theme":return{top:58,right:100};
-      default:return{top:"50%",left:"50%",transform:"translate(-50%,-50%)"};
+    const id=cur.id;
+    if(id==="welcome"||id==="done")return{top:"50vh",left:"50vw",transform:"translate(-50%,-50%)"};
+    const tutId=id==="autocomplete"?"editor":id;
+    const el=document.querySelector(`[data-tut="${tutId}"]`);
+    if(!el)return{top:"50vh",left:"50vw",transform:"translate(-50%,-50%)"};
+    const r=el.getBoundingClientRect();
+    const vw=window.innerWidth,vh=window.innerHeight;
+    const cardW=Math.min(500,vw*0.92);
+    const cardH=360; // estimated max card height
+    const margin=14;
+
+    let top,left,transform;
+
+    if(id==="sidebar"){top=vh/2;left=r.right+margin;transform="translateY(-50%)";}
+    else if(id==="ai-panel"){top=vh/2;left=r.left-cardW-margin;transform="translateY(-50%)";}
+    else if(id==="editor"||id==="autocomplete"){
+      // Large element — center the card inside it
+      top=r.top+r.height/2;left=r.left+r.width/2;transform="translate(-50%,-50%)";
     }
+    else{
+      // Default: place below if fits, otherwise above
+      const spaceBelow=vh-(r.bottom+margin);
+      if(spaceBelow>=cardH){top=r.bottom+margin;left=r.left;}
+      else{top=r.top-margin;left=r.left;transform="translateY(-100%)";}
+    }
+
+    // Clamp left so card doesn't go off-screen right
+    if(typeof left==="number"){
+      left=Math.max(10,Math.min(left,vw-cardW-10));
+    }
+    // Clamp top so card stays in viewport
+    if(typeof top==="number"&&!transform?.includes("translateY(-1")&&!transform?.includes("translate(-50%,-50%)")){
+      top=Math.max(10,Math.min(top,vh-cardH-10));
+    }
+
+    const pos={top,left};
+    if(transform)pos.transform=transform;
+    return pos;
   };
 
   // Animated demo visuals per step
@@ -3134,28 +3151,39 @@ function Tutorial({onComplete}){
   const hl=getHighlight();
   const cardPos=getCardPos();
 
+  // Build clip-path to cut out highlighted region, so only non-highlighted areas are darkened/blurred
+  const getClipPath=()=>{
+    if(!hl)return"none";
+    const t=`${hl.top}px`,l=`${hl.left}px`,w=`${hl.width}px`,h=`${hl.height}px`;
+    return`polygon(0% 0%, 0% 100%, ${l} 100%, ${l} ${t}, calc(${l} + ${w}) ${t}, calc(${l} + ${w}) calc(${t} + ${h}), ${l} calc(${t} + ${h}), ${l} 100%, 100% 100%, 100% 0%)`;
+  };
+
   return(<>
     <style>{`
+      @keyframes tutFadeInCenter{from{opacity:0;transform:translate(-50%,-50%) translateY(10px)}to{opacity:1;transform:translate(-50%,-50%) translateY(0)}}
       @keyframes tutFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-      @keyframes tutPulse{0%,100%{box-shadow:0 0 0 0 rgba(123,147,245,0.4)}50%{box-shadow:0 0 0 10px rgba(123,147,245,0)}}
+      @keyframes tutPulse{0%,100%{box-shadow:0 0 0 0 rgba(123,147,245,0.4)}50%{box-shadow:0 0 0 12px rgba(123,147,245,0)}}
       @keyframes tutBlink{50%{border-color:transparent}}
       .tut-card{animation:tutFadeIn 0.35s ease-out both}
+      .tut-card-center{animation:tutFadeInCenter 0.35s ease-out both}
       .tut-hl{animation:tutPulse 2s ease infinite}
     `}</style>
-    <div style={{position:"fixed",inset:0,zIndex:10000,background:"rgba(0,0,0,0.55)",backdropFilter:"blur(2px)"}}>
-      {hl&&<div className="tut-hl" style={{position:"fixed",...hl,border:"2px solid rgba(123,147,245,0.5)",borderRadius:10,background:"rgba(123,147,245,0.06)",pointerEvents:"none",zIndex:10000}}/>}
-    </div>
-    <div key={step} className="tut-card" style={{position:"fixed",zIndex:10001,maxWidth:400,width:"90vw",padding:24,background:"var(--t-bg2)",border:"1px solid var(--t-border)",borderRadius:18,boxShadow:"0 16px 48px rgba(0,0,0,0.35)",...cardPos}}>
+    {/* Dark overlay with hole cut out for highlighted element */}
+    <div style={{position:"fixed",inset:0,zIndex:10000,background:"rgba(0,0,0,0.55)",backdropFilter:"blur(2px)",WebkitBackdropFilter:"blur(2px)",clipPath:hl?getClipPath():"none",transition:"clip-path 0.3s ease"}}/>
+    {/* Highlight border ring around the clear area */}
+    {hl&&<div className="tut-hl" style={{position:"fixed",...hl,border:"2px solid rgba(123,147,245,0.6)",borderRadius:10,pointerEvents:"none",zIndex:10001}}/>}
+    {/* Tutorial card */}
+    <div key={step} className={cardPos.transform?.includes("translate(-50%,-50%)")?"tut-card-center":"tut-card"} style={{position:"fixed",zIndex:10002,maxWidth:500,width:"92vw",padding:28,background:"var(--t-bg2)",border:"1px solid var(--t-border)",borderRadius:18,boxShadow:"0 16px 48px rgba(0,0,0,0.35)",...cardPos}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
         <div style={{display:"flex",gap:3}}>{steps.map((_,i)=>(<div key={i} style={{width:i===step?18:5,height:5,borderRadius:3,background:i===step?"linear-gradient(135deg,#7b93f5,#9571cd)":i<step?"var(--t-a1)":"var(--t-border)",transition:"all 0.3s",opacity:i<step?0.4:1}}/>))}</div>
         <span style={{fontSize:10,color:"var(--t-txt2)",fontFamily:"'JetBrains Mono',monospace"}}>{step+1}/{total}</span>
       </div>
-      <div style={{fontSize:18,fontWeight:800,fontFamily:"'Inter',sans-serif",background:"linear-gradient(135deg,#7b93f5,#9571cd)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:6,letterSpacing:"-0.3px"}}>{cur.title}</div>
-      <div style={{fontSize:13,color:"var(--t-txt2)",lineHeight:1.65,marginBottom:14}}>{cur.desc}</div>
+      <div style={{fontSize:20,fontWeight:800,fontFamily:"'Inter',sans-serif",background:"linear-gradient(135deg,#7b93f5,#9571cd)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:8,letterSpacing:"-0.3px"}}>{cur.title}</div>
+      <div style={{fontSize:14,color:"var(--t-txt2)",lineHeight:1.65,marginBottom:16}}>{cur.desc}</div>
       <Demo/>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <button onClick={onComplete} style={{padding:"7px 16px",borderRadius:8,border:"1px solid var(--t-border)",background:"transparent",color:"var(--t-txt2)",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>Skip</button>
-        <button onClick={next} style={{padding:"9px 24px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",boxShadow:"0 4px 14px rgba(123,147,245,0.3)"}}>{step===total-1?"Get Started":"Next"}</button>
+        <button onClick={onComplete} style={{padding:"8px 18px",borderRadius:8,border:"1px solid var(--t-border)",background:"transparent",color:"var(--t-txt2)",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>Skip</button>
+        <button onClick={next} style={{padding:"10px 28px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",boxShadow:"0 4px 14px rgba(123,147,245,0.3)"}}>{step===total-1?"Get Started":"Next"}</button>
       </div>
     </div>
   </>);
@@ -3388,21 +3416,21 @@ function NotiqApp(){
     <div style={S.main}>
       <div style={S.topBar}>
         <button className="tab-btn" style={S.tabBtn(page==="notes")} onClick={()=>setPage("notes")}>Notes</button>
-        <button className="tab-btn" style={S.tabBtn(page==="summary")} onClick={()=>setPage("summary")}>Summary</button>
-        <button className="tab-btn" style={S.tabBtn(page==="links")} onClick={()=>setPage("links")}>Links</button>
+        <button data-tut="summary" className="tab-btn" style={S.tabBtn(page==="summary")} onClick={()=>setPage("summary")}>Summary</button>
+        <button data-tut="links" className="tab-btn" style={S.tabBtn(page==="links")} onClick={()=>setPage("links")}>Links</button>
         <div style={{flex:1}}/>
-        <button onClick={()=>{document.body.classList.add("theme-transition");setIsDark(d=>!d);setTimeout(()=>document.body.classList.remove("theme-transition"),400);}} style={{padding:"7px 16px",borderRadius:10,border:"1px solid var(--t-border)",background:"var(--t-glass)",color:"var(--t-txt2)",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginRight:4,transition:"all 0.2s ease"}}>{isDark?"Light":"Dark"}</button>
+        <button data-tut="theme" onClick={()=>{document.body.classList.add("theme-transition");setIsDark(d=>!d);setTimeout(()=>document.body.classList.remove("theme-transition"),400);}} style={{padding:"7px 16px",borderRadius:10,border:"1px solid var(--t-border)",background:"var(--t-glass)",color:"var(--t-txt2)",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginRight:4,transition:"all 0.2s ease"}}>{isDark?"Light":"Dark"}</button>
         {page==="notes"&&!viewMode&&<button className="tab-btn" style={{...S.tabBtn(showAI),fontSize:12}} onClick={()=>{setShowAI(!showAI);if(showAI){setShowFiles(false);}else{setShowTransform(false);}}}>{showAI?"AI Panel":"AI Panel"}</button>}
       </div>
       {page==="notes"&&viewMode&&<div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
         <div style={{padding:"16px 32px 8px"}}>
           <h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:24,margin:"0 0 10px",color:"var(--t-txt)",fontWeight:800,letterSpacing:"-0.5px"}}>{combinedTitle}</h2>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>setShowInsightsPanel(p=>!p)} style={{padding:"10px 24px",borderRadius:12,border:"none",background:showInsightsPanel?"linear-gradient(135deg,#7b93f5,#9571cd)":"linear-gradient(135deg,rgba(149,113,205,0.15),rgba(123,147,245,0.15))",color:showInsightsPanel?"#fff":"var(--t-purple)",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}>
+            <button data-tut="insights" onClick={()=>setShowInsightsPanel(p=>!p)} style={{padding:"10px 24px",borderRadius:12,border:"none",background:showInsightsPanel?"linear-gradient(135deg,#7b93f5,#9571cd)":"linear-gradient(135deg,rgba(149,113,205,0.15),rgba(123,147,245,0.15))",color:showInsightsPanel?"#fff":"var(--t-purple)",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
               Insights
             </button>
-            <button onClick={()=>setShowTransformPopup(true)} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,rgba(149,113,205,0.15),rgba(123,147,245,0.15))",color:"var(--t-purple)",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}>
+            <button data-tut="transform" onClick={()=>setShowTransformPopup(true)} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,rgba(149,113,205,0.15),rgba(123,147,245,0.15))",color:"var(--t-purple)",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4l-6.4 4.8L8 14 2 9.2h7.6z"/></svg>
               Transform
             </button>
@@ -3425,11 +3453,11 @@ function NotiqApp(){
             </div>
             {showInsightsPanel&&<NoteInsightsPanel noteIds={[activeNote]} notes={notes} topicSections={topicSections} confidence={confidence} geminiKey={GEMINI_KEY} title={active.title} onClose={()=>setShowInsightsPanel(false)}/>}
             <div style={{display:"flex",gap:8,marginBottom:6}}>
-              <button onClick={()=>setShowInsightsPanel(p=>!p)} style={{padding:"10px 24px",borderRadius:12,border:"none",background:showInsightsPanel?"linear-gradient(135deg,#7b93f5,#9571cd)":"linear-gradient(135deg,rgba(149,113,205,0.15),rgba(123,147,245,0.15))",color:showInsightsPanel?"#fff":"var(--t-purple)",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}>
+              <button data-tut="insights" onClick={()=>setShowInsightsPanel(p=>!p)} style={{padding:"10px 24px",borderRadius:12,border:"none",background:showInsightsPanel?"linear-gradient(135deg,#7b93f5,#9571cd)":"linear-gradient(135deg,rgba(149,113,205,0.15),rgba(123,147,245,0.15))",color:showInsightsPanel?"#fff":"var(--t-purple)",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
                 Insights
               </button>
-              <button onClick={()=>setShowTransformPopup(true)} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,rgba(149,113,205,0.15),rgba(123,147,245,0.15))",color:"var(--t-purple)",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}>
+              <button data-tut="transform" onClick={()=>setShowTransformPopup(true)} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,rgba(149,113,205,0.15),rgba(123,147,245,0.15))",color:"var(--t-purple)",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4l-6.4 4.8L8 14 2 9.2h7.6z"/></svg>
                 Transform
               </button>
