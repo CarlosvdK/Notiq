@@ -992,9 +992,9 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
       wrap.style.cssText='position:absolute;right:8px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:4px;z-index:5;';
       const score=(confidence||{})[`${noteId}:${i}`]||0;
       const sel=document.createElement('select');
-      sel.style.cssText=`background:${score>0?(score>=7?'rgba(34,197,94,0.15)':score>=4?'rgba(245,158,11,0.15)':'rgba(255,92,92,0.15)'):'rgba(255,255,255,0.06)'};border:1px solid ${score>0?(score>=7?'#22c55e44':score>=4?'#f59e0b44':'#ff5c5c44'):'rgba(255,255,255,0.1)'};color:${score>0?(score>=7?'#22c55e':score>=4?'#f59e0b':'#ff5c5c'):'#b0bec5'};border-radius:6px;padding:2px 4px;font-size:11px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace;outline:none;-webkit-appearance:none;appearance:none;min-width:42px;text-align:center;`;
-      const defOpt=document.createElement('option');defOpt.value='0';defOpt.textContent='—';defOpt.style.background='#12131a';sel.appendChild(defOpt);
-      for(let n=1;n<=10;n++){const o=document.createElement('option');o.value=String(n);o.textContent=String(n);o.style.background='#12131a';if(n===score)o.selected=true;sel.appendChild(o);}
+      sel.style.cssText=`background:${score>0?(score>=7?'rgba(34,197,94,0.15)':score>=4?'rgba(245,158,11,0.15)':'rgba(255,92,92,0.15)'):'var(--t-glass)'};border:1px solid ${score>0?(score>=7?'#22c55e44':score>=4?'#f59e0b44':'#ff5c5c44'):'var(--t-border)'};color:${score>0?(score>=7?'#22c55e':score>=4?'#f59e0b':'#ff5c5c'):'var(--t-txt2)'};border-radius:6px;padding:2px 4px;font-size:11px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace;outline:none;-webkit-appearance:none;appearance:none;min-width:42px;text-align:center;`;
+      const defOpt=document.createElement('option');defOpt.value='0';defOpt.textContent='—';defOpt.style.background='var(--t-bg2)';sel.appendChild(defOpt);
+      for(let n=1;n<=10;n++){const o=document.createElement('option');o.value=String(n);o.textContent=String(n);o.style.background='var(--t-bg2)';if(n===score)o.selected=true;sel.appendChild(o);}
       if(score>0)defOpt.selected=false;
       const idx=i;
       sel.addEventListener('change',e=>{const v=parseInt(e.target.value);if(onSetConfidence)onSetConfidence(noteId,idx,v);});
@@ -1073,7 +1073,7 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
     }catch(err){}
   },[onChange]);
   const exec=(cmd,val=null)=>{document.execCommand(cmd,false,val);ref.current?.focus();onInput();};
-  const sep=<span style={{width:1,height:22,background:"rgba(255,255,255,0.06)",margin:"0 3px",flexShrink:0}}/>;
+  const sep=<span style={{width:1,height:22,background:"var(--t-border)",margin:"0 3px",flexShrink:0}}/>;
   // ── Ribbon tab state ──
   const[ribbonTab,setRibbonTab]=useState("home");
   // ── Drawing state ──
@@ -1233,9 +1233,9 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
   </>);
 
   return(
-    <div data-tut="editor" style={{border:`1px solid ${dropOver?"rgba(102,126,234,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:20,overflow:"hidden",background:dropOver?"rgba(102,126,234,.04)":"rgba(255,255,255,0.03)",backdropFilter:"blur(12px)",flex:1,display:"flex",flexDirection:"column",transition:"border-color .2s",boxShadow:"0 4px 24px rgba(0,0,0,0.2)"}} onDragStart={handleBlockDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+    <div data-tut="editor" style={{border:`1px solid ${dropOver?"rgba(102,126,234,0.4)":"var(--t-border)"}`,borderRadius:20,overflow:"hidden",background:dropOver?"rgba(102,126,234,.04)":"var(--t-glass)",backdropFilter:"blur(12px)",flex:1,display:"flex",flexDirection:"column",transition:"border-color .2s",boxShadow:"0 4px 24px rgba(0,0,0,0.1)"}} onDragStart={handleBlockDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
       {/* ── Ribbon Tab Bar ── */}
-      <div style={{display:"flex",alignItems:"center",padding:"0 10px",borderBottom:"1px solid rgba(255,255,255,0.06)",background:"var(--t-topbar)",gap:0}}>
+      <div style={{display:"flex",alignItems:"center",padding:"0 10px",borderBottom:"1px solid var(--t-border)",background:"var(--t-topbar)",gap:0}}>
         {[["home","Home"],["insert","Insert"],["draw","Draw"],["references","References"],["review","Review"]].map(([k,lb])=>(<button key={k} onClick={()=>setRibbonTab(k)} style={tabStyle(k)}>{lb}</button>))}
         <div style={{flex:1}}/>
         {/* Share button in ribbon bar */}
@@ -1268,17 +1268,17 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
           {ghostData&&!loading&&!showCanvas&&<div style={{position:"absolute",bottom:8,left:20,fontSize:11,color:T.txt2,fontFamily:"'JetBrains Mono',monospace",opacity:.6,pointerEvents:"none",background:"rgba(0,0,0,.3)",padding:"3px 10px",borderRadius:8,zIndex:5}}>TAB to accept  ·  ESC to dismiss</div>}
         </div>
         {/* ── Comments Panel ── */}
-        {showComments&&<div style={{width:260,minWidth:260,borderLeft:"1px solid rgba(255,255,255,0.06)",background:"rgba(8,9,13,0.6)",overflowY:"auto",padding:14,display:"flex",flexDirection:"column"}}>
+        {showComments&&<div style={{width:260,minWidth:260,borderLeft:"1px solid var(--t-border)",background:"var(--t-glass)",overflowY:"auto",padding:14,display:"flex",flexDirection:"column"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
             <span style={{fontSize:12,fontWeight:700,color:"#7b93f5",textTransform:"uppercase",letterSpacing:"0.5px"}}>Comments</span>
             <button onClick={()=>setShowComments(false)} style={{border:"none",background:"transparent",color:"#8492a6",cursor:"pointer",fontSize:16}}>{"\u00d7"}</button>
           </div>
           <div style={{display:"flex",gap:4,marginBottom:12}}>
-            <input className="nq-input" value={newComment} onChange={e=>setNewComment(e.target.value)} placeholder="Add a comment..." style={{flex:1,padding:"8px 10px",borderRadius:8,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#f1f5f9",fontSize:12,outline:"none",transition:"border-color 0.2s"}} onKeyDown={e=>{if(e.key==="Enter")addComment();}}/>
+            <input className="nq-input" value={newComment} onChange={e=>setNewComment(e.target.value)} placeholder="Add a comment..." style={{flex:1,padding:"8px 10px",borderRadius:8,border:"1px solid var(--t-border)",background:"var(--t-glass)",color:"var(--t-txt)",fontSize:12,outline:"none",transition:"border-color 0.2s"}} onKeyDown={e=>{if(e.key==="Enter")addComment();}}/>
             <button className="grad-btn" onClick={addComment} style={{padding:"8px 12px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>+</button>
           </div>
           {comments.length===0&&<div style={{fontSize:12,color:"#8492a6",textAlign:"center",padding:20}}>No comments yet. Select text and add a comment.</div>}
-          {comments.map(c=>(<div key={c.id} style={{padding:10,borderRadius:10,background:c.resolved?"rgba(34,197,94,0.05)":"rgba(255,255,255,0.03)",border:`1px solid ${c.resolved?"rgba(34,197,94,0.15)":"rgba(255,255,255,0.06)"}`,marginBottom:6}}>
+          {comments.map(c=>(<div key={c.id} style={{padding:10,borderRadius:10,background:c.resolved?"rgba(34,197,94,0.05)":"var(--t-glass)",border:`1px solid ${c.resolved?"rgba(34,197,94,0.15)":"var(--t-border)"}`,marginBottom:6}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
               <span style={{fontSize:11,fontWeight:600,color:"#f1f5f9"}}>{c.author}</span>
               <span style={{fontSize:9,color:"#8492a6"}}>{c.time}</span>
@@ -1294,33 +1294,33 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
       </div>
       {/* ── Share Modal ── */}
       {showShare&&<div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.6)",backdropFilter:"blur(8px)"}} onClick={e=>{if(e.target===e.currentTarget)setShowShare(false);}}>
-        <div style={{width:440,background:"rgba(13,14,20,0.98)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:24,padding:28,boxShadow:"0 24px 80px rgba(0,0,0,0.5)"}}>
+        <div style={{width:440,background:"var(--t-bg2)",border:"1px solid var(--t-border)",borderRadius:24,padding:28,boxShadow:"0 24px 80px rgba(0,0,0,0.3)"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-            <h3 style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:"#f1f5f9",margin:0}}>Share Note</h3>
-            <button onClick={()=>setShowShare(false)} style={{border:"none",background:"transparent",color:"#8492a6",cursor:"pointer",fontSize:20}}>{"\u00d7"}</button>
+            <h3 style={{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,color:"var(--t-txt)",margin:0}}>Share Note</h3>
+            <button onClick={()=>setShowShare(false)} style={{border:"none",background:"transparent",color:"var(--t-txt2)",cursor:"pointer",fontSize:20}}>{"\u00d7"}</button>
           </div>
           {/* Invite */}
-          <label style={{fontSize:11,fontWeight:600,color:"#b0bec5",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Invite People</label>
+          <label style={{fontSize:11,fontWeight:600,color:"var(--t-txt2)",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Invite People</label>
           <div style={{display:"flex",gap:6,marginBottom:16}}>
-            <input className="nq-input" value={shareEmail} onChange={e=>setShareEmail(e.target.value)} placeholder="Email address..." style={{flex:1,padding:"10px 14px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.04)",color:"#f1f5f9",fontSize:13,outline:"none",fontFamily:"'Inter',sans-serif"}} onKeyDown={e=>{if(e.key==="Enter")addCollab();}}/>
+            <input className="nq-input" value={shareEmail} onChange={e=>setShareEmail(e.target.value)} placeholder="Email address..." style={{flex:1,padding:"10px 14px",borderRadius:10,border:"1px solid var(--t-border)",background:"var(--t-glass)",color:"var(--t-txt)",fontSize:13,outline:"none",fontFamily:"'Inter',sans-serif"}} onKeyDown={e=>{if(e.key==="Enter")addCollab();}}/>
             <button className="grad-btn" onClick={addCollab} style={{padding:"10px 20px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>Invite</button>
           </div>
           {/* Share link */}
-          <label style={{fontSize:11,fontWeight:600,color:"#b0bec5",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Share Link</label>
+          <label style={{fontSize:11,fontWeight:600,color:"var(--t-txt2)",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Share Link</label>
           <div style={{display:"flex",gap:6,marginBottom:20}}>
-            <div style={{flex:1,padding:"10px 14px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",color:"#b0bec5",fontSize:12,fontFamily:"'JetBrains Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{shareLink}</div>
-            <button onClick={copyLink} style={{padding:"10px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.04)",color:copied?"#22c55e":"#b0bec5",fontSize:12,fontWeight:600,cursor:"pointer",transition:"color 0.2s"}}>{copied?"Copied!":"Copy"}</button>
+            <div style={{flex:1,padding:"10px 14px",borderRadius:10,border:"1px solid var(--t-border)",background:"var(--t-glass)",color:"var(--t-txt2)",fontSize:12,fontFamily:"'JetBrains Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{shareLink}</div>
+            <button onClick={copyLink} style={{padding:"10px 16px",borderRadius:10,border:"1px solid var(--t-border)",background:"var(--t-glass)",color:copied?"#22c55e":"var(--t-txt2)",fontSize:12,fontWeight:600,cursor:"pointer",transition:"color 0.2s"}}>{copied?"Copied!":"Copy"}</button>
           </div>
           {/* Collaborators */}
-          <label style={{fontSize:11,fontWeight:600,color:"#b0bec5",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8,display:"block"}}>People with Access</label>
-          {collaborators.map((c,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<collaborators.length-1?"1px solid rgba(255,255,255,0.04)":"none"}}>
+          <label style={{fontSize:11,fontWeight:600,color:"var(--t-txt2)",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8,display:"block"}}>People with Access</label>
+          {collaborators.map((c,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<collaborators.length-1?"1px solid var(--t-border)":"none"}}>
             <div style={{width:32,height:32,borderRadius:"50%",background:c.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#fff",position:"relative"}}>
               {c.name[0].toUpperCase()}
-              {c.online&&<span style={{position:"absolute",bottom:0,right:0,width:8,height:8,borderRadius:"50%",background:"#22c55e",border:"2px solid rgba(13,14,20,0.98)"}}/>}
+              {c.online&&<span style={{position:"absolute",bottom:0,right:0,width:8,height:8,borderRadius:"50%",background:"#22c55e",border:"2px solid var(--t-bg2)"}}/>}
             </div>
-            <div style={{flex:1}}><div style={{fontSize:13,color:"#f1f5f9",fontWeight:500}}>{c.name}</div><div style={{fontSize:11,color:"#8492a6"}}>{c.email==="owner"?"Owner":c.email}</div></div>
-            <span style={{fontSize:11,color:c.online?"#22c55e":"#8492a6"}}>{c.online?"Online":"Invited"}</span>
-            {c.email!=="owner"&&<button onClick={()=>setCollaborators(p=>p.filter((_,j)=>j!==i))} style={{border:"none",background:"transparent",color:"#8492a6",cursor:"pointer",fontSize:14}}>{"\u00d7"}</button>}
+            <div style={{flex:1}}><div style={{fontSize:13,color:"var(--t-txt)",fontWeight:500}}>{c.name}</div><div style={{fontSize:11,color:"var(--t-txt2)"}}>{c.email==="owner"?"Owner":c.email}</div></div>
+            <span style={{fontSize:11,color:c.online?"#22c55e":"var(--t-txt2)"}}>{c.online?"Online":"Invited"}</span>
+            {c.email!=="owner"&&<button onClick={()=>setCollaborators(p=>p.filter((_,j)=>j!==i))} style={{border:"none",background:"transparent",color:"var(--t-txt2)",cursor:"pointer",fontSize:14}}>{"\u00d7"}</button>}
           </div>))}
         </div>
       </div>}
@@ -1384,54 +1384,54 @@ function NewNoteModal({folders,activeFolder,activeSubfolder,onClose,onCreate}){
   };
   return(
     <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.6)",backdropFilter:"blur(8px)"}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={{width:520,maxHeight:"85vh",overflowY:"auto",background:"rgba(13,14,20,0.98)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:24,padding:32,boxShadow:"0 24px 80px rgba(0,0,0,0.5)"}}>
+      <div style={{width:520,maxHeight:"85vh",overflowY:"auto",background:"var(--t-bg2)",border:"1px solid var(--t-border)",borderRadius:24,padding:32,boxShadow:"0 24px 80px rgba(0,0,0,0.3)"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-          <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:"#f1f5f9",margin:0,letterSpacing:"-0.5px"}}>Create New Note</h2>
-          <button onClick={onClose} style={{border:"none",background:"transparent",color:"#8492a6",cursor:"pointer",fontSize:20,padding:4}}>{"\u00d7"}</button>
+          <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:"var(--t-txt)",margin:0,letterSpacing:"-0.5px"}}>Create New Note</h2>
+          <button onClick={onClose} style={{border:"none",background:"transparent",color:"var(--t-txt2)",cursor:"pointer",fontSize:20,padding:4}}>{"\u00d7"}</button>
         </div>
 
         {/* Note Name */}
-        <label style={{fontSize:12,fontWeight:600,color:"#b0bec5",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Note Title</label>
-        <input className="nq-input" autoFocus value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Prototyping Class Notes" style={{width:"100%",padding:"12px 16px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#f1f5f9",fontSize:15,outline:"none",fontFamily:"'Inter',sans-serif",marginBottom:18,transition:"border-color 0.2s, box-shadow 0.2s",boxSizing:"border-box"}}
+        <label style={{fontSize:12,fontWeight:600,color:"var(--t-txt2)",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Note Title</label>
+        <input className="nq-input" autoFocus value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Prototyping Class Notes" style={{width:"100%",padding:"12px 16px",borderRadius:12,border:"1px solid var(--t-border)",background:"var(--t-glass)",color:"var(--t-txt)",fontSize:15,outline:"none",fontFamily:"'Inter',sans-serif",marginBottom:18,transition:"border-color 0.2s, box-shadow 0.2s",boxSizing:"border-box"}}
           onKeyDown={e=>{if(e.key==="Enter")submit();}}/>
 
         {/* Folder */}
-        <label style={{fontSize:12,fontWeight:600,color:"#b0bec5",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Subfolder</label>
-        <select value={subfolder} onChange={e=>setSubfolder(e.target.value)} style={{width:"100%",padding:"10px 14px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#f1f5f9",fontSize:14,outline:"none",fontFamily:"'Inter',sans-serif",marginBottom:18,cursor:"pointer",boxSizing:"border-box"}}>
+        <label style={{fontSize:12,fontWeight:600,color:"var(--t-txt2)",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Subfolder</label>
+        <select value={subfolder} onChange={e=>setSubfolder(e.target.value)} style={{width:"100%",padding:"10px 14px",borderRadius:12,border:"1px solid var(--t-border)",background:"var(--t-glass)",color:"var(--t-txt)",fontSize:14,outline:"none",fontFamily:"'Inter',sans-serif",marginBottom:18,cursor:"pointer",boxSizing:"border-box"}}>
           <option value="">Select a subfolder...</option>
           {folders.map(f=>(f.children||[]).map(sub=><option key={sub.id} value={sub.id}>{f.name} / {sub.name}</option>))}
         </select>
 
         {/* Context */}
-        <label style={{fontSize:12,fontWeight:600,color:"#b0bec5",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Context / Description</label>
-        <textarea className="nq-input" value={context} onChange={e=>setContext(e.target.value)} placeholder="Describe what this note is about — e.g. 'Notes for my prototyping class. We cover wireframing, user testing, and Figma. The final project is designing a mobile app prototype.'" rows={4} style={{width:"100%",padding:"12px 16px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#f1f5f9",fontSize:14,outline:"none",fontFamily:"'Inter',sans-serif",lineHeight:1.6,resize:"vertical",marginBottom:18,transition:"border-color 0.2s, box-shadow 0.2s",boxSizing:"border-box"}}/>
+        <label style={{fontSize:12,fontWeight:600,color:"var(--t-txt2)",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Context / Description</label>
+        <textarea className="nq-input" value={context} onChange={e=>setContext(e.target.value)} placeholder="Describe what this note is about — e.g. 'Notes for my prototyping class. We cover wireframing, user testing, and Figma. The final project is designing a mobile app prototype.'" rows={4} style={{width:"100%",padding:"12px 16px",borderRadius:12,border:"1px solid var(--t-border)",background:"var(--t-glass)",color:"var(--t-txt)",fontSize:14,outline:"none",fontFamily:"'Inter',sans-serif",lineHeight:1.6,resize:"vertical",marginBottom:18,transition:"border-color 0.2s, box-shadow 0.2s",boxSizing:"border-box"}}/>
 
         {/* File Upload */}
-        <label style={{fontSize:12,fontWeight:600,color:"#b0bec5",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Reference Files (slides, PDFs, documents)</label>
+        <label style={{fontSize:12,fontWeight:600,color:"var(--t-txt2)",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>Reference Files (slides, PDFs, documents)</label>
         <div onClick={()=>document.getElementById("newNoteFileInput")?.click()}
           onDragOver={e=>{e.preventDefault();e.currentTarget.style.borderColor="rgba(123,147,245,0.5)";}}
-          onDragLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";}}
-          onDrop={e=>{e.preventDefault();e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";handleFiles(e.dataTransfer.files);}}
-          style={{border:"2px dashed rgba(255,255,255,0.1)",borderRadius:14,padding:20,textAlign:"center",cursor:"pointer",marginBottom:12,transition:"border-color 0.2s",background:"rgba(255,255,255,0.02)"}}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7b93f5" strokeWidth="1.5" style={{marginBottom:6}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <div style={{fontSize:13,color:"#b0bec5"}}>Drop files here or click to browse</div>
-          <div style={{fontSize:11,color:"#8492a6",marginTop:4}}>PDF, text, markdown, CSV — content used as AI context</div>
+          onDragLeave={e=>{e.currentTarget.style.borderColor="var(--t-border)";}}
+          onDrop={e=>{e.preventDefault();e.currentTarget.style.borderColor="var(--t-border)";handleFiles(e.dataTransfer.files);}}
+          style={{border:"2px dashed var(--t-border)",borderRadius:14,padding:20,textAlign:"center",cursor:"pointer",marginBottom:12,transition:"border-color 0.2s",background:"var(--t-glass)"}}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--t-a1)" strokeWidth="1.5" style={{marginBottom:6}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div style={{fontSize:13,color:"var(--t-txt2)"}}>Drop files here or click to browse</div>
+          <div style={{fontSize:11,color:"var(--t-txt2)",marginTop:4,opacity:0.7}}>PDF, text, markdown, CSV — content used as AI context</div>
           <input id="newNoteFileInput" type="file" multiple accept=".pdf,.txt,.md,.csv,.doc,.docx,.pptx" style={{display:"none"}} onChange={e=>handleFiles(e.target.files)}/>
         </div>
-        {parsing&&<div style={{fontSize:12,color:"#7b93f5",marginBottom:8}}>Parsing files...</div>}
+        {parsing&&<div style={{fontSize:12,color:"var(--t-a1)",marginBottom:8}}>Parsing files...</div>}
         {files.length>0&&<div style={{marginBottom:18}}>
-          {files.map((f,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",marginBottom:4}}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7b93f5" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <span style={{flex:1,fontSize:12,color:"#f1f5f9"}}>{f.name}</span>
-            <span style={{fontSize:10,color:"#8492a6"}}>{(f.size/1024).toFixed(0)}KB</span>
-            {f.text&&<span style={{fontSize:9,color:"#7b93f5",padding:"1px 6px",borderRadius:4,background:"rgba(123,147,245,0.1)"}}>parsed</span>}
-            <button onClick={()=>setFiles(p=>p.filter((_,j)=>j!==i))} style={{border:"none",background:"transparent",color:"#8492a6",cursor:"pointer",fontSize:14,padding:2}}>{"\u00d7"}</button>
+          {files.map((f,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"var(--t-glass)",border:"1px solid var(--t-border)",marginBottom:4}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t-a1)" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span style={{flex:1,fontSize:12,color:"var(--t-txt)"}}>{f.name}</span>
+            <span style={{fontSize:10,color:"var(--t-txt2)"}}>{(f.size/1024).toFixed(0)}KB</span>
+            {f.text&&<span style={{fontSize:9,color:"var(--t-a1)",padding:"1px 6px",borderRadius:4,background:"rgba(123,147,245,0.1)"}}>parsed</span>}
+            <button onClick={()=>setFiles(p=>p.filter((_,j)=>j!==i))} style={{border:"none",background:"transparent",color:"var(--t-txt2)",cursor:"pointer",fontSize:14,padding:2}}>{"\u00d7"}</button>
           </div>))}
         </div>}
 
         {/* Actions */}
         <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
-          <button onClick={onClose} style={{padding:"10px 20px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",background:"transparent",color:"#b0bec5",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>Cancel</button>
+          <button onClick={onClose} style={{padding:"10px 20px",borderRadius:12,border:"1px solid var(--t-border)",background:"transparent",color:"var(--t-txt2)",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>Cancel</button>
           <button className="grad-btn" onClick={submit} disabled={!name.trim()} style={{padding:"10px 28px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",opacity:name.trim()?1:0.5}}>Create Note</button>
         </div>
       </div>
@@ -2666,7 +2666,7 @@ function LandingPage({onEnter}){
           <div style={{flex:1.2,minWidth:0}}>
             <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.8}}
               style={{fontSize:15,color:"#667eea",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:28,fontFamily:"'JetBrains Mono',monospace"}}>
-              AI-Powered Notes
+              Your Second Brain
             </motion.div>
 
             <h1 style={{fontSize:"clamp(48px, 6vw, 88px)",fontWeight:800,lineHeight:1.02,margin:"0 0 32px",letterSpacing:"-3px"}}>
@@ -2686,7 +2686,7 @@ function LandingPage({onEnter}){
 
             <motion.p initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.6,duration:0.8}}
               style={{fontSize:20,color:"#94a3b8",lineHeight:1.75,maxWidth:560,margin:"0 0 48px"}}>
-              The intelligent note-taking app that understands your content. AI autocomplete, topic detection with confidence scoring, smart subfolders, AI study plans, and deep insights — all in one beautiful workspace.
+              Notes that learn with you. Notiq predicts what you'll write next, tracks what you actually understand, and builds personalised study plans to fill the gaps.
             </motion.p>
 
             <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.8,duration:0.6}}
@@ -2701,7 +2701,7 @@ function LandingPage({onEnter}){
 
             <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:1.2,duration:0.8}}
               style={{display:"flex",gap:40,marginTop:56}}>
-              {[["Gemini 2.0","Flash AI engine"],["Topic Detection","confidence scoring"],["Study Plans","AI-generated insights"]].map(([n,l],i)=>(
+              {[["Real-time AI","autocomplete as you type"],["Knowledge Gaps","tracked per topic"],["Study Plans","generated in seconds"]].map(([n,l],i)=>(
                 <div key={i}><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:16,fontWeight:700,color:"#667eea"}}>{n}</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>{l}</div></div>
               ))}
             </motion.div>
@@ -2718,18 +2718,18 @@ function LandingPage({onEnter}){
       <section id="features" style={{padding:"140px 80px",width:"100%"}}>
         <motion.div style={{textAlign:"center",marginBottom:80}} initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} transition={{duration:0.8,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-80px"}}>
           <div style={{fontSize:14,color:"#667eea",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:16,fontFamily:"'JetBrains Mono',monospace"}}>Features</div>
-          <h2 style={{fontSize:"clamp(36px, 5vw, 64px)",fontWeight:800,letterSpacing:"-2px",margin:0}}>Everything you need.<br/><span style={{color:"#475569"}}>Nothing you don't.</span></h2>
+          <h2 style={{fontSize:"clamp(36px, 5vw, 64px)",fontWeight:800,letterSpacing:"-2px",margin:0}}>Built for how<br/><span style={{color:"#475569"}}>you actually study.</span></h2>
         </motion.div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4, 1fr)",gap:24}}>
           {[
-            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.912 5.813a2 2 0 001.272 1.272L21 12l-5.813 1.912a2 2 0 00-1.272 1.272L12 21l-1.912-5.813a2 2 0 00-1.272-1.272L3 12l5.813-1.912a2 2 0 001.272-1.272z"/></svg>,title:"AI Autocomplete",desc:"Copilot-style predictions that understand your context — note title, content, and writing style. Press Tab to accept, Escape to dismiss. Powered by Gemini 2.0 Flash.",color:"#667eea"},
-            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>,title:"Smart Subfolders",desc:"Organise notes in a 3-level hierarchy: root folders, subfolders, and individual notes. Click a root folder to see all notes, a subfolder for its notes, or a single note to edit.",color:"#22c55e"},
-            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>,title:"Topic Detection",desc:"Headings in your notes are automatically detected as distinct topics, colour-coded with alternating blue and purple backgrounds so you can visually distinguish each section at a glance.",color:"#764ba2"},
-            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,title:"Confidence Scoring",desc:"Rate your understanding of each topic section from 1-10 using the dropdown next to each heading. Scores feed into folder-specific insights with bar charts and weakness analysis.",color:"#f59e0b"},
-            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>,title:"Smart Video Suggestions",desc:"A two-step LLM pipeline: Gemini extracts the optimal YouTube search query from your notes, then the YouTube API returns the most relevant educational videos to drag into your editor.",color:"#06b6d4"},
-            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><circle cx="5" cy="19" r="2"/><line x1="12" y1="9" x2="12" y2="5"/><line x1="14.5" y1="13.5" x2="17.5" y2="17.5"/><line x1="9.5" y1="13.5" x2="6.5" y2="17.5"/></svg>,title:"Knowledge Graph",desc:"Multi-call entity extraction analyses every note in batches, then post-processing finds shared concepts between all note pairs. Interactive SVG visualisation.",color:"#ec4899"},
-            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3l5 5-5 5"/><path d="M21 8H9"/><path d="M8 21l-5-5 5-5"/><path d="M3 16h12"/></svg>,title:"AI Transformer",desc:"Convert any note into interactive quizzes with scoring, structured summaries, flippable flashcards, or visual mind maps. Gemini returns structured JSON, beautifully rendered.",color:"#8b5cf6"},
-            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19V6l12-3v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="15" r="3"/></svg>,title:"AI Study Plans",desc:"The Insights page shows confidence distributions per folder, identifies your weakest topics, and generates a personalised AI study plan with priorities, time estimates, and resources.",color:"#f093fb"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.912 5.813a2 2 0 001.272 1.272L21 12l-5.813 1.912a2 2 0 00-1.272 1.272L12 21l-1.912-5.813a2 2 0 00-1.272-1.272L3 12l5.813-1.912a2 2 0 001.272-1.272z"/></svg>,title:"AI Autocomplete",desc:"Start typing and Notiq finishes your thought. Context-aware suggestions appear inline as ghost text based on your note title, content, and writing style. Press Tab to accept, Escape to dismiss.",color:"#667eea"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>,title:"Smart Subfolders",desc:"Organise notes the way your brain works. A 3-level hierarchy of folders, subfolders, and notes means everything has a home — and you can browse at any level.",color:"#22c55e"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>,title:"Topic Detection",desc:"Every heading becomes a distinct topic, colour-coded with alternating backgrounds so you can see where one idea ends and the next begins. No manual tagging required.",color:"#764ba2"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,title:"Confidence Scoring",desc:"Be honest with yourself. Rate each topic 1-10 using the dropdown next to each heading, and Notiq turns those scores into a clear picture of your strengths and blind spots.",color:"#f59e0b"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>,title:"Smart Video Suggestions",desc:"Notiq reads your notes and finds the best YouTube videos to match. Not keyword search — the AI crafts the perfect query so you get tutorials that actually explain what you're writing about.",color:"#06b6d4"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><circle cx="5" cy="19" r="2"/><line x1="12" y1="9" x2="12" y2="5"/><line x1="14.5" y1="13.5" x2="17.5" y2="17.5"/><line x1="9.5" y1="13.5" x2="6.5" y2="17.5"/></svg>,title:"Knowledge Graph",desc:"See how your notes connect. Notiq analyses every note to find shared concepts across subjects and maps them in an interactive visual graph. Discover links you didn't know existed.",color:"#ec4899"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3l5 5-5 5"/><path d="M21 8H9"/><path d="M8 21l-5-5 5-5"/><path d="M3 16h12"/></svg>,title:"AI Transformer",desc:"Turn any note into a quiz, summary, set of flashcards, or mind map with one click. The AI restructures your content into interactive study materials you can use immediately.",color:"#8b5cf6"},
+            {icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19V6l12-3v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="15" r="3"/></svg>,title:"AI Study Plans",desc:"Stop guessing what to revise. Notiq identifies your weakest topics, then generates a personalised study plan with priorities, time estimates, and specific resources to close each gap.",color:"#f093fb"},
           ].map((f,i)=>(
             <motion.div key={i} className="feature-card"
               initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}}
@@ -2752,8 +2752,8 @@ function LandingPage({onEnter}){
           <motion.div style={{padding:"80px 64px 80px 80px",display:"flex",flexDirection:"column",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             <div style={{fontSize:13,color:"#667eea",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:20,fontFamily:"'JetBrains Mono',monospace"}}>Autocomplete</div>
             <h2 style={{fontSize:"clamp(34px, 4vw, 52px)",fontWeight:800,letterSpacing:"-2px",margin:"0 0 24px",lineHeight:1.08}}>Finish your thoughts<br/>before you type them.</h2>
-            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Notiq watches what you write in real time. As you type, Gemini 2.0 Flash reads your note title, existing content, and writing style to predict what comes next. Suggestions appear inline as ghost text — press Tab to accept, Escape to dismiss.</p>
-            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:"0 0 28px"}}>Every keystroke cancels the previous request via AbortController, so the UI never blocks. A 500ms debounce ensures we only call the API when you pause.</p>
+            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Notiq watches what you write in real time. As you type, the AI reads your note title, existing content, and writing style to predict what comes next. Suggestions appear inline as ghost text — press Tab to accept, Escape to dismiss.</p>
+            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:"0 0 28px"}}>Predictions are instant and never block your typing. The AI waits for natural pauses so suggestions feel helpful, not intrusive.</p>
             <div style={{display:"flex",gap:28}}>
               {[["Tab","accept"],["Esc","dismiss"],["Type","ignore"]].map(([k,v],i)=>(
                 <div key={i} style={{fontSize:13,color:"#64748b"}}><span style={{padding:"3px 10px",borderRadius:6,background:"rgba(102,126,234,0.12)",color:"#667eea",fontWeight:700,fontSize:12,fontFamily:"'JetBrains Mono',monospace"}}>{k}</span><span style={{marginLeft:8}}>to {v}</span></div>
@@ -2774,8 +2774,8 @@ function LandingPage({onEnter}){
           <motion.div style={{padding:"80px 80px 80px 64px",display:"flex",flexDirection:"column",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             <div style={{fontSize:13,color:"#764ba2",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:20,fontFamily:"'JetBrains Mono',monospace"}}>Video Suggestions</div>
             <h2 style={{fontSize:"clamp(34px, 4vw, 52px)",fontWeight:800,letterSpacing:"-2px",margin:"0 0 24px",lineHeight:1.08}}>Learn from the best.<br/>Automatically.</h2>
-            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>When you write about a topic, Notiq runs a two-step LLM pipeline behind the scenes. First, Gemini reads your note content and extracts the single most effective YouTube search query — not just keywords, but a semantically rich phrase tuned for educational content.</p>
-            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>Then the YouTube Data API v3 searches with that query and returns the top results ranked by relevance. Each video card shows the title, channel, and view count. Drag any result directly into your note editor to embed it as a reference link.</p>
+            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>When you write about a topic, Notiq doesn't just search for keywords — it understands what you're studying and finds the best educational videos to match. The AI crafts the perfect search query so results are always relevant.</p>
+            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>Each video card shows the title, channel, and view count. Drag any result directly into your editor to embed it as a reference link alongside your notes.</p>
           </motion.div>
         </div>
 
@@ -2785,8 +2785,8 @@ function LandingPage({onEnter}){
           <motion.div style={{padding:"80px 64px 80px 80px",display:"flex",flexDirection:"column",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             <div style={{fontSize:13,color:"#667eea",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:20,fontFamily:"'JetBrains Mono',monospace"}}>Topic Detection</div>
             <h2 style={{fontSize:"clamp(34px, 4vw, 52px)",fontWeight:800,letterSpacing:"-2px",margin:"0 0 24px",lineHeight:1.08}}>See your topics.<br/>Rate your knowledge.</h2>
-            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Every heading in your notes is automatically detected as a topic section. Alternating purple and transparent backgrounds make it easy to visually distinguish where one topic ends and the next begins — no manual tagging needed.</p>
-            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>Next to each heading, a confidence dropdown lets you rate your understanding from 1-10. These scores feed directly into the Insights page, where you can see your strengths, weaknesses, and generate personalised AI study plans.</p>
+            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Every heading in your notes becomes a topic section, colour-coded so you can see the structure of your knowledge at a glance. No manual tagging, no setup — just write with headings and Notiq does the rest.</p>
+            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>The confidence dropdown next to each heading lets you honestly rate your understanding from 1-10. Those scores power everything: insights, bar charts, weakness detection, and personalised AI study plans.</p>
           </motion.div>
           <motion.div style={{padding:"80px 80px 80px 64px",display:"flex",alignItems:"center",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,delay:0.12,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             {/* Topic detection visual demo */}
@@ -2820,8 +2820,8 @@ function LandingPage({onEnter}){
           <motion.div style={{padding:"80px 80px 80px 64px",display:"flex",flexDirection:"column",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             <div style={{fontSize:13,color:"#06b6d4",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:20,fontFamily:"'JetBrains Mono',monospace"}}>Knowledge Graph</div>
             <h2 style={{fontSize:"clamp(34px, 4vw, 52px)",fontWeight:800,letterSpacing:"-2px",margin:"0 0 24px",lineHeight:1.08}}>See the connections<br/>you are missing.</h2>
-            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Notiq sends every note through Gemini in batches, extracting named entities, key concepts, and domain tags from each one. Then a post-processing step compares all note pairs, scoring shared concepts by semantic similarity to build a weighted adjacency graph.</p>
-            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>The result is an interactive SVG visualization where nodes are your notes and edges represent shared knowledge. Hover any node to see which concepts it shares with its neighbours.</p>
+            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Your notes contain more connections than you realise. Notiq analyses every note to extract key concepts, then maps the relationships between them — across subjects, across folders, across everything you've written.</p>
+            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>The result is an interactive graph where your notes are nodes and shared knowledge forms the edges. Hover any node to see exactly which concepts it shares with its neighbours.</p>
           </motion.div>
         </div>
 
@@ -2831,8 +2831,8 @@ function LandingPage({onEnter}){
           <motion.div style={{padding:"80px 64px 80px 80px",display:"flex",flexDirection:"column",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             <div style={{fontSize:13,color:"#f093fb",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:20,fontFamily:"'JetBrains Mono',monospace"}}>AI Study Plans</div>
             <h2 style={{fontSize:"clamp(34px, 4vw, 52px)",fontWeight:800,letterSpacing:"-2px",margin:"0 0 24px",lineHeight:1.08}}>Focus on what<br/>you don't know.</h2>
-            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>The Insights page aggregates your confidence scores per folder, showing a bar chart of your self-rated knowledge across all topics. Weak areas are flagged automatically — no manual review needed.</p>
-            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>Hit "Create Study Plan" and Gemini generates a structured plan targeting your lowest-confidence topics, with priority levels, estimated time, specific actions, and resource suggestions. Study smarter, not harder.</p>
+            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Your confidence scores tell the full story. The Insights page shows a clear breakdown of where you're strong and where you're struggling, with visual charts so you can spot gaps at a glance.</p>
+            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>One click generates a structured study plan targeting your weakest areas, complete with priorities, time estimates, and specific resources. Stop wasting time on what you already know.</p>
           </motion.div>
           <motion.div style={{padding:"80px 80px 80px 64px",display:"flex",alignItems:"center",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,delay:0.12,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             {/* Study plan visual demo */}
@@ -2863,8 +2863,8 @@ function LandingPage({onEnter}){
           <motion.div style={{padding:"80px 80px 80px 64px",display:"flex",flexDirection:"column",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             <div style={{fontSize:13,color:"#f59e0b",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:20,fontFamily:"'JetBrains Mono',monospace"}}>AI Transformer</div>
             <h2 style={{fontSize:"clamp(34px, 4vw, 52px)",fontWeight:800,letterSpacing:"-2px",margin:"0 0 24px",lineHeight:1.08}}>One note.<br/>Four formats.</h2>
-            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Select any note and Notiq transforms it into four distinct study formats using a single Gemini call with structured JSON output. Interactive quizzes with multiple-choice scoring, condensed summaries with key bullet points, flippable flashcards for spaced repetition, and visual mind maps that show topic hierarchies.</p>
-            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>The prompt engineering enforces a strict JSON schema so every response parses cleanly into rich, interactive UI components — no regex post-processing needed. Switch between formats instantly with the tab bar above.</p>
+            <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Highlight any text and transform it instantly. Interactive quizzes that test your understanding, concise summaries with key takeaways, flippable flashcards for spaced repetition, and visual mind maps that reveal the structure of a topic.</p>
+            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>Every format is fully interactive — answer quiz questions and get scored, flip flashcards to check yourself, or explore mind map branches. Switch between all four with a single click.</p>
           </motion.div>
         </div>
       </section>
@@ -2884,7 +2884,7 @@ function LandingPage({onEnter}){
                 >{ch}</motion.span>
               ))}
             </h2>
-            <p style={{fontSize:18,color:"#94a3b8",lineHeight:1.75,marginBottom:40}}>No account needed. No setup. Just open the app and start writing.<br/>Your AI-powered workspace is one click away.</p>
+            <p style={{fontSize:18,color:"#94a3b8",lineHeight:1.75,marginBottom:40}}>No account needed. No setup. No friction.<br/>Just open the app and let the AI handle the rest.</p>
             <button onClick={enter} className="cta-btn" style={{padding:"20px 56px",borderRadius:16,border:"none",background:"linear-gradient(135deg,#667eea,#764ba2)",color:"#fff",fontSize:20,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
               Launch Notiq &rarr;
             </button>
