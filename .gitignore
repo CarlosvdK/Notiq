@@ -33,3 +33,14 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Submission artifacts (large files)
+submission/
+*.mov
+*.mp4
+
+# Claude Code plugins (not part of app)
+everything-claude-code/
+
+# Word temp files
+~$*
