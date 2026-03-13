@@ -51,7 +51,7 @@ const LIGHT_CSS=`
   --t-panel:rgba(0,0,0,.02);
   --t-pbar:rgba(0,0,0,.08);
   --t-dot-off:rgba(0,0,0,.2);
-  --t-topbar:rgba(0,0,0,.02);
+  --t-topbar:#ffffff;
 `;
 const T={bg:"var(--t-bg)",bg2:"var(--t-bg2)",bg3:"var(--t-bg3)",glass:"var(--t-glass)",glassH:"var(--t-glassH)",border:"var(--t-border)",a1:"var(--t-a1)",a2:"var(--t-a2)",a3:"var(--t-a3)",txt:"var(--t-txt)",txt2:"var(--t-txt2)",txt3:"var(--t-txt3)",red:"var(--t-red)",amber:"var(--t-amber)",blue:"var(--t-blue)",purple:"var(--t-purple)",cyan:"var(--t-cyan)",pink:"var(--t-pink)",grad:"var(--t-grad)"};
 const CM = {
@@ -925,7 +925,7 @@ function getNextTopics(k){const r=[];for(const[key,info]of Object.entries(k)){if
 // ══════════════════════════════════════════════════════════════
 const S={
   app:{display:"flex",height:"100vh",width:"100%",background:"var(--t-bg)",color:"var(--t-txt)",fontFamily:"'Inter',system-ui,sans-serif",overflow:"hidden",position:"relative"},
-  sidebar:{width:270,minWidth:270,background:"var(--t-sidebar)",backdropFilter:"blur(24px)",borderRight:"1px solid var(--t-border)",display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",zIndex:2,boxShadow:"4px 0 20px rgba(0,0,0,0.08)"},
+  sidebar:{width:310,minWidth:310,background:"var(--t-sidebar)",backdropFilter:"blur(24px)",borderRight:"1px solid var(--t-border)",display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",zIndex:2,boxShadow:"4px 0 20px rgba(0,0,0,0.08)"},
   sideScroll:{flex:1,overflowY:"auto",padding:"0 14px 14px"},
   main:{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",zIndex:1},
   topBar:{display:"flex",gap:6,padding:"12px 24px",borderBottom:"1px solid var(--t-border)",background:"var(--t-topbar)",backdropFilter:"blur(16px)",alignItems:"center"},
@@ -936,7 +936,7 @@ const S={
   tag:c=>({display:"inline-block",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600,textTransform:"uppercase",background:CM[c]?.bg||"var(--t-glass)",color:CM[c]?.color||"var(--t-txt2)"}),
   sh:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"var(--t-a1)",letterSpacing:".5px",textTransform:"uppercase",marginBottom:8,fontWeight:600},
   sh2:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"var(--t-txt3)",letterSpacing:".5px",textTransform:"uppercase",marginBottom:8,fontWeight:600},
-  sh3:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"var(--t-amber)",letterSpacing:".5px",textTransform:"uppercase",marginBottom:8,fontWeight:600},
+  sh3:{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"var(--t-purple)",letterSpacing:".5px",textTransform:"uppercase",marginBottom:8,fontWeight:600},
   editor:{minHeight:350,outline:"none",padding:"24px 32px",fontFamily:"'Inter',sans-serif",fontSize:16,lineHeight:1.85,color:"var(--t-txt)",background:"transparent"},
   toolbar:{display:"flex",flexWrap:"wrap",gap:3,padding:"8px 16px",borderBottom:"1px solid var(--t-border)",background:"var(--t-topbar)",backdropFilter:"blur(12px)",alignItems:"center"},
   toolBtn:{padding:"6px 9px",border:"none",borderRadius:7,cursor:"pointer",fontSize:12,background:"transparent",color:"var(--t-txt3)",fontFamily:"'Inter',sans-serif",transition:"all 0.15s ease",display:"inline-flex",alignItems:"center",justifyContent:"center"},
@@ -1235,7 +1235,7 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
   return(
     <div style={{border:`1px solid ${dropOver?"rgba(102,126,234,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:20,overflow:"hidden",background:dropOver?"rgba(102,126,234,.04)":"rgba(255,255,255,0.03)",backdropFilter:"blur(12px)",flex:1,display:"flex",flexDirection:"column",transition:"border-color .2s",boxShadow:"0 4px 24px rgba(0,0,0,0.2)"}} onDragStart={handleBlockDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
       {/* ── Ribbon Tab Bar ── */}
-      <div style={{display:"flex",alignItems:"center",padding:"0 10px",borderBottom:"1px solid rgba(255,255,255,0.06)",background:"rgba(8,9,13,0.5)",gap:0}}>
+      <div style={{display:"flex",alignItems:"center",padding:"0 10px",borderBottom:"1px solid rgba(255,255,255,0.06)",background:"var(--t-topbar)",gap:0}}>
         {[["home","Home"],["insert","Insert"],["draw","Draw"],["references","References"],["review","Review"]].map(([k,lb])=>(<button key={k} onClick={()=>setRibbonTab(k)} style={tabStyle(k)}>{lb}</button>))}
         <div style={{flex:1}}/>
         {/* Share button in ribbon bar */}
@@ -1332,37 +1332,11 @@ function RichEditor({content,onChange,ghostData,onAcceptGhost,noteId,loading,onS
 // NOTIQ LOGO — custom SVG wordmark
 // ══════════════════════════════════════════════════════════════
 function NotiqLogo({size=24,animated=false,style={}}){
-  const h=size;const w=h*2.7;
-  const grad="url(#_nq)";
-  // All letters aligned on baseline=42, x-height top=8, consistent stroke=6
-  return(
-    <svg viewBox="0 0 164 60" width={w} height={h} style={{display:"inline-block",verticalAlign:"middle",...style}} xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="_nq" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#667eea"/>
-          <stop offset="40%" stopColor="#764ba2"/>
-          <stop offset="100%" stopColor="#f093fb"/>
-        </linearGradient>
-      </defs>
-      <g fill="none" strokeLinecap="round" strokeLinejoin="round">
-        {/* n — geometric arch, baseline 42, top 8 */}
-        <path d="M4,42 V16 C4,8 12,4 19,4 C26,4 34,8 34,16 V42" stroke={grad} strokeWidth="6.5"/>
-        {/* o — rounded square (tech feel), centered y=8..42 */}
-        <rect x="42" y="8" width="28" height="34" rx="10" stroke={grad} strokeWidth="6"/>
-        {/* t — taller stem with clear crossbar + curved foot */}
-        <path d="M86,0 V34 Q86,42 94,42" stroke={grad} strokeWidth="6"/>
-        <line x1="78" y1="11" x2="96" y2="11" stroke={grad} strokeWidth="5.5"/>
-        {/* i — stem aligned with baseline, dot well above */}
-        <line x1="107" y1="16" x2="107" y2="42" stroke={grad} strokeWidth="6"/>
-        {/* i — diamond dot with clear gap above stem */}
-        <rect x="104" y="-2" width="6" height="6" rx="0.8" fill={grad} stroke="none" transform="rotate(45 107 1)"/>
-        {/* q — bowl + stem with angular descender */}
-        <path d="M141,8 C135,4 125,4 120,11 C116,18 116,32 121,38 C126,42 136,42 142,38" stroke={grad} strokeWidth="6"/>
-        <path d="M143,6 V52 L150,58" stroke={grad} strokeWidth="6"/>
-      </g>
-      {animated&&<style>{`@keyframes _nqShift{0%{stop-color:#667eea}33%{stop-color:#f093fb}66%{stop-color:#764ba2}100%{stop-color:#667eea}} #_nq stop{animation:_nqShift 4s ease infinite} #_nq stop:nth-child(2){animation-delay:1.3s} #_nq stop:nth-child(3){animation-delay:2.6s}`}</style>}
-    </svg>
-  );
+  const id=animated?"_nqA":"_nqS";
+  return(<>
+    {animated&&<style>{`@keyframes nqGrad{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}`}</style>}
+    <span style={{fontSize:size,fontWeight:800,fontFamily:"'Inter',system-ui,sans-serif",letterSpacing:"-1px",background:animated?"linear-gradient(270deg,#7b93f5,#9571cd,#f0abfc,#7b93f5)":"linear-gradient(135deg,#7b93f5,#9571cd,#f0abfc)",backgroundSize:animated?"300% 300%":"100% 100%",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:animated?"nqGrad 4s ease infinite":"none",display:"inline-block",...style}}>NOTIQ</span>
+  </>);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1476,7 +1450,7 @@ function Sidebar({folders,notes,activeNote,activeFolder,activeSubfolder,onSelect
   return(
     <div style={S.sidebar}>
       <div style={{padding:"20px 18px 0"}}><NotiqLogo size={24}/><div style={{fontSize:11,color:"#8492a6",marginBottom:16,marginTop:4}}>AI-powered notes</div></div>
-      <div style={{padding:"0 14px 12px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+      <div style={{padding:"0 14px 12px",borderBottom:"1px solid var(--t-border)"}}>
         <button className="grad-btn" onClick={onOpenNewNote} style={{width:"100%",padding:"11px 16px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New Note
@@ -1565,11 +1539,11 @@ function EditableNote({id,content,onChange}){
 // ══════════════════════════════════════════════════════════════
 // SECTION 8: COMBINED VIEW (folder or parent note)
 // ══════════════════════════════════════════════════════════════
-function CombinedView({title,items,onSelect,onAddLesson,parentId,onChangeNote}){
+function CombinedView({title,items,onSelect,onAddLesson,parentId,onChangeNote,hideTitle=false}){
   const[nt,setNt]=useState("");
   return(
     <div style={{flex:1,overflowY:"auto",padding:"24px 32px"}}>
-      <h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:28,margin:"0 0 6px",color:"#f1f5f9",fontWeight:800,letterSpacing:"-0.5px"}}>{title}</h2>
+      {!hideTitle&&<h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:28,margin:"0 0 6px",color:"var(--t-txt)",fontWeight:800,letterSpacing:"-0.5px"}}>{title}</h2>}
       <span style={{fontSize:13,color:"#8492a6"}}>{items.length} note{items.length!==1?"s":""}</span>
       {parentId&&<div style={{display:"flex",gap:6,margin:"12px 0"}}><input className="nq-input" value={nt} onChange={e=>setNt(e.target.value)} placeholder="Add new lesson..." style={{flex:1,padding:"8px 14px",borderRadius:10,border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.04)",color:"#f1f5f9",fontSize:13,outline:"none",transition:"border-color 0.2s, box-shadow 0.2s"}} onKeyDown={e=>{if(e.key==="Enter"&&nt.trim()){onAddLesson(nt.trim());setNt("");}}}/><button className="grad-btn" onClick={()=>{if(nt.trim()){onAddLesson(nt.trim());setNt("");}}} style={{padding:"8px 18px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ Lesson</button></div>}
       <div style={{...S.glass,padding:16,marginBottom:16}}><div style={S.sh}>Table of Contents</div>
@@ -1729,11 +1703,11 @@ Notes:\n${digest}`;
     {weakTopics.length>0&&<div style={{...S.glass,padding:16,marginBottom:16,borderLeft:"3px solid #ff5c5c"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
         <div style={S.sh3}>Weak Areas ({weakTopics.length})</div>
-        {geminiKey&&<button className="grad-btn" onClick={genStudyPlan} disabled={spLd} style={{padding:"6px 16px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#ff5c5c,#f59e0b)",color:"#fff",fontSize:11,fontWeight:600,cursor:spLd?"wait":"pointer",opacity:spLd?.7:1}}>{spLd?"Generating...":"Create Study Plan"}</button>}
+        {geminiKey&&<button className="grad-btn" onClick={genStudyPlan} disabled={spLd} style={{padding:"6px 16px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:11,fontWeight:600,cursor:spLd?"wait":"pointer",opacity:spLd?.7:1}}>{spLd?"Generating...":"Create Study Plan"}</button>}
       </div>
       {weakTopics.slice(0,8).map((d,i)=>(
         <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:i<weakTopics.length-1?"1px solid rgba(255,255,255,0.04)":"none"}}>
-          <span style={{width:24,height:24,borderRadius:6,background:d.score<=2?"rgba(255,92,92,0.15)":"rgba(245,158,11,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:d.score<=2?"#ff5c5c":"#f59e0b",flexShrink:0}}>{d.score}</span>
+          <span style={{width:24,height:24,borderRadius:6,background:d.score<=2?"rgba(255,92,92,0.15)":"rgba(149,113,205,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:d.score<=2?"#ff5c5c":"#9571cd",flexShrink:0}}>{d.score}</span>
           <div style={{flex:1,minWidth:0}}>
             <div style={{fontSize:12,fontWeight:600,color:"#f1f5f9",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d.section}</div>
             <div style={{fontSize:10,color:"#8492a6"}}>{d.noteTitle}</div>
@@ -1764,7 +1738,7 @@ Notes:\n${digest}`;
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
             <div style={{fontSize:13,fontWeight:600,color:"#f1f5f9"}}>{item.topic}</div>
             <div style={{display:"flex",gap:6,alignItems:"center"}}>
-              <span style={{fontSize:10,padding:"2px 8px",borderRadius:6,background:item.priority==="high"?"rgba(255,92,92,0.15)":"rgba(245,158,11,0.15)",color:item.priority==="high"?"#ff5c5c":"#f59e0b",fontWeight:600}}>{item.priority}</span>
+              <span style={{fontSize:10,padding:"2px 8px",borderRadius:6,background:item.priority==="high"?"rgba(255,92,92,0.15)":"rgba(149,113,205,0.15)",color:item.priority==="high"?"#ff5c5c":"#9571cd",fontWeight:600}}>{item.priority}</span>
               {item.timeEstimate&&<span style={{fontSize:10,color:"#8492a6"}}>{item.timeEstimate}</span>}
             </div>
           </div>
@@ -1779,9 +1753,9 @@ Notes:\n${digest}`;
       <div style={S.sh}>Knowledge Tracker</div>
       {kVals.map((info,i)=>(<div key={i} style={{...S.glass,padding:12,marginBottom:8}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{fontSize:13,fontWeight:600}}>{info.name}</span><span style={{fontSize:12,color:T.a1,fontFamily:"'JetBrains Mono',monospace"}}>{info.pct}%</span></div>
-        <div style={S.pBar}><div style={S.pFill(info.pct,info.pct>70?T.a1:info.pct>40?T.amber:T.red)}/></div>
+        <div style={S.pBar}><div style={S.pFill(info.pct,info.pct>70?T.a1:info.pct>40?T.purple:T.red)}/></div>
         <div style={{fontSize:11,color:T.txt2,marginTop:2}}>{info.found}/{info.total} concepts covered</div>
-        {info.missing.length>0&&<div style={{marginTop:4}}><span style={{fontSize:11,color:T.amber}}>Gaps: </span><span style={{fontSize:11,color:T.txt3}}>{info.missing.join(", ")}</span></div>}
+        {info.missing.length>0&&<div style={{marginTop:4}}><span style={{fontSize:11,color:T.purple}}>Gaps: </span><span style={{fontSize:11,color:T.txt3}}>{info.missing.join(", ")}</span></div>}
       </div>))}
       {nxt.length>0&&<><div style={{...S.sh,marginTop:12}}>Suggested Next Topics</div>
         {nxt.map((nt,i)=>(<div key={i} style={{...S.glass,padding:10,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -1823,7 +1797,7 @@ Notes:\n${digest}`;
         </div>}
         {aiData.gaps?.length>0&&<div style={{flex:1}}>
           <div style={S.sh}>Areas to Improve</div>
-          {aiData.gaps.map((g,i)=><div key={i} style={{...S.glass,padding:"8px 12px",marginBottom:4,borderLeft:`3px solid ${T.amber}`}}><div style={{fontSize:12,color:T.txt3}}>{g}</div></div>)}
+          {aiData.gaps.map((g,i)=><div key={i} style={{...S.glass,padding:"8px 12px",marginBottom:4,borderLeft:`3px solid ${T.purple}`}}><div style={{fontSize:12,color:T.txt3}}>{g}</div></div>)}
         </div>}
       </div>
     </div>}
@@ -1832,6 +1806,99 @@ Notes:\n${digest}`;
       <div style={{fontSize:14,marginBottom:10,color:"#7b93f5",fontFamily:"'JetBrains Mono',monospace"}}>---</div>
       <div style={{fontSize:14,color:"#b0bec5"}}>Rate your confidence on topics in your notes, then generate insights</div>
       <div style={{fontSize:12,marginTop:6,color:"#8492a6"}}>Open a note and rate each section 1-10 using the Topics & Confidence panel below the editor</div>
+    </div>}
+  </div>);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 11B: SUMMARY PAGE
+// ══════════════════════════════════════════════════════════════
+function SummaryPage({notes,folders,geminiKey}){
+  const[filter,setFilter]=useState({folder:"all",cat:"all"});
+  const[summary,setSummary]=useState(null);const[loading,setLoading]=useState(false);
+
+  const allNotes=Object.entries(notes).map(([id,n])=>({id,...n})).filter(n=>!n.children);
+  const filtered=allNotes.filter(n=>{
+    if(filter.cat!=="all"&&n.cat!==filter.cat)return false;
+    if(filter.folder!=="all"){
+      const f=folders.find(f=>getAllFolderNoteIds(f).includes(n.id));
+      if(!f||f.id!==filter.folder)return false;
+    }
+    return true;
+  });
+
+  const cats=[...new Set(allNotes.map(n=>n.cat).filter(Boolean))];
+
+  const genSummary=async()=>{
+    if(!geminiKey||filtered.length===0)return;setLoading(true);
+    const digest=filtered.map(n=>`[${n.title}] (${n.cat||"uncategorized"})\n${(n.content||"").replace(/<[^>]+>/g,"").slice(0,400)}`).join("\n---\n");
+    const prompt=`Summarize these ${filtered.length} notes concisely. Group by theme. Return ONLY valid JSON:\n{"overview":"2-3 sentence overview","groups":[{"theme":"Theme","notes":["note title 1"],"summary":"group summary"}],"keyTakeaways":["takeaway 1","takeaway 2"]}\n\nNotes:\n${digest}`;
+    try{
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:1200,temperature:0.3,responseMimeType:"application/json"}})
+      });
+      const d=await r.json();const txt=d?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if(txt)setSummary(JSON.parse(txt));
+    }catch(e){console.error("Summary error:",e);}
+    setLoading(false);
+  };
+
+  return(<div style={{padding:"28px 36px",overflowY:"auto",flex:1}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+      <div><h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:0,color:"var(--t-txt)",fontWeight:800,letterSpacing:"-0.5px"}}>Summary</h2>
+        <div style={{fontSize:14,color:"var(--t-txt2)",marginTop:4}}>{filtered.length} notes</div></div>
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        {geminiKey&&<button className="grad-btn" onClick={genSummary} disabled={loading} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:600,cursor:loading?"wait":"pointer",opacity:loading?.7:1}}>{loading?"Summarizing...":"Generate Summary"}</button>}
+      </div>
+    </div>
+
+    {/* Filters */}
+    <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+      <select value={filter.folder} onChange={e=>setFilter(p=>({...p,folder:e.target.value}))} style={{padding:"6px 12px",borderRadius:8,border:"1px solid var(--t-border)",background:"var(--t-glass)",color:"var(--t-txt)",fontSize:12,cursor:"pointer",outline:"none"}}>
+        <option value="all">All Folders</option>
+        {folders.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}
+      </select>
+      <select value={filter.cat} onChange={e=>setFilter(p=>({...p,cat:e.target.value}))} style={{padding:"6px 12px",borderRadius:8,border:"1px solid var(--t-border)",background:"var(--t-glass)",color:"var(--t-txt)",fontSize:12,cursor:"pointer",outline:"none"}}>
+        <option value="all">All Types</option>
+        {cats.map(c=><option key={c} value={c}>{CM[c]?.lb||c}</option>)}
+      </select>
+    </div>
+
+    {/* Note list */}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10,marginBottom:20}}>
+      {filtered.map(n=>{const words=(n.content||"").replace(/<[^>]+>/g,"").split(/\s+/).filter(Boolean).length;return(
+        <div key={n.id} style={{...S.glass,padding:14}}>
+          <div style={{fontSize:14,fontWeight:600,color:"var(--t-txt)",marginBottom:4}}>{n.title}</div>
+          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+            {n.cat&&<span style={S.tag(n.cat)}>{CM[n.cat]?.lb||n.cat}</span>}
+            <span style={{fontSize:10,color:"var(--t-txt2)"}}>{words} words</span>
+            <span style={{fontSize:10,color:"var(--t-txt2)"}}>{n.created}</span>
+          </div>
+        </div>
+      );})}
+    </div>
+
+    {/* AI Summary result */}
+    {summary&&<div>
+      {summary.overview&&<div style={{...S.glassAccent,padding:16,marginBottom:14,borderLeft:"3px solid var(--t-a1)"}}>
+        <div style={{fontSize:10,color:"var(--t-a1)",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:6}}>Overview</div>
+        <div style={{fontSize:14,color:"var(--t-txt)",lineHeight:1.6}}>{summary.overview}</div>
+      </div>}
+      {summary.groups?.map((g,i)=><div key={i} style={{...S.glass,padding:14,marginBottom:8}}>
+        <div style={{fontSize:14,fontWeight:600,color:"var(--t-txt)",marginBottom:4}}>{g.theme}</div>
+        <div style={{fontSize:12,color:"var(--t-txt2)",marginBottom:6}}>{g.summary}</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:4}}>{g.notes?.map((t,j)=><span key={j} style={{padding:"2px 8px",borderRadius:20,fontSize:10,background:"var(--t-glass)",color:"var(--t-a1)",border:"1px solid var(--t-border)"}}>{t}</span>)}</div>
+      </div>)}
+      {summary.keyTakeaways?.length>0&&<div style={{...S.glassAccent,padding:14,marginBottom:14}}>
+        <div style={{fontSize:10,color:"var(--t-a1)",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Key Takeaways</div>
+        {summary.keyTakeaways.map((t,i)=><div key={i} style={{fontSize:13,color:"var(--t-txt3)",lineHeight:1.6,paddingLeft:10,borderLeft:"2px solid var(--t-border)",marginBottom:4}}>{t}</div>)}
+      </div>}
+    </div>}
+
+    {!summary&&!loading&&<div style={{textAlign:"center",padding:48,color:"var(--t-txt2)"}}>
+      <div style={{fontSize:14,marginBottom:10,color:"var(--t-a1)",fontFamily:"'JetBrains Mono',monospace"}}>---</div>
+      <div style={{fontSize:14,color:"var(--t-txt3)"}}>Select filters and generate an AI summary of your notes</div>
     </div>}
   </div>);
 }
@@ -2023,7 +2090,7 @@ function TransformPanel({note,geminiKey,onClose}){
       </div>
       {result.branches?.map((b,i)=>(<div key={i} style={{...S.glass,padding:10,marginBottom:6}}>
         <div style={{fontSize:13,fontWeight:600,color:"var(--t-a1)",marginBottom:6,display:"flex",alignItems:"center",gap:6}}>
-          <span style={{width:8,height:8,borderRadius:"50%",background:["var(--t-blue)","var(--t-amber)","var(--t-cyan)","var(--t-purple)","var(--t-red)"][i%5],flexShrink:0}}/>{b.label}
+          <span style={{width:8,height:8,borderRadius:"50%",background:["var(--t-blue)","var(--t-purple)","var(--t-cyan)","var(--t-pink)","var(--t-red)"][i%5],flexShrink:0}}/>{b.label}
         </div>
         <div style={{display:"flex",flexWrap:"wrap",gap:4,paddingLeft:14}}>
           {b.children?.map((c,j)=><span key={j} style={{padding:"3px 10px",borderRadius:20,fontSize:11,background:T.glass,color:T.txt3,border:`1px solid ${T.border}`}}>{c}</span>)}
@@ -2036,6 +2103,213 @@ function TransformPanel({note,geminiKey,onClose}){
       Transform "{note.title}" into a different format using AI
     </div>}
   </div>);
+}
+
+function NoteInsightsPanel({noteIds,notes,topicSections,confidence,geminiKey,title,onClose}){
+  const[studyPlan,setStudyPlan]=useState(null);const[spLd,setSpLd]=useState(false);
+
+  // Gather confidence data for the given noteIds
+  const confData=[];
+  noteIds.forEach(nid=>{
+    const secs=topicSections[nid]||[];
+    secs.forEach((sec,i)=>{
+      const score=confidence[`${nid}:${i}`]||0;
+      if(score>0)confData.push({noteId:nid,noteTitle:notes[nid]?.title||"",section:sec.title,score,sectionIdx:i});
+    });
+  });
+  const avgConf=confData.length?Math.round(confData.reduce((s,d)=>s+d.score,0)/confData.length*10)/10:0;
+  const weakTopics=confData.filter(d=>d.score<=4).sort((a,b)=>a.score-b.score);
+  const strongTopics=confData.filter(d=>d.score>=7).sort((a,b)=>b.score-a.score);
+  const barData=Array.from({length:10},(_,i)=>({level:i+1,count:confData.filter(d=>d.score===i+1).length}));
+  const maxBar=Math.max(1,...barData.map(b=>b.count));
+
+  const genStudyPlan=async()=>{
+    if(!geminiKey||weakTopics.length===0)return;setSpLd(true);
+    const weakDigest=weakTopics.map(d=>`"${d.section}" (confidence: ${d.score}/10, from note: ${d.noteTitle})`).join("\n");
+    const prompt=`Create a focused study plan for a student who is weak in these topics:\n${weakDigest}\n\nReturn ONLY valid JSON:\n{"plan":[{"topic":"topic name","confidence":3,"priority":"high/medium","actions":["action 1","action 2"],"timeEstimate":"2 hours","resources":["resource"]}],"summary":"One paragraph overview","schedule":"Suggested weekly schedule"}`;
+    try{
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:1200,temperature:0.3,responseMimeType:"application/json"}})
+      });
+      const d=await r.json();const txt=d?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if(txt)setStudyPlan(JSON.parse(txt));
+    }catch(e){console.error("Study plan error:",e);}
+    setSpLd(false);
+  };
+
+  return(<div style={{background:"var(--t-bg2)",border:"1px solid var(--t-border)",borderRadius:16,padding:20,marginBottom:16}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+      <div style={{fontSize:15,fontWeight:700,color:"var(--t-txt)"}}>Insights — {title}</div>
+      <button onClick={onClose} style={{border:"none",background:"transparent",color:"var(--t-txt2)",cursor:"pointer",fontSize:18}}>{"\u00d7"}</button>
+    </div>
+
+    {/* Quick stats row */}
+    <div style={{display:"flex",gap:8,marginBottom:14}}>
+      <div style={{flex:1,background:"var(--t-glass)",border:"1px solid var(--t-border)",borderRadius:12,padding:"10px 14px",textAlign:"center"}}>
+        <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:22,fontWeight:700,background:"var(--t-grad)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{confData.length}</div>
+        <div style={{fontSize:9,color:"var(--t-txt2)",textTransform:"uppercase",letterSpacing:".5px",marginTop:2}}>Topics Rated</div>
+      </div>
+      <div style={{flex:1,background:"var(--t-glass)",border:"1px solid var(--t-border)",borderRadius:12,padding:"10px 14px",textAlign:"center"}}>
+        <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:22,fontWeight:700,background:"var(--t-grad)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{avgConf||"\u2014"}</div>
+        <div style={{fontSize:9,color:"var(--t-txt2)",textTransform:"uppercase",letterSpacing:".5px",marginTop:2}}>Avg Confidence</div>
+      </div>
+      <div style={{flex:1,background:"var(--t-glass)",border:"1px solid var(--t-border)",borderRadius:12,padding:"10px 14px",textAlign:"center"}}>
+        <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:22,fontWeight:700,color:"var(--t-red)"}}>{weakTopics.length}</div>
+        <div style={{fontSize:9,color:"var(--t-txt2)",textTransform:"uppercase",letterSpacing:".5px",marginTop:2}}>Weak Areas</div>
+      </div>
+      <div style={{flex:1,background:"var(--t-glass)",border:"1px solid var(--t-border)",borderRadius:12,padding:"10px 14px",textAlign:"center"}}>
+        <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:22,fontWeight:700,color:"#22c55e"}}>{strongTopics.length}</div>
+        <div style={{fontSize:9,color:"var(--t-txt2)",textTransform:"uppercase",letterSpacing:".5px",marginTop:2}}>Strong</div>
+      </div>
+    </div>
+
+    {/* Bar graph */}
+    {confData.length>0&&<div style={{background:"var(--t-glass)",border:"1px solid var(--t-border)",borderRadius:12,padding:14,marginBottom:14}}>
+      <div style={{fontSize:10,fontWeight:600,color:"var(--t-txt2)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:10}}>Confidence Distribution</div>
+      <div style={{display:"flex",alignItems:"flex-end",gap:4,height:80}}>
+        {barData.map(b=>{const pct=b.count/maxBar*100;const color=b.level<=3?"var(--t-red)":b.level<=6?"var(--t-purple)":"#22c55e";return(
+          <div key={b.level} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+            <span style={{fontSize:8,color:"var(--t-txt2)",fontFamily:"'JetBrains Mono',monospace"}}>{b.count||""}</span>
+            <div style={{width:"100%",height:`${Math.max(pct,3)}%`,background:color,borderRadius:"3px 3px 0 0",transition:"height 0.4s",minHeight:b.count?3:1,opacity:b.count?1:0.15}}/>
+            <span style={{fontSize:9,color:b.count?"var(--t-txt)":"var(--t-txt2)",fontWeight:b.count?600:400}}>{b.level}</span>
+          </div>
+        );})}
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",marginTop:6,fontSize:9,color:"var(--t-txt2)"}}>
+        <span>Weak</span><span>Moderate</span><span>Strong</span>
+      </div>
+    </div>}
+
+    {/* Weak topics list */}
+    {weakTopics.length>0&&<div style={{marginBottom:14}}>
+      <div style={{fontSize:10,fontWeight:600,color:"var(--t-purple)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Weak Areas</div>
+      {weakTopics.map((d,i)=>(
+        <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:i<weakTopics.length-1?"1px solid var(--t-border)":"none"}}>
+          <span style={{width:22,height:22,borderRadius:6,background:"rgba(255,92,92,0.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"var(--t-red)",flexShrink:0}}>{d.score}</span>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:12,fontWeight:600,color:"var(--t-txt)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d.section}</div>
+            <div style={{fontSize:10,color:"var(--t-txt2)"}}>{d.noteTitle}</div>
+          </div>
+        </div>
+      ))}
+    </div>}
+
+    {/* Strong topics */}
+    {strongTopics.length>0&&<div style={{marginBottom:14}}>
+      <div style={{fontSize:10,fontWeight:600,color:"#22c55e",textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Strong Areas</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+        {strongTopics.map((d,i)=>(
+          <span key={i} style={{padding:"3px 8px",borderRadius:6,background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.15)",fontSize:10,color:"#22c55e",fontWeight:600}}>{d.section} ({d.score})</span>
+        ))}
+      </div>
+    </div>}
+
+    {/* Study plan button + results */}
+    {weakTopics.length>0&&<div>
+      {!studyPlan&&<button className="grad-btn" onClick={genStudyPlan} disabled={spLd} style={{width:"100%",padding:"10px 0",borderRadius:10,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:12,fontWeight:600,cursor:spLd?"wait":"pointer",opacity:spLd?.7:1}}>{spLd?"Generating Study Plan...":"Generate Study Plan"}</button>}
+      {studyPlan&&<div style={{marginTop:10}}>
+        <div style={{fontSize:10,fontWeight:600,color:"var(--t-a1)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>AI Study Plan</div>
+        {studyPlan.summary&&<div style={{fontSize:12,color:"var(--t-txt2)",lineHeight:1.5,marginBottom:10}}>{studyPlan.summary}</div>}
+        {studyPlan.schedule&&<div style={{fontSize:11,color:"var(--t-a1)",marginBottom:10,padding:"6px 10px",background:"rgba(123,147,245,0.06)",borderRadius:8}}>{studyPlan.schedule}</div>}
+        {studyPlan.plan?.map((item,i)=>(
+          <div key={i} style={{background:"var(--t-glass)",border:"1px solid var(--t-border)",borderRadius:10,padding:10,marginBottom:6}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+              <div style={{fontSize:12,fontWeight:600,color:"var(--t-txt)"}}>{item.topic}</div>
+              <span style={{fontSize:9,padding:"2px 6px",borderRadius:4,background:item.priority==="high"?"rgba(255,92,92,0.12)":"rgba(149,113,205,0.12)",color:item.priority==="high"?"var(--t-red)":"var(--t-purple)",fontWeight:600}}>{item.priority}</span>
+            </div>
+            {item.actions?.map((a,j)=><div key={j} style={{fontSize:11,color:"var(--t-txt2)",paddingLeft:8,borderLeft:"2px solid var(--t-border)",marginBottom:2,lineHeight:1.4}}>{a}</div>)}
+            {item.timeEstimate&&<div style={{fontSize:10,color:"var(--t-txt2)",marginTop:4}}>{item.timeEstimate}</div>}
+          </div>
+        ))}
+      </div>}
+    </div>}
+
+    {confData.length===0&&<div style={{textAlign:"center",padding:16,color:"var(--t-txt2)",fontSize:12}}>No confidence ratings found for these notes. Rate topics in the editor to see insights.</div>}
+  </div>);
+}
+
+function TransformPopup({note,geminiKey,onClose,selectedText}){
+  const[format,setFormat]=useState(null);const[result,setResult]=useState(null);
+  const[loading,setLoading]=useState(false);const[quizAnswers,setQuizAnswers]=useState({});
+  const[flipped,setFlipped]=useState({});
+  const textToTransform=selectedText||(note?.content||"").replace(/<[^>]+>/g,"");
+  const transform=async(fmt)=>{
+    setFormat(fmt);setResult(null);setLoading(true);setQuizAnswers({});setFlipped({});
+    const r=await geminiTransformNote(note?.title||"Selection",textToTransform,fmt,geminiKey);
+    setResult(r);setLoading(false);
+  };
+  const qLen=result?.questions?.length||0;
+  const answered=Object.keys(quizAnswers).length;
+  const quizScore=result?.questions?result.questions.reduce((s,q,i)=>s+(quizAnswers[i]===q.answer?1:0),0):0;
+  return(<>
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:100,backdropFilter:"blur(4px)"}}/>
+    <div style={{position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%)",zIndex:101,width:480,maxHeight:"80vh",overflowY:"auto",background:"var(--t-bg2)",border:"1px solid var(--t-border)",borderRadius:20,padding:24,boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <div style={{fontSize:16,fontWeight:700,color:"var(--t-txt)"}}>Transform</div>
+        <button onClick={onClose} style={{border:"none",background:"transparent",color:"var(--t-txt2)",cursor:"pointer",fontSize:20}}>{"\u00d7"}</button>
+      </div>
+      {selectedText&&<div style={{...S.glass,padding:10,marginBottom:12,maxHeight:80,overflowY:"auto"}}><div style={{fontSize:11,color:"var(--t-txt2)",lineHeight:1.5}}>{selectedText.slice(0,200)}{selectedText.length>200?"...":""}</div></div>}
+      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
+        {[["quiz","Quiz"],["summary","Summary"],["flashcards","Flashcards"],["mindmap","Mind Map"]].map(([k,lb])=>(
+          <button key={k} onClick={()=>transform(k)} disabled={loading} style={{padding:"8px 18px",borderRadius:10,border:`1px solid ${format===k?"rgba(123,147,245,.4)":"var(--t-border)"}`,background:format===k?"rgba(123,147,245,.1)":"transparent",color:format===k?"var(--t-a1)":"var(--t-txt2)",fontSize:13,fontWeight:600,cursor:"pointer",transition:"all 0.2s ease"}}>{lb}</button>
+        ))}
+      </div>
+      {loading&&<div style={{textAlign:"center",padding:20,color:"var(--t-txt2)",fontSize:12}}>
+        <div style={{...S.pBar,width:120,margin:"8px auto"}}><div style={{height:"100%",borderRadius:7,background:"var(--t-grad)",animation:"pulse 1.5s ease infinite",width:"70%"}}/></div>
+        Generating {format}...</div>}
+      {format==="quiz"&&result?.questions&&(<div>
+        {result.questions.map((q,qi)=>(<div key={qi} style={{...S.glass,padding:10,marginBottom:8}}>
+          <div style={{fontSize:12,fontWeight:600,marginBottom:6}}>{qi+1}. {q.q}</div>
+          {q.options.map((opt,oi)=>{
+            const done=quizAnswers[qi]!==undefined;const correct=oi===q.answer;const picked=quizAnswers[qi]===oi;
+            let bg="var(--t-glass)",bdr="var(--t-border)",clr="var(--t-txt)";
+            if(done&&correct){bg="rgba(39,174,96,.15)";bdr="rgba(39,174,96,.4)";clr="var(--t-a1)";}
+            else if(done&&picked&&!correct){bg="rgba(192,57,43,.1)";bdr="rgba(192,57,43,.3)";clr="var(--t-red)";}
+            return(<button key={oi} onClick={()=>{if(!done)setQuizAnswers(p=>({...p,[qi]:oi}));}}
+              style={{display:"block",width:"100%",textAlign:"left",padding:"5px 10px",marginBottom:3,borderRadius:6,border:`1px solid ${bdr}`,background:bg,color:clr,fontSize:11,cursor:done?"default":"pointer",fontFamily:"'Inter',sans-serif"}}>{String.fromCharCode(65+oi)}. {opt}</button>);
+          })}
+          {quizAnswers[qi]!==undefined&&q.explanation&&<div style={{fontSize:10,color:"var(--t-txt2)",marginTop:4,fontStyle:"italic"}}>{q.explanation}</div>}
+        </div>))}
+        {answered===qLen&&qLen>0&&(<div style={{...S.glassAccent,padding:12,textAlign:"center"}}>
+          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:22,fontWeight:700,background:"var(--t-grad)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{quizScore}/{qLen}</div>
+          <div style={{fontSize:11,color:"var(--t-txt2)"}}>{quizScore===qLen?"Perfect score!":quizScore>=qLen*.7?"Great job!":"Keep studying!"}</div>
+        </div>)}
+      </div>)}
+      {format==="summary"&&result&&(<div>
+        {result.title&&<div style={{fontSize:14,fontWeight:600,marginBottom:8}}>{result.title}</div>}
+        {result.keyPoints&&(<div style={{...S.glass,padding:10,marginBottom:8}}>
+          <div style={S.sh2}>Key Points</div>
+          {result.keyPoints.map((p,i)=><div key={i} style={{fontSize:12,color:"var(--t-txt3)",marginBottom:4,paddingLeft:8,borderLeft:"2px solid var(--t-a2)"}}>{p}</div>)}
+        </div>)}
+        {result.details&&<div style={{...S.glass,padding:10}}><div style={S.sh2}>Details</div><div style={{fontSize:12,color:"var(--t-txt3)",lineHeight:1.6}}>{result.details}</div></div>}
+      </div>)}
+      {format==="flashcards"&&result?.cards&&(<div>
+        {result.cards.map((card,i)=>(<div key={i} onClick={()=>setFlipped(p=>({...p,[i]:!p[i]}))}
+          style={{...S.glass,padding:14,marginBottom:6,cursor:"pointer",minHeight:60,display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center",transition:"all .25s",background:flipped[i]?"var(--t-glass-accent)":"var(--t-glass)"}}>
+          <div>
+            <div style={{fontSize:9,color:"var(--t-txt2)",marginBottom:4,textTransform:"uppercase",letterSpacing:".5px"}}>{flipped[i]?"Answer":"Question"} {"\u00b7"} {i+1}/{result.cards.length}</div>
+            <div style={{fontSize:13,fontWeight:flipped[i]?400:600,color:flipped[i]?"var(--t-txt3)":"var(--t-txt)",lineHeight:1.5}}>{flipped[i]?card.back:card.front}</div>
+          </div>
+        </div>))}
+        <div style={{fontSize:10,color:"var(--t-txt2)",textAlign:"center",marginTop:4}}>Click cards to flip</div>
+      </div>)}
+      {format==="mindmap"&&result&&(<div>
+        <div style={{...S.glassAccent,padding:12,textAlign:"center",marginBottom:8}}>
+          <div style={{fontSize:15,fontWeight:700,background:"var(--t-grad)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{result.root}</div>
+        </div>
+        {result.branches?.map((b,i)=>(<div key={i} style={{...S.glass,padding:10,marginBottom:6}}>
+          <div style={{fontSize:13,fontWeight:600,color:"var(--t-a1)",marginBottom:6,display:"flex",alignItems:"center",gap:6}}>
+            <span style={{width:8,height:8,borderRadius:"50%",background:["var(--t-blue)","var(--t-purple)","var(--t-cyan)","var(--t-pink)","var(--t-red)"][i%5],flexShrink:0}}/>{b.label}
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:4,paddingLeft:14}}>
+            {b.children?.map((c,j)=><span key={j} style={{padding:"3px 10px",borderRadius:20,fontSize:11,background:"var(--t-glass)",color:"var(--t-txt3)",border:"1px solid var(--t-border)"}}>{c}</span>)}
+          </div>
+        </div>))}
+      </div>)}
+      {!format&&!loading&&<div style={{fontSize:13,color:"var(--t-txt2)",textAlign:"center",padding:20}}>Choose a format to transform {selectedText?"your selection":"this note"}</div>}
+    </div>
+  </>);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -2643,12 +2917,28 @@ function NotiqApp(){
   const[ghostData,setGhostData]=useState(null);const[ghostLoading,setGhostLoading]=useState(false);
   const[ytResults,setYtResults]=useState([]);const[ytLoading,setYtLoading]=useState(false);const[aiInsight,setAiInsight]=useState(null);
   const[uploadedFiles,setUploadedFiles]=useState([]);const[fileSearch,setFileSearch]=useState("");
-  const[isDark,setIsDark]=useState(true);
+  const[isDark,setIsDark]=useState(false);
   const[showTransform,setShowTransform]=useState(false);
+  const[showTransformPopup,setShowTransformPopup]=useState(false);
   const[showNewNoteModal,setShowNewNoteModal]=useState(false);
+  const[showInsightsPanel,setShowInsightsPanel]=useState(false);
   // Topic sections & confidence scores
-  const[topicSections,setTopicSections]=useState({}); // noteId -> [{title,index}]
-  const[confidence,setConfidence]=useState({}); // "noteId:sectionIdx" -> 1-10
+  const[topicSections,setTopicSections]=useState({
+  n1:[{title:"Supervised Learning Overview",index:0},{title:"Regression vs Classification",index:1},{title:"Linear Regression",index:2},{title:"Logistic Regression",index:3},{title:"Decision Trees & Random Forests",index:4},{title:"Support Vector Machines",index:5},{title:"Evaluation Metrics",index:6}],
+  n2:[{title:"Neural Networks Fundamentals",index:0},{title:"Activation Functions",index:1},{title:"Backpropagation & Gradient Descent",index:2},{title:"Convolutional Neural Networks (CNNs)",index:3},{title:"Famous CNN Architectures",index:4},{title:"Practical Tips",index:5}],
+  n3:[{title:"NLP — From Bag of Words to Transformers",index:0},{title:"Classical NLP Pipeline",index:1},{title:"Word Embeddings",index:2},{title:"The Transformer Architecture",index:3},{title:"Self-Attention Mechanism",index:4},{title:"LLMs: GPT, BERT, and Beyond",index:5}],
+  n4:[{title:"Valuation — Core Methods",index:0},{title:"Discounted Cash Flow (DCF)",index:1},{title:"WACC — Weighted Average Cost of Capital",index:2},{title:"NPV and IRR",index:3},{title:"Comparable Company Analysis (Comps)",index:4},{title:"Modigliani-Miller Theorem",index:5}],
+  n5:[{title:"Quantum Computing — Beyond Classical Bits",index:0}],
+  n6:[{title:"Ethics in Data Science and AI",index:0}],
+});
+  const[confidence,setConfidence]=useState({
+  "n1:0":8,"n1:1":7,"n1:2":9,"n1:3":6,"n1:4":8,"n1:5":4,"n1:6":7,
+  "n2:0":7,"n2:1":8,"n2:2":5,"n2:3":9,"n2:4":6,"n2:5":7,
+  "n3:0":6,"n3:1":5,"n3:2":7,"n3:3":9,"n3:4":4,"n3:5":8,
+  "n4:0":7,"n4:1":5,"n4:2":3,"n4:3":6,"n4:4":8,"n4:5":4,
+  "n5:0":3,
+  "n6:0":6,
+});
   const[insightsFolder,setInsightsFolder]=useState("academics"); // which root folder insights are for
   const timerRef=useRef(null);const ytRef=useRef(null);const abortRef=useRef(null);const ytAbortRef=useRef(null);
   useEffect(()=>{
@@ -2826,46 +3116,62 @@ function NotiqApp(){
       <div style={{position:"absolute",bottom:"15%",right:"10%",width:600,height:600,background:"radial-gradient(circle,rgba(149,113,205,0.05) 0%,transparent 65%)"}}/>
     </div>
     {showNewNoteModal&&<NewNoteModal folders={folders} activeFolder={activeFolder} activeSubfolder={activeSubfolder} onClose={()=>setShowNewNoteModal(false)} onCreate={createNote}/>}
+    {showTransformPopup&&active&&<TransformPopup note={active} geminiKey={GEMINI_KEY} selectedText={window.getSelection()?.toString()||""} onClose={()=>setShowTransformPopup(false)}/>}
     <Sidebar folders={folders} notes={notes} activeNote={activeNote} activeFolder={activeFolder} activeSubfolder={activeSubfolder}
       onSelect={selectNote} onSelectFolder={setActiveFolder} onSelectSubfolder={setActiveSubfolder} onCreateFolder={createFolder} onCreateSubfolder={createSubfolder} onSelectParent={selectParent} onSelectFolderView={selectFolderView} onSelectSubfolderView={selectSubfolderView} onOpenNewNote={()=>setShowNewNoteModal(true)}/>
     <div style={S.main}>
       <div style={S.topBar}>
         <button className="tab-btn" style={S.tabBtn(page==="notes")} onClick={()=>setPage("notes")}>Notes</button>
-        <button className="tab-btn" style={S.tabBtn(page==="insights")} onClick={()=>{setPage("insights");setInsightsFolder(activeFolder);}}>Insights</button>
+        <button className="tab-btn" style={S.tabBtn(page==="summary")} onClick={()=>setPage("summary")}>Summary</button>
         <button className="tab-btn" style={S.tabBtn(page==="links")} onClick={()=>setPage("links")}>Links</button>
         <div style={{flex:1}}/>
-        <button onClick={()=>{document.body.classList.add("theme-transition");setIsDark(d=>!d);setTimeout(()=>document.body.classList.remove("theme-transition"),400);}} style={{padding:"7px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",color:"#b0bec5",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginRight:4,transition:"all 0.2s ease"}}>{isDark?"Light":"Dark"}</button>
-        <div style={{display:"flex",gap:8,alignItems:"center",marginRight:10}}>
-          <span style={{width:6,height:6,borderRadius:"50%",background:GEMINI_KEY?"#7b93f5":"var(--t-dot-off)"}}/>
-          <span style={{fontSize:10,color:"#8492a6"}}>Gemini</span>
-          <span style={{width:6,height:6,borderRadius:"50%",background:YOUTUBE_KEY?"#7b93f5":"var(--t-dot-off)"}}/>
-          <span style={{fontSize:10,color:"#8492a6"}}>YT</span>
-        </div>
-        {page==="notes"&&!viewMode&&<>
-          <button className="tab-btn" style={{...S.tabBtn(showFiles),fontSize:12}} onClick={()=>{setShowFiles(!showFiles);if(!showFiles){setShowAI(false);setShowTransform(false);}else setShowAI(true);}}>Files</button>
-          <button className="tab-btn" style={{...S.tabBtn(showTransform),fontSize:12}} onClick={()=>{setShowTransform(!showTransform);if(!showTransform){setShowAI(false);setShowFiles(false);}}}> Transform</button>
-          <button className="tab-btn" style={{...S.tabBtn(showAI),fontSize:12}} onClick={()=>{setShowAI(!showAI);if(showAI){setShowFiles(false);}else{setShowTransform(false);}}}>{showAI?"AI Panel":"AI Panel"}</button>
-        </>}
+        <button onClick={()=>{document.body.classList.add("theme-transition");setIsDark(d=>!d);setTimeout(()=>document.body.classList.remove("theme-transition"),400);}} style={{padding:"7px 16px",borderRadius:10,border:"1px solid var(--t-border)",background:"var(--t-glass)",color:"var(--t-txt2)",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginRight:4,transition:"all 0.2s ease"}}>{isDark?"Light":"Dark"}</button>
+        {page==="notes"&&!viewMode&&<button className="tab-btn" style={{...S.tabBtn(showAI),fontSize:12}} onClick={()=>{setShowAI(!showAI);if(showAI){setShowFiles(false);}else{setShowTransform(false);}}}>{showAI?"AI Panel":"AI Panel"}</button>}
       </div>
-      {page==="notes"&&viewMode&&<CombinedView title={combinedTitle} items={combinedItems} onSelect={selectNote} onAddLesson={t=>combinedParentId&&addLesson(combinedParentId,t)} parentId={combinedParentId} onChangeNote={(id,html)=>setNotes(p=>({...p,[id]:{...p[id],content:html}}))}/>}
+      {page==="notes"&&viewMode&&<div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        <div style={{padding:"16px 32px 8px"}}>
+          <h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:24,margin:"0 0 10px",color:"var(--t-txt)",fontWeight:800,letterSpacing:"-0.5px"}}>{combinedTitle}</h2>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>setShowInsightsPanel(p=>!p)} style={{padding:"10px 24px",borderRadius:12,border:"none",background:showInsightsPanel?"linear-gradient(135deg,#7b93f5,#9571cd)":"linear-gradient(135deg,rgba(149,113,205,0.15),rgba(123,147,245,0.15))",color:showInsightsPanel?"#fff":"var(--t-purple)",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+              Insights
+            </button>
+            <button onClick={()=>setShowTransformPopup(true)} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,rgba(149,113,205,0.15),rgba(123,147,245,0.15))",color:"var(--t-purple)",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4l-6.4 4.8L8 14 2 9.2h7.6z"/></svg>
+              Transform
+            </button>
+          </div>
+        </div>
+        {showInsightsPanel&&<div style={{padding:"12px 32px 0"}}><NoteInsightsPanel noteIds={combinedItems.map(c=>c.id)} notes={notes} topicSections={topicSections} confidence={confidence} geminiKey={GEMINI_KEY} title={combinedTitle} onClose={()=>setShowInsightsPanel(false)}/></div>}
+        <CombinedView hideTitle title={combinedTitle} items={combinedItems} onSelect={selectNote} onAddLesson={t=>combinedParentId&&addLesson(combinedParentId,t)} parentId={combinedParentId} onChangeNote={(id,html)=>setNotes(p=>({...p,[id]:{...p[id],content:html}}))}/></div>}
       {page==="notes"&&!viewMode&&active&&(
         <div style={{display:"flex",flex:1,overflow:"hidden"}}>
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",padding:"20px 32px"}}>
             <div style={{marginBottom:12}}>
-              <span style={{fontSize:12,color:"#8492a6",letterSpacing:"0.3px"}}>{folderName} / {active.created}</span>
-              {active.parent&&<span style={{fontSize:12,color:"#7b93f5",marginLeft:8,cursor:"pointer",transition:"opacity 0.15s"}} onClick={()=>selectParent(active.parent)}>{"\u2190"} {notes[active.parent]?.title}</span>}
-              <h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:28,margin:"8px 0",color:"#f1f5f9",fontWeight:800,letterSpacing:"-0.5px"}}>{active.title}</h2>
+              <span style={{fontSize:12,color:"var(--t-txt2)",letterSpacing:"0.3px"}}>{folderName} / {active.created}</span>
+              {active.parent&&<span style={{fontSize:12,color:"var(--t-a1)",marginLeft:8,cursor:"pointer",transition:"opacity 0.15s"}} onClick={()=>selectParent(active.parent)}>{"\u2190"} {notes[active.parent]?.title}</span>}
+              <h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:28,margin:"8px 0",color:"var(--t-txt)",fontWeight:800,letterSpacing:"-0.5px"}}>{active.title}</h2>
               {active.context&&<div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7b93f5" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 <span style={{fontSize:11,color:"#7b93f5"}}>RAG context attached</span>
                 {active.ragFiles?.length>0&&<span style={{fontSize:10,color:"#8492a6"}}>({active.ragFiles.length} file{active.ragFiles.length!==1?"s":""})</span>}
               </div>}
             </div>
+            {showInsightsPanel&&<NoteInsightsPanel noteIds={[activeNote]} notes={notes} topicSections={topicSections} confidence={confidence} geminiKey={GEMINI_KEY} title={active.title} onClose={()=>setShowInsightsPanel(false)}/>}
+            <div style={{display:"flex",gap:8,marginBottom:6}}>
+              <button onClick={()=>setShowInsightsPanel(p=>!p)} style={{padding:"10px 24px",borderRadius:12,border:"none",background:showInsightsPanel?"linear-gradient(135deg,#7b93f5,#9571cd)":"linear-gradient(135deg,rgba(149,113,205,0.15),rgba(123,147,245,0.15))",color:showInsightsPanel?"#fff":"var(--t-purple)",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+                Insights
+              </button>
+              <button onClick={()=>setShowTransformPopup(true)} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,rgba(149,113,205,0.15),rgba(123,147,245,0.15))",color:"var(--t-purple)",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4l-6.4 4.8L8 14 2 9.2h7.6z"/></svg>
+                Transform
+              </button>
+            </div>
             <RichEditor key={activeNote} content={active.content} onChange={handleChange} ghostData={ghostData} onAcceptGhost={acceptGhost} noteId={activeNote} loading={ghostLoading} onShowFiles={handleShowFiles} sectionColors={SECTION_COLORS} confidence={confidence} onSetConfidence={setConfidenceScore}/>
           </div>
           {showFiles&&<FilePanel files={uploadedFiles} onUpload={f=>setUploadedFiles(p=>[...p,f])} onClose={()=>{setShowFiles(false);setShowAI(true);}} searchText={fileSearch}/>}
           {showAI&&!showFiles&&!showTransform&&<SugPanel videos={videos} ytResults={ytResults} knowledge={knowledge} aiInsight={aiInsight} loadingYT={ytLoading}/>}
-          {showTransform&&!showFiles&&active&&<TransformPanel note={active} geminiKey={GEMINI_KEY} onClose={()=>{setShowTransform(false);setShowAI(true);}}/>}
         </div>
       )}
       {page==="notes"&&!viewMode&&!active&&<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{textAlign:"center",maxWidth:340}}>
@@ -2874,6 +3180,7 @@ function NotiqApp(){
         <p style={{color:"#8492a6",fontSize:12}}>Your AI-powered writing companion is ready.</p>
       </div></div>}
       {page==="insights"&&<InsightsPage notes={notes} folders={folders} knowledge={knowledge} onAddTopic={addTopic} geminiKey={GEMINI_KEY} topicSections={topicSections} confidence={confidence} insightsFolder={insightsFolder} setInsightsFolder={setInsightsFolder}/>}
+      {page==="summary"&&<SummaryPage notes={notes} folders={folders} geminiKey={GEMINI_KEY}/>}
       {page==="links"&&<LinksPage notes={notes} geminiKey={GEMINI_KEY} onSelectNote={selectNote}/>}
     </div>
   </div>);
