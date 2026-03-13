@@ -2900,12 +2900,278 @@ function LandingPage({onEnter}){
 }
 
 // ══════════════════════════════════════════════════════════════
-// SECTION 13B: MAIN APP
+// SECTION 13B: TUTORIAL / ONBOARDING
+// ══════════════════════════════════════════════════════════════
+function Tutorial({onComplete}){
+  const[step,setStep]=useState(0);
+  const[typedIdx,setTypedIdx]=useState(0);
+  const[barAnim,setBarAnim]=useState(false);
+  const[flipDemo,setFlipDemo]=useState(false);
+
+  // Reset animations on step change
+  useEffect(()=>{setTypedIdx(0);setBarAnim(false);setFlipDemo(false);
+    const t1=setTimeout(()=>setBarAnim(true),300);
+    return()=>clearTimeout(t1);
+  },[step]);
+
+  // Typing animation for autocomplete step
+  const ghostText="using gradient descent to minimize the loss function across all training samples...";
+  useEffect(()=>{
+    if(step!==4)return;
+    if(typedIdx>=ghostText.length)return;
+    const t=setTimeout(()=>setTypedIdx(p=>p+1),35);
+    return()=>clearTimeout(t);
+  },[step,typedIdx]);
+
+  // Flip demo for transform step
+  useEffect(()=>{
+    if(step!==7)return;
+    const i=setInterval(()=>setFlipDemo(p=>!p),2000);
+    return()=>clearInterval(i);
+  },[step]);
+
+  const steps=[
+    {id:"welcome",title:"Welcome to Notiq",desc:"Your AI-powered note-taking companion. Write smarter with autocomplete, track your knowledge with confidence scoring, and transform notes into study materials."},
+    {id:"sidebar",title:"Sidebar & Folders",desc:"Your notes live here, organized in folders and subfolders. Click a folder to see all its notes, or select an individual note to open it in the editor."},
+    {id:"new-note",title:"Create a Note",desc:"Start here to create notes. Add a title, choose a subfolder, describe the context for smarter AI, and attach reference files like PDFs or slides."},
+    {id:"editor",title:"Editor & Ribbon",desc:"A full rich text editor with 5 ribbon tabs: Home (formatting), Insert (tables, images, links), Draw (freehand canvas), References (TOC, citations), and Review (comments, read aloud)."},
+    {id:"autocomplete",title:"AI Autocomplete",desc:"As you type, the AI suggests completions as ghost text. Press TAB to accept or ESC to dismiss. Suggestions are context-aware based on your note and uploaded files."},
+    {id:"confidence",title:"Confidence Scoring",desc:"Each heading gets a 1-10 confidence dropdown. Rate how well you understand each topic — these scores drive your personalized insights and study plans."},
+    {id:"insights",title:"Insights",desc:"View your confidence analysis: overall stats, a distribution graph, weak and strong areas, plus an AI-generated study plan targeting your weakest topics."},
+    {id:"transform",title:"Transform",desc:"Highlight text and click Transform to convert your notes into a Quiz, Summary, Flashcards, or Mind Map. The AI restructures your content instantly."},
+    {id:"ai-panel",title:"AI Panel",desc:"The right panel shows YouTube videos relevant to your note, plus a knowledge tracker showing your coverage of each subject. Toggle it from the top bar."},
+    {id:"summary",title:"Summary Page",desc:"Get an AI-generated overview of all your notes. Filter by folder or type, then generate themed summaries with key takeaways."},
+    {id:"links",title:"Knowledge Graph",desc:"AI discovers hidden connections between your notes and builds a visual graph showing how topics relate across different subjects."},
+    {id:"theme",title:"Theme Toggle",desc:"Switch between light and dark mode. Both are fully themed — pick whichever suits you."},
+    {id:"done",title:"You're All Set!",desc:"Start by opening a note from the sidebar or create a new one. As you write, the AI handles the rest. Happy studying!"},
+  ];
+  const cur=steps[step];
+  const total=steps.length;
+  const next=()=>{if(step<total-1)setStep(step+1);else onComplete();};
+
+  // Highlight regions matched to actual UI layout
+  // Sidebar=310px wide, topbar ~50px tall, insights/transform buttons below title ~150px from top
+  const getHighlight=()=>{
+    switch(cur.id){
+      case"sidebar":return{top:0,left:0,width:310,height:"100vh"};
+      case"new-note":return{top:68,left:14,width:282,height:48};
+      case"editor":return{top:190,left:342,width:"calc(100vw - 700px)",height:"calc(100vh - 210px)"};
+      case"autocomplete":return{top:300,left:342,width:"calc(100vw - 700px)",height:200};
+      case"confidence":return{top:300,left:342,width:"calc(100vw - 700px)",height:200};
+      case"insights":return{top:150,left:342,width:130,height:44};
+      case"transform":return{top:150,left:482,width:140,height:44};
+      case"ai-panel":return{top:50,right:0,width:320,height:"calc(100vh - 50px)"};
+      case"summary":return{top:0,left:370,width:90,height:50};
+      case"links":return{top:0,left:462,width:65,height:50};
+      case"theme":return{top:5,right:120,width:60,height:40};
+      default:return null;
+    }
+  };
+
+  // Card position: aligned to the highlighted element
+  const getCardPos=()=>{
+    switch(cur.id){
+      case"welcome":case"done":return{top:"50%",left:"50%",transform:"translate(-50%,-50%)"};
+      case"sidebar":return{top:"50%",left:324,transform:"translateY(-50%)"};
+      case"new-note":return{top:130,left:324};
+      case"editor":return{top:60,left:"50%",transform:"translateX(-50%)"};
+      case"autocomplete":return{top:520,left:"50%",transform:"translateX(-50%)"};
+      case"confidence":return{top:520,left:"50%",transform:"translateX(-50%)"};
+      case"insights":return{top:208,left:342};
+      case"transform":return{top:208,left:482};
+      case"ai-panel":return{top:"50%",right:334,transform:"translateY(-50%)"};
+      case"summary":return{top:58,left:340};
+      case"links":return{top:58,left:430};
+      case"theme":return{top:58,right:100};
+      default:return{top:"50%",left:"50%",transform:"translate(-50%,-50%)"};
+    }
+  };
+
+  // Animated demo visuals per step
+  const Demo=()=>{
+    switch(cur.id){
+      case"welcome":return(
+        <div style={{display:"flex",gap:8,marginBottom:8}}>
+          {["Autocomplete","Insights","Transform","Knowledge Graph"].map((f,i)=>(
+            <div key={i} style={{flex:1,padding:"8px 4px",borderRadius:8,background:"linear-gradient(135deg,rgba(123,147,245,0.1),rgba(149,113,205,0.1))",textAlign:"center",fontSize:10,fontWeight:600,color:"var(--t-a1)",animation:`tutFadeIn 0.4s ease-out ${i*0.1}s both`}}>{f}</div>
+          ))}
+        </div>
+      );
+      case"sidebar":return(
+        <div style={{background:"var(--t-glass)",borderRadius:10,padding:10,marginBottom:8,border:"1px solid var(--t-border)"}}>
+          {[{n:"Academics",open:true,ch:["Machine Learning","Corporate Finance"]},{n:"Career & Projects",open:false}].map((f,i)=>(
+            <div key={i} style={{marginBottom:4}}>
+              <div style={{fontSize:11,fontWeight:700,color:"var(--t-a1)",textTransform:"uppercase",letterSpacing:".5px",padding:"4px 0",animation:`tutFadeIn 0.3s ease-out ${i*0.15}s both`}}>{f.open?"\u25bc":"\u25b6"} {f.n}</div>
+              {f.open&&f.ch?.map((c,j)=>(<div key={j} style={{fontSize:11,color:"var(--t-txt2)",paddingLeft:16,padding:"3px 0 3px 16px",animation:`tutFadeIn 0.3s ease-out ${(i+j+1)*0.12}s both`}}>{c}</div>))}
+            </div>
+          ))}
+        </div>
+      );
+      case"new-note":return(
+        <div style={{background:"var(--t-glass)",borderRadius:10,padding:10,marginBottom:8,border:"1px solid var(--t-border)"}}>
+          <div style={{background:"var(--t-border)",borderRadius:6,height:28,marginBottom:6,display:"flex",alignItems:"center",padding:"0 10px"}}><span style={{fontSize:10,color:"var(--t-txt2)"}}>Note title...</span></div>
+          <div style={{display:"flex",gap:4}}>
+            <div style={{flex:1,background:"var(--t-border)",borderRadius:6,height:24,display:"flex",alignItems:"center",padding:"0 8px"}}><span style={{fontSize:9,color:"var(--t-txt2)"}}>Subfolder</span></div>
+            <div style={{width:60,background:"linear-gradient(135deg,#7b93f5,#9571cd)",borderRadius:6,height:24,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:9,color:"#fff",fontWeight:600}}>Create</span></div>
+          </div>
+        </div>
+      );
+      case"editor":return(
+        <div style={{background:"var(--t-glass)",borderRadius:10,padding:8,marginBottom:8,border:"1px solid var(--t-border)"}}>
+          <div style={{display:"flex",gap:3,marginBottom:6}}>
+            {["Home","Insert","Draw","Ref","Review"].map((t,i)=>(<div key={i} style={{padding:"3px 8px",borderRadius:5,fontSize:9,fontWeight:600,background:i===0?"var(--t-note-active)":"transparent",color:i===0?"var(--t-a1)":"var(--t-txt2)",animation:`tutFadeIn 0.25s ease-out ${i*0.08}s both`}}>{t}</div>))}
+          </div>
+          <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
+            {["B","I","U","H1","H2","\u2261","\u2022","1."].map((b,i)=>(<div key={i} style={{width:22,height:22,borderRadius:4,background:"var(--t-glass)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"var(--t-txt2)",animation:`tutFadeIn 0.2s ease-out ${0.3+i*0.05}s both`}}>{b}</div>))}
+          </div>
+        </div>
+      );
+      case"autocomplete":return(
+        <div style={{background:"var(--t-glass)",borderRadius:10,padding:12,marginBottom:8,border:"1px solid var(--t-border)",fontFamily:"'Inter',sans-serif"}}>
+          <div style={{fontSize:12,color:"var(--t-txt)",marginBottom:4}}>We optimize the model weights </div>
+          <div style={{fontSize:12,color:"var(--t-txt2)",opacity:0.45,minHeight:18}}>{ghostText.slice(0,typedIdx)}<span style={{borderRight:"2px solid var(--t-a1)",animation:"tutBlink 1s step-end infinite"}}></span></div>
+          <div style={{marginTop:8,display:"flex",gap:6}}>
+            <span style={{fontSize:9,padding:"2px 8px",borderRadius:4,background:"var(--t-glass)",color:"var(--t-a1)",fontFamily:"'JetBrains Mono',monospace",border:"1px solid var(--t-border)"}}>TAB accept</span>
+            <span style={{fontSize:9,padding:"2px 8px",borderRadius:4,background:"var(--t-glass)",color:"var(--t-txt2)",fontFamily:"'JetBrains Mono',monospace",border:"1px solid var(--t-border)"}}>ESC dismiss</span>
+          </div>
+        </div>
+      );
+      case"confidence":return(
+        <div style={{background:"var(--t-glass)",borderRadius:10,padding:10,marginBottom:8,border:"1px solid var(--t-border)"}}>
+          {[{t:"Linear Regression",s:9,c:"#22c55e"},{t:"Support Vector Machines",s:4,c:"var(--t-purple)"},{t:"WACC Calculation",s:3,c:"var(--t-red)"}].map((d,i)=>(
+            <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0",animation:`tutFadeIn 0.3s ease-out ${i*0.15}s both`}}>
+              <div style={{width:22,height:22,borderRadius:5,background:`${d.c}20`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:d.c}}>{d.s}</div>
+              <span style={{fontSize:11,color:"var(--t-txt)",flex:1}}>{d.t}</span>
+              <div style={{width:50,height:5,borderRadius:3,background:"var(--t-border)",overflow:"hidden"}}><div style={{height:"100%",borderRadius:3,background:d.c,width:barAnim?`${d.s*10}%`:"0%",transition:"width 0.8s ease"}}/></div>
+            </div>
+          ))}
+        </div>
+      );
+      case"insights":return(
+        <div style={{background:"var(--t-glass)",borderRadius:10,padding:10,marginBottom:8,border:"1px solid var(--t-border)"}}>
+          <div style={{display:"flex",gap:4,marginBottom:8}}>
+            {[{l:"Topics",v:"7"},{l:"Avg",v:"6.4"},{l:"Weak",v:"3"}].map((s,i)=>(
+              <div key={i} style={{flex:1,textAlign:"center",animation:`tutFadeIn 0.3s ease-out ${i*0.1}s both`}}>
+                <div style={{fontSize:16,fontWeight:700,background:"var(--t-grad)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{s.v}</div>
+                <div style={{fontSize:8,color:"var(--t-txt2)",textTransform:"uppercase"}}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{display:"flex",alignItems:"flex-end",gap:2,height:36}}>
+            {[0,1,0,2,3,1,4,2,1,0].map((v,i)=>(<div key={i} style={{flex:1,height:barAnim?`${Math.max(v*25,4)}%`:"4%",background:i<3?"var(--t-red)":i<6?"var(--t-purple)":"#22c55e",borderRadius:"2px 2px 0 0",transition:`height 0.6s ease ${i*0.05}s`,minHeight:2}}/>))}
+          </div>
+        </div>
+      );
+      case"transform":return(
+        <div style={{background:"var(--t-glass)",borderRadius:10,padding:10,marginBottom:8,border:"1px solid var(--t-border)"}}>
+          <div style={{display:"flex",gap:4,marginBottom:8}}>
+            {["Quiz","Summary","Flashcards","Mind Map"].map((f,i)=>(
+              <div key={i} style={{flex:1,padding:"4px 2px",borderRadius:6,border:"1px solid var(--t-border)",textAlign:"center",fontSize:9,fontWeight:600,color:i===2?"var(--t-a1)":"var(--t-txt2)",background:i===2?"rgba(123,147,245,0.1)":"transparent",animation:`tutFadeIn 0.25s ease-out ${i*0.08}s both`}}>{f}</div>
+            ))}
+          </div>
+          <div style={{background:flipDemo?"var(--t-glass-accent)":"var(--t-glass)",borderRadius:8,padding:10,textAlign:"center",transition:"all 0.5s",transform:flipDemo?"scale(0.97)":"scale(1)",border:"1px solid var(--t-border)"}}>
+            <div style={{fontSize:8,color:"var(--t-txt2)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:3}}>{flipDemo?"Answer":"Question"}</div>
+            <div style={{fontSize:11,fontWeight:flipDemo?400:600,color:flipDemo?"var(--t-txt2)":"var(--t-txt)"}}>{flipDemo?"The sigmoid function: σ(z) = 1/(1+e⁻ᶻ)":"What function maps values to 0-1 range?"}</div>
+          </div>
+        </div>
+      );
+      case"ai-panel":return(
+        <div style={{background:"var(--t-glass)",borderRadius:10,padding:10,marginBottom:8,border:"1px solid var(--t-border)"}}>
+          {[{t:"Neural Networks Explained",ch:"3Blue1Brown"},{t:"Backpropagation Deep Dive",ch:"Stanford CS"}].map((v,i)=>(
+            <div key={i} style={{display:"flex",gap:8,padding:"4px 0",alignItems:"center",animation:`tutFadeIn 0.3s ease-out ${i*0.15}s both`}}>
+              <div style={{width:36,height:24,borderRadius:4,background:"linear-gradient(135deg,rgba(123,147,245,0.15),rgba(149,113,205,0.15))",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:8,color:"var(--t-a1)"}}>YT</span></div>
+              <div><div style={{fontSize:10,fontWeight:600,color:"var(--t-txt)"}}>{v.t}</div><div style={{fontSize:8,color:"var(--t-txt2)"}}>{v.ch}</div></div>
+            </div>
+          ))}
+        </div>
+      );
+      case"summary":return(
+        <div style={{background:"var(--t-glass)",borderRadius:10,padding:10,marginBottom:8,border:"1px solid var(--t-border)"}}>
+          <div style={{display:"flex",gap:4,marginBottom:6}}>
+            <div style={{flex:1,height:22,borderRadius:5,border:"1px solid var(--t-border)",display:"flex",alignItems:"center",padding:"0 6px"}}><span style={{fontSize:8,color:"var(--t-txt2)"}}>All Folders</span></div>
+            <div style={{flex:1,height:22,borderRadius:5,border:"1px solid var(--t-border)",display:"flex",alignItems:"center",padding:"0 6px"}}><span style={{fontSize:8,color:"var(--t-txt2)"}}>All Types</span></div>
+          </div>
+          <div style={{padding:6,borderRadius:6,borderLeft:"3px solid var(--t-a1)",background:"rgba(123,147,245,0.05)",animation:"tutFadeIn 0.4s ease-out 0.2s both"}}>
+            <div style={{fontSize:9,fontWeight:700,color:"var(--t-a1)",textTransform:"uppercase",marginBottom:2}}>Overview</div>
+            <div style={{fontSize:10,color:"var(--t-txt2)",lineHeight:1.4}}>Your notes cover ML, finance, and health topics...</div>
+          </div>
+        </div>
+      );
+      case"links":return(
+        <div style={{background:"var(--t-glass)",borderRadius:10,padding:12,marginBottom:8,border:"1px solid var(--t-border)",display:"flex",alignItems:"center",justifyContent:"center",height:70}}>
+          <svg width="120" height="50" viewBox="0 0 120 50">
+            <circle cx="20" cy="25" r="8" fill="rgba(123,147,245,0.2)" stroke="var(--t-a1)" strokeWidth="1.5"><animate attributeName="r" values="8;10;8" dur="2s" repeatCount="indefinite"/></circle>
+            <circle cx="60" cy="15" r="6" fill="rgba(149,113,205,0.2)" stroke="var(--t-purple)" strokeWidth="1.5"><animate attributeName="r" values="6;8;6" dur="2s" begin="0.3s" repeatCount="indefinite"/></circle>
+            <circle cx="100" cy="25" r="7" fill="rgba(240,171,252,0.2)" stroke="var(--t-pink)" strokeWidth="1.5"><animate attributeName="r" values="7;9;7" dur="2s" begin="0.6s" repeatCount="indefinite"/></circle>
+            <circle cx="60" cy="40" r="5" fill="rgba(34,211,238,0.2)" stroke="var(--t-cyan)" strokeWidth="1.5"><animate attributeName="r" values="5;7;5" dur="2s" begin="0.9s" repeatCount="indefinite"/></circle>
+            <line x1="28" y1="25" x2="54" y2="17" stroke="var(--t-border)" strokeWidth="1" opacity="0.5"/>
+            <line x1="66" y1="15" x2="93" y2="23" stroke="var(--t-border)" strokeWidth="1" opacity="0.5"/>
+            <line x1="60" y1="21" x2="60" y2="35" stroke="var(--t-border)" strokeWidth="1" opacity="0.5"/>
+            <line x1="26" y1="30" x2="55" y2="38" stroke="var(--t-border)" strokeWidth="1" opacity="0.5"/>
+            <text x="20" y="27" textAnchor="middle" fontSize="5" fill="var(--t-a1)">ML</text>
+            <text x="60" y="17" textAnchor="middle" fontSize="4" fill="var(--t-purple)">NLP</text>
+            <text x="100" y="27" textAnchor="middle" fontSize="5" fill="var(--t-pink)">Finance</text>
+            <text x="60" y="42" textAnchor="middle" fontSize="4" fill="var(--t-cyan)">Ethics</text>
+          </svg>
+        </div>
+      );
+      case"theme":return(
+        <div style={{display:"flex",gap:6,marginBottom:8}}>
+          <div style={{flex:1,background:"#1a1d28",borderRadius:8,padding:8,border:"1px solid rgba(255,255,255,0.08)",animation:"tutFadeIn 0.3s ease-out both"}}>
+            <div style={{fontSize:8,fontWeight:700,color:"#f1f5f9",marginBottom:3}}>Dark</div>
+            <div style={{height:3,borderRadius:2,background:"linear-gradient(135deg,#7b93f5,#9571cd)",width:"60%"}}/>
+          </div>
+          <div style={{flex:1,background:"#fafbfe",borderRadius:8,padding:8,border:"1px solid rgba(0,0,0,0.1)",animation:"tutFadeIn 0.3s ease-out 0.15s both"}}>
+            <div style={{fontSize:8,fontWeight:700,color:"#1e293b",marginBottom:3}}>Light</div>
+            <div style={{height:3,borderRadius:2,background:"linear-gradient(135deg,#5b6fd6,#6b4f9e)",width:"60%"}}/>
+          </div>
+        </div>
+      );
+      default:return null;
+    }
+  };
+
+  const hl=getHighlight();
+  const cardPos=getCardPos();
+
+  return(<>
+    <style>{`
+      @keyframes tutFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+      @keyframes tutPulse{0%,100%{box-shadow:0 0 0 0 rgba(123,147,245,0.4)}50%{box-shadow:0 0 0 10px rgba(123,147,245,0)}}
+      @keyframes tutBlink{50%{border-color:transparent}}
+      .tut-card{animation:tutFadeIn 0.35s ease-out both}
+      .tut-hl{animation:tutPulse 2s ease infinite}
+    `}</style>
+    <div style={{position:"fixed",inset:0,zIndex:10000,background:"rgba(0,0,0,0.55)",backdropFilter:"blur(2px)"}}>
+      {hl&&<div className="tut-hl" style={{position:"fixed",...hl,border:"2px solid rgba(123,147,245,0.5)",borderRadius:10,background:"rgba(123,147,245,0.06)",pointerEvents:"none",zIndex:10000}}/>}
+    </div>
+    <div key={step} className="tut-card" style={{position:"fixed",zIndex:10001,maxWidth:400,width:"90vw",padding:24,background:"var(--t-bg2)",border:"1px solid var(--t-border)",borderRadius:18,boxShadow:"0 16px 48px rgba(0,0,0,0.35)",...cardPos}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+        <div style={{display:"flex",gap:3}}>{steps.map((_,i)=>(<div key={i} style={{width:i===step?18:5,height:5,borderRadius:3,background:i===step?"linear-gradient(135deg,#7b93f5,#9571cd)":i<step?"var(--t-a1)":"var(--t-border)",transition:"all 0.3s",opacity:i<step?0.4:1}}/>))}</div>
+        <span style={{fontSize:10,color:"var(--t-txt2)",fontFamily:"'JetBrains Mono',monospace"}}>{step+1}/{total}</span>
+      </div>
+      <div style={{fontSize:18,fontWeight:800,fontFamily:"'Inter',sans-serif",background:"linear-gradient(135deg,#7b93f5,#9571cd)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:6,letterSpacing:"-0.3px"}}>{cur.title}</div>
+      <div style={{fontSize:13,color:"var(--t-txt2)",lineHeight:1.65,marginBottom:14}}>{cur.desc}</div>
+      <Demo/>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <button onClick={onComplete} style={{padding:"7px 16px",borderRadius:8,border:"1px solid var(--t-border)",background:"transparent",color:"var(--t-txt2)",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>Skip</button>
+        <button onClick={next} style={{padding:"9px 24px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",boxShadow:"0 4px 14px rgba(123,147,245,0.3)"}}>{step===total-1?"Get Started":"Next"}</button>
+      </div>
+    </div>
+  </>);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SECTION 13C: MAIN APP
 // ══════════════════════════════════════════════════════════════
 export default function App(){
   const[showLanding,setShowLanding]=useState(true);
-  if(showLanding)return <LandingPage onEnter={()=>setShowLanding(false)}/>;
-  return <NotiqApp/>;
+  const[showTutorial,setShowTutorial]=useState(false);
+  if(showLanding)return <LandingPage onEnter={()=>{setShowLanding(false);setShowTutorial(true);}}/>;
+  return <>
+    <NotiqApp/>
+    {showTutorial&&<Tutorial onComplete={()=>setShowTutorial(false)}/>}
+  </>;
 }
 
 function NotiqApp(){
