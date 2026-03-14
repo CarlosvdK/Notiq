@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// NOTIQ v4 — AI Notes · Gemini · YouTube · Files · Sub-notes
+// NOTIQ v4 — AI Notes · Claude / Gemini · YouTube · Files · Sub-notes
 // ══════════════════════════════════════════════════════════════
 //
 // ┌───────────────────────────────────────────────────────────┐
@@ -1583,7 +1583,7 @@ function SugPanel({videos,ytResults,knowledge,aiInsight,loadingYT}){
     {loadingYT&&<div style={{fontSize:12,color:"#7b93f5",marginBottom:8}}>Searching YouTube...</div>}
     {all.length===0&&!loadingYT&&<p style={{fontSize:12,color:"#8492a6"}}>Type to get suggestions.</p>}
     {all.map((v,i)=>(<div key={i} draggable onDragStart={e=>{e.dataTransfer.setData("application/json",JSON.stringify({type:"youtube-video",t:v.t,ch:v.ch,v:v.v||"",url:v.url,thumb:v.thumb||""}));e.dataTransfer.effectAllowed="copy";}} style={{marginBottom:6}}><a href={v.url} target="_blank" rel="noopener noreferrer" style={{textDecoration:"none"}}><div className="res-card" style={{display:"flex",gap:8,alignItems:"center",padding:"7px 8px",borderRadius:10,border:"1px solid rgba(255,255,255,.06)",background:"rgba(255,255,255,.02)",cursor:"grab"}}>
-      {v.thumb?<img src={v.thumb} alt="" style={{width:64,height:44,borderRadius:6,objectFit:"cover",flexShrink:0}}/>:<div style={{width:44,height:32,borderRadius:6,background:"linear-gradient(135deg,rgba(123,147,245,.15),rgba(149,113,205,.15))",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:8,color:"#7b93f5",fontWeight:700}}>{(v.ty||"VID").toUpperCase()}</span></div>}
+      {v.thumb?<img src={v.thumb} alt="" style={{width:64,height:44,borderRadius:6,objectFit:"cover",flexShrink:0}}/>:<div style={{width:64,height:44,borderRadius:6,background:"linear-gradient(135deg,rgba(123,147,245,.2),rgba(149,113,205,.2))",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:18,opacity:.7}}>&#9654;</span></div>}
       <div style={{flex:1,minWidth:0}}><div style={{fontSize:12,fontWeight:600,color:"#f1f5f9",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v.t}</div><div style={{fontSize:10,color:"#8492a6"}}>{v.ch}{v.v?` \u00b7 ${v.v}`:""}</div></div>
     </div></a><div style={{fontSize:9,color:"#8492a6",textAlign:"center",opacity:.45,paddingBottom:2}}>drag to pin</div></div>))}
     {aiInsight&&<div style={{marginTop:14}}><div style={S.sh2}>AI Insight</div><div style={{...S.glassAccent,padding:12,fontSize:13,color:"#b0bec5",lineHeight:1.6}}>{aiInsight}</div></div>}
@@ -1913,11 +1913,14 @@ function LinksPage({notes,geminiKey,onSelectNote}){
   const[links,setLinks]=useState(null);const[loading,setLoading]=useState(false);
   const[selectedNode,setSelectedNode]=useState(null);const[entities,setEntities]=useState({});
   const[progress,setProgress]=useState("");
-  const analyze=async()=>{
-    if(!geminiKey)return;setLoading(true);setLinks(null);setEntities({});setSelectedNode(null);
+  const[positions,setPositions]=useState({});
+  const canvasRef=useRef(null);const animRef=useRef(null);const posRef=useRef({});const velRef=useRef({});
+  const analyzedRef=useRef(false);const dragRef=useRef(null);const hoverRef=useRef(null);
+
+  const analyze=useCallback(async()=>{
+    if(!geminiKey||loading)return;setLoading(true);setLinks(null);setEntities({});setSelectedNode(null);
     const noteList=Object.entries(notes).filter(([_,n])=>!n.children&&(n.content||"").replace(/<[^>]+>/g,"").trim().length>20);
     const results={};
-    // Multi-call: process notes in batches, extract entities from each
     for(let i=0;i<noteList.length;i+=4){
       const batch=noteList.slice(i,i+4);
       setProgress(`Analyzing ${Math.min(i+4,noteList.length)}/${noteList.length} notes...`);
@@ -1926,7 +1929,6 @@ function LinksPage({notes,geminiKey,onSelectNote}){
       batchResults.forEach(({id,result})=>{if(result)results[id]=result;});
     }
     setEntities(results);
-    // Post-processing: find shared concepts between every pair of notes
     const linkMap=[];const ids=Object.keys(results);
     for(let i=0;i<ids.length;i++){
       for(let j=i+1;j<ids.length;j++){
@@ -1937,26 +1939,179 @@ function LinksPage({notes,geminiKey,onSelectNote}){
       }
     }
     setLinks(linkMap);setLoading(false);setProgress("");
-  };
-  // SVG circular layout
+  },[geminiKey,notes,loading]);
+
+  // Auto-analyze on mount
+  useEffect(()=>{
+    if(!analyzedRef.current&&geminiKey){analyzedRef.current=true;analyze();}
+  },[geminiKey,analyze]);
+
+  // Force-directed layout simulation
+  useEffect(()=>{
+    if(!links||!canvasRef.current)return;
+    const nodeIds=Object.keys(entities);if(nodeIds.length===0)return;
+    const canvas=canvasRef.current;const ctx=canvas.getContext("2d");
+    const W=canvas.width,H=canvas.height;
+    // Initialize positions
+    const pos={};const vel={};
+    nodeIds.forEach((id,i)=>{
+      const angle=(2*Math.PI*i)/nodeIds.length;
+      pos[id]={x:W/2+Math.cos(angle)*(W*0.3),y:H/2+Math.sin(angle)*(H*0.3)};
+      vel[id]={x:0,y:0};
+    });
+    posRef.current=pos;velRef.current=vel;
+
+    const connCount={};nodeIds.forEach(id=>{connCount[id]=links.filter(l=>l.from===id||l.to===id).length;});
+    const maxConn=Math.max(1,...Object.values(connCount));
+
+    const colors=["#7b93f5","#9571cd","#f59b7b","#71cda5","#cd71b8","#71b8cd","#cdc171","#f57b93"];
+    const nodeColor={};nodeIds.forEach((id,i)=>nodeColor[id]=colors[i%colors.length]);
+
+    let frame=0;
+    const draw=()=>{
+      frame++;
+      const cooling=Math.max(0.01,1-frame/300);
+      // Force simulation
+      nodeIds.forEach(id=>{vel[id]={x:0,y:0};});
+      // Repulsion between all nodes
+      for(let i=0;i<nodeIds.length;i++){
+        for(let j=i+1;j<nodeIds.length;j++){
+          const a=nodeIds[i],b=nodeIds[j];
+          let dx=pos[b].x-pos[a].x,dy=pos[b].y-pos[a].y;
+          const dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
+          const force=800/(dist*dist);
+          const fx=dx/dist*force,fy=dy/dist*force;
+          vel[a].x-=fx;vel[a].y-=fy;vel[b].x+=fx;vel[b].y+=fy;
+        }
+      }
+      // Attraction along edges
+      links.forEach(l=>{
+        const dx=pos[l.to].x-pos[l.from].x,dy=pos[l.to].y-pos[l.from].y;
+        const dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
+        const force=(dist-150)*0.005*l.strength;
+        const fx=dx/dist*force,fy=dy/dist*force;
+        vel[l.from].x+=fx;vel[l.from].y+=fy;vel[l.to].x-=fx;vel[l.to].y-=fy;
+      });
+      // Center gravity
+      nodeIds.forEach(id=>{
+        vel[id].x+=(W/2-pos[id].x)*0.002;
+        vel[id].y+=(H/2-pos[id].y)*0.002;
+      });
+      // Apply velocities
+      nodeIds.forEach(id=>{
+        if(dragRef.current===id)return;
+        pos[id].x+=vel[id].x*cooling;pos[id].y+=vel[id].y*cooling;
+        pos[id].x=Math.max(40,Math.min(W-40,pos[id].x));
+        pos[id].y=Math.max(40,Math.min(H-40,pos[id].y));
+      });
+      // Draw
+      ctx.clearRect(0,0,W,H);
+      // Glow effect background
+      const grad=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.5);
+      grad.addColorStop(0,"rgba(123,147,245,0.03)");grad.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+      // Draw edges
+      links.forEach(l=>{
+        const f=pos[l.from],t=pos[l.to];if(!f||!t)return;
+        const isSel=selectedNode&&(l.from===selectedNode||l.to===selectedNode);
+        const isHov=hoverRef.current&&(l.from===hoverRef.current||l.to===hoverRef.current);
+        ctx.beginPath();ctx.moveTo(f.x,f.y);
+        // Curved edges
+        const mx=(f.x+t.x)/2+(f.y-t.y)*0.1,my=(f.y+t.y)/2+(t.x-f.x)*0.1;
+        ctx.quadraticCurveTo(mx,my,t.x,t.y);
+        ctx.strokeStyle=isSel?"rgba(123,147,245,0.6)":isHov?"rgba(149,113,205,0.4)":"rgba(123,147,245,0.12)";
+        ctx.lineWidth=Math.min(3,l.strength)+(isSel||isHov?1.5:0);
+        ctx.stroke();
+        // Show concept label on selected/hovered edges
+        if(isSel||isHov){
+          ctx.fillStyle="rgba(149,113,205,0.8)";ctx.font="600 9px Inter,sans-serif";ctx.textAlign="center";
+          ctx.fillText(l.concepts[0],(f.x+t.x)/2,(f.y+t.y)/2-8);
+        }
+      });
+      // Draw nodes
+      nodeIds.forEach(id=>{
+        const p=pos[id];const note=notes[id];const isSel=selectedNode===id;const isHov=hoverRef.current===id;
+        const conns=connCount[id]||0;const r=14+conns/maxConn*16+(isSel?4:isHov?2:0);
+        const color=nodeColor[id];
+        // Outer glow
+        if(isSel||isHov){
+          const g=ctx.createRadialGradient(p.x,p.y,r*0.5,p.x,p.y,r*2.5);
+          g.addColorStop(0,color+"40");g.addColorStop(1,color+"00");
+          ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,r*2.5,0,Math.PI*2);ctx.fill();
+        }
+        // Node circle with gradient
+        const ng=ctx.createRadialGradient(p.x-r*0.3,p.y-r*0.3,0,p.x,p.y,r);
+        ng.addColorStop(0,color+"50");ng.addColorStop(1,color+"20");
+        ctx.fillStyle=ng;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle=isSel?color:color+"60";ctx.lineWidth=isSel?2.5:1;ctx.stroke();
+        // Label
+        ctx.fillStyle=isSel?"#f1f5f9":"#c0cad8";ctx.font=`${isSel?'700':'600'} ${isSel?11:10}px Inter,sans-serif`;ctx.textAlign="center";
+        const label=(note?.title||"").length>16?(note?.title||"").slice(0,14)+"\u2026":(note?.title||"");
+        ctx.fillText(label,p.x,p.y+r+14);
+        // Connection count badge
+        if(conns>0){
+          ctx.fillStyle=color+"90";ctx.beginPath();ctx.arc(p.x+r*0.7,p.y-r*0.7,7,0,Math.PI*2);ctx.fill();
+          ctx.fillStyle="#fff";ctx.font="700 8px Inter,sans-serif";ctx.fillText(conns,p.x+r*0.7,p.y-r*0.7+3);
+        }
+      });
+      setPositions({...pos});
+      animRef.current=requestAnimationFrame(draw);
+    };
+    animRef.current=requestAnimationFrame(draw);
+    return()=>{if(animRef.current)cancelAnimationFrame(animRef.current);};
+  },[links,entities,selectedNode,notes]);
+
+  // Canvas mouse interaction
+  const handleCanvasClick=useCallback(e=>{
+    const canvas=canvasRef.current;if(!canvas)return;
+    const rect=canvas.getBoundingClientRect();
+    const scaleX=canvas.width/rect.width,scaleY=canvas.height/rect.height;
+    const mx=(e.clientX-rect.left)*scaleX,my=(e.clientY-rect.top)*scaleY;
+    const nodeIds=Object.keys(entities);
+    const connCount={};nodeIds.forEach(id=>{connCount[id]=(links||[]).filter(l=>l.from===id||l.to===id).length;});
+    const maxC=Math.max(1,...Object.values(connCount));
+    for(const id of nodeIds){
+      const p=posRef.current[id];if(!p)continue;
+      const r=14+(connCount[id]||0)/maxC*16+6;
+      if(Math.sqrt((mx-p.x)**2+(my-p.y)**2)<r){setSelectedNode(prev=>prev===id?null:id);return;}
+    }
+    setSelectedNode(null);
+  },[entities,links]);
+
+  const handleCanvasMove=useCallback(e=>{
+    const canvas=canvasRef.current;if(!canvas)return;
+    const rect=canvas.getBoundingClientRect();
+    const scaleX=canvas.width/rect.width,scaleY=canvas.height/rect.height;
+    const mx=(e.clientX-rect.left)*scaleX,my=(e.clientY-rect.top)*scaleY;
+    const nodeIds=Object.keys(entities);
+    const connCount={};nodeIds.forEach(id=>{connCount[id]=(links||[]).filter(l=>l.from===id||l.to===id).length;});
+    const maxC=Math.max(1,...Object.values(connCount));
+    let found=null;
+    for(const id of nodeIds){
+      const p=posRef.current[id];if(!p)continue;
+      const r=14+(connCount[id]||0)/maxC*16+6;
+      if(Math.sqrt((mx-p.x)**2+(my-p.y)**2)<r){found=id;break;}
+    }
+    hoverRef.current=found;
+    canvas.style.cursor=found?"pointer":"default";
+  },[entities,links]);
+
   const nodeIds=Object.keys(entities);
-  const cx=300,cy=250,radius=Math.min(200,Math.max(120,nodeIds.length*18));
-  const positions={};
-  nodeIds.forEach((id,i)=>{const angle=(2*Math.PI*i)/nodeIds.length-Math.PI/2;positions[id]={x:cx+radius*Math.cos(angle),y:cy+radius*Math.sin(angle)};});
   const selEnt=selectedNode&&entities[selectedNode];
   const selNote=selectedNode&&notes[selectedNode];
   const selLinks=links?.filter(l=>l.from===selectedNode||l.to===selectedNode)||[];
+
   return(<div style={{padding:"28px 36px",overflowY:"auto",flex:1}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-      <div><h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:0,color:"#f1f5f9",fontWeight:800,letterSpacing:"-0.5px"}}>Knowledge Graph</h2>
-        <div style={{fontSize:14,color:"#8492a6",marginTop:4}}>AI-discovered connections between your notes</div></div>
-      <button className="grad-btn" onClick={analyze} disabled={loading||!geminiKey} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",opacity:loading?.6:1}}>
-        {loading?"Analyzing...":links?"Re-analyze":"Build Graph"}</button>
+      <div><h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:0,color:"var(--t-txt)",fontWeight:800,letterSpacing:"-0.5px"}}>Knowledge Graph</h2>
+        <div style={{fontSize:14,color:"var(--t-txt2)",marginTop:4}}>AI-discovered connections between your notes</div></div>
+      {links&&<button className="grad-btn" onClick={()=>{analyzedRef.current=false;analyze();}} disabled={loading} style={{padding:"8px 18px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",opacity:loading?.6:1}}>
+        Re-analyze</button>}
     </div>
-    {!geminiKey&&<div style={{...S.glass,padding:16,color:"#b0bec5",fontSize:13}}>API key required for knowledge graph.</div>}
-    {loading&&<div style={{textAlign:"center",padding:48,color:"#8492a6"}}>
-      <div style={{fontSize:14,marginBottom:8,color:"#b0bec5"}}>{progress}</div>
-      <div style={{fontSize:12}}>Extracting concepts with Gemini and finding connections</div>
+    {!geminiKey&&<div style={{...S.glass,padding:16,color:"var(--t-txt2)",fontSize:13}}>API key required for knowledge graph.</div>}
+    {loading&&<div style={{textAlign:"center",padding:48,color:"var(--t-txt2)"}}>
+      <div style={{fontSize:14,marginBottom:8,color:"var(--t-txt3)"}}>{progress}</div>
+      <div style={{fontSize:12}}>Extracting concepts and finding connections...</div>
       <div style={{...S.pBar,width:200,margin:"14px auto"}}><div style={{height:"100%",borderRadius:6,background:"linear-gradient(135deg,#7b93f5,#9571cd)",animation:"pulse 1.5s ease infinite",width:"60%"}}/></div>
     </div>}
     {links&&!loading&&(<>
@@ -1966,49 +2121,30 @@ function LinksPage({notes,geminiKey,onSelectNote}){
         <div className="stat-card" style={S.statCard}><div style={S.statN}>{[...new Set(links.flatMap(l=>l.concepts))].length}</div><div style={S.statL}>Shared Concepts</div></div>
       </div>
       <div style={{display:"flex",gap:14}}>
-        <div style={{...S.glass,padding:0,overflow:"hidden",flex:2}}>
-          <svg width="100%" viewBox="0 0 600 500" style={{display:"block"}}>
-            {links.map((l,i)=>{const f=positions[l.from],t=positions[l.to];if(!f||!t)return null;
-              const isSel=selectedNode&&(l.from===selectedNode||l.to===selectedNode);
-              return(<g key={`l${i}`}>
-                <line x1={f.x} y1={f.y} x2={t.x} y2={t.y} stroke={isSel?"var(--t-a1)":"var(--t-a2)"} strokeWidth={Math.min(3,l.strength)+(isSel?1:0)} strokeOpacity={isSel?.6:.2}/>
-                {isSel&&<text x={(f.x+t.x)/2} y={(f.y+t.y)/2-6} textAnchor="middle" fill="var(--t-a2)" fontSize={9} fontWeight={600}>{l.concepts[0]}</text>}
-              </g>);})}
-            {nodeIds.map(id=>{const pos=positions[id];const note=notes[id];const isSel=selectedNode===id;
-              const conns=links.filter(l=>l.from===id||l.to===id).length;const r=18+conns*3;
-              return(<g key={id} onClick={()=>setSelectedNode(isSel?null:id)} style={{cursor:"pointer"}}>
-                <circle cx={pos.x} cy={pos.y} r={r} fill={"var(--t-a1)"} fillOpacity={isSel?.3:.12} stroke={isSel?"var(--t-a1)":"var(--t-a2)"} strokeWidth={isSel?2.5:1}/>
-                <text x={pos.x} y={pos.y+1} textAnchor="middle" fill="var(--t-txt)" fontSize={9} fontWeight={600}>{(note?.title||"").slice(0,12)}{(note?.title||"").length>12?"\u2026":""}</text>
-                <text x={pos.x} y={pos.y+12} textAnchor="middle" fill="var(--t-txt2)" fontSize={7}>{conns} link{conns!==1?"s":""}</text>
-              </g>);})}
-          </svg>
+        <div style={{...S.glass,padding:0,overflow:"hidden",flex:2,borderRadius:20,position:"relative"}}>
+          <canvas ref={canvasRef} width={800} height={600} onClick={handleCanvasClick} onMouseMove={handleCanvasMove}
+            style={{width:"100%",height:500,display:"block",background:"rgba(0,0,0,0.15)",borderRadius:20}}/>
         </div>
-        <div style={{flex:1,minWidth:200}}>
-          {selEnt&&selNote?(<div style={{...S.glassAccent,padding:14}}>
-            <div style={{fontSize:14,fontWeight:600,marginBottom:2}}>{selNote.title}</div>
-            
-            <div style={{fontSize:11,color:T.txt2,margin:"8px 0 6px"}}>{selEnt.summary}</div>
+        <div style={{flex:1,minWidth:220}}>
+          {selEnt&&selNote?(<div style={{...S.glassAccent,padding:16,borderRadius:16}}>
+            <div style={{fontSize:15,fontWeight:700,color:"var(--t-txt)",marginBottom:4}}>{selNote.title}</div>
+            <div style={{fontSize:11,color:"var(--t-txt2)",margin:"8px 0 10px",lineHeight:1.5}}>{selEnt.summary}</div>
             <div style={S.sh2}>Concepts</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:10}}>
-              {selEnt.concepts.map((c,i)=><span key={i} style={{padding:"2px 8px",borderRadius:20,fontSize:11,background:T.glass,color:"var(--t-a1)",border:`1px solid ${T.border}`}}>{c}</span>)}
+            <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:12}}>
+              {selEnt.concepts.map((c,i)=><span key={i} style={{padding:"3px 10px",borderRadius:20,fontSize:11,background:"rgba(123,147,245,0.1)",color:"var(--t-a1)",border:"1px solid rgba(123,147,245,0.2)"}}>{c}</span>)}
             </div>
             {selLinks.length>0&&<><div style={S.sh2}>Connected To</div>
               {selLinks.map((l,i)=>{const oid=l.from===selectedNode?l.to:l.from;return(
-                <div key={i} onClick={()=>setSelectedNode(oid)} style={{...S.glass,padding:8,marginBottom:4,cursor:"pointer",fontSize:12}}>
-                  <span style={{fontWeight:600,color:T.txt}}>{notes[oid]?.title}</span>
-                  <div style={{fontSize:10,color:T.txt2,marginTop:2}}>via <span style={{color:"var(--t-a2)"}}>{l.concepts.join(", ")}</span></div>
+                <div key={i} onClick={()=>setSelectedNode(oid)} style={{padding:"8px 10px",marginBottom:4,cursor:"pointer",fontSize:12,borderRadius:10,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",transition:"background 0.15s"}}>
+                  <span style={{fontWeight:600,color:"var(--t-txt)"}}>{notes[oid]?.title}</span>
+                  <div style={{fontSize:10,color:"var(--t-txt2)",marginTop:2}}>via <span style={{color:"var(--t-a2)"}}>{l.concepts.join(", ")}</span></div>
                 </div>);})}</>}
-            <button className="grad-btn" onClick={()=>{onSelectNote(selectedNode);}} style={{marginTop:8,padding:"5px 14px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer",width:"100%",transition:"opacity 0.15s"}}>Open Note</button>
-          </div>):(<div style={{...S.glass,padding:14,textAlign:"center",color:T.txt2,fontSize:12}}>Click a node to see its concepts and connections</div>)}
+            <button className="grad-btn" onClick={()=>{onSelectNote(selectedNode);}} style={{marginTop:10,padding:"7px 14px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",width:"100%"}}>Open Note</button>
+          </div>):(<div style={{...S.glass,padding:16,textAlign:"center",color:"var(--t-txt2)",fontSize:12,borderRadius:16}}>Click a node to see its concepts and connections</div>)}
         </div>
       </div>
-      {links.length===0&&<div style={{...S.glass,padding:14,textAlign:"center",color:T.txt2,fontSize:13,marginTop:12}}>No connections found. Add more detailed content to discover links between notes.</div>}
+      {links.length===0&&<div style={{...S.glass,padding:14,textAlign:"center",color:"var(--t-txt2)",fontSize:13,marginTop:12}}>No connections found. Add more detailed content to discover links between notes.</div>}
     </>)}
-    {!links&&!loading&&<div style={{...S.glass,padding:40,textAlign:"center",color:"#8492a6"}}>
-      <div style={{fontSize:32,marginBottom:10,opacity:.25,color:"#7b93f5"}}>&#9675;</div>
-      <div style={{fontSize:15,marginBottom:6,color:"#b0bec5"}}>Discover hidden connections</div>
-      <div style={{fontSize:12}}>Click "Build Graph" to analyze all your notes with AI and find shared concepts</div>
-    </div>}
   </div>);
 }
 
@@ -3324,9 +3460,7 @@ function NotiqApp(){
     timerRef.current=setTimeout(async()=>{
       const plain=html.replace(/<[^>]+>/g,"");if(plain.length<15)return;
       const localGhost=getGhost(html);
-      if(localGhost&&!AI_KEY){setGhostData(localGhost);return;}
-      if(localGhost)setGhostData(localGhost);
-      if(!AI_KEY)return;
+      if(!AI_KEY){if(localGhost)setGhostData(localGhost);return;}
       if(abortRef.current)abortRef.current.abort();
       const ac=new AbortController();abortRef.current=ac;
       setGhostLoading(true);
