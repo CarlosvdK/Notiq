@@ -67,9 +67,7 @@ const CM = {
 // ══════════════════════════════════════════════════════════════
 const INIT_FOLDERS = [
   {id:"academics",name:"Academics",children:[
-    {id:"ml_2026",name:"Machine Learning 2026",notes:["n1","n2","n3"]},
-    {id:"fin_2026",name:"Corporate Finance 2026",notes:["n4"]},
-    {id:"qt_2026",name:"Quantum & Ethics 2026",notes:["n5","n6"]},
+    {id:"twd_2026",name:"Thinking With Data",notes:["twd1"]},
   ]},
   {id:"career",name:"Career & Projects",children:[
     {id:"startup",name:"RestaurantIQ Startup",notes:["n7","n8"]},
@@ -97,189 +95,83 @@ const INIT_NOTES = {
 
 // ── ACADEMICS ──────────────────────────────────────────────
 
-n1:{title:"Supervised Learning — Regression & Classification",created:"2026-02-10",content:`<h2>Supervised Learning Overview</h2>
-<p>Supervised learning is the branch of machine learning where models are trained on <strong>labeled data</strong> — each input comes with a known output. The goal is to learn a mapping function from inputs to outputs that generalises to unseen data. This is the most widely used paradigm in industry, powering everything from spam detection to medical diagnosis.</p>
 
-<h3>Regression vs Classification</h3>
-<p>The two main supervised tasks differ in their output type. <strong>Regression</strong> predicts continuous values (house prices, stock returns, temperature), while <strong>classification</strong> predicts discrete categories (spam/not spam, disease/healthy, image label). The choice of loss function follows: mean squared error for regression, cross-entropy for classification.</p>
+twd1:{title:"Class 1 — Statistics: How Wrong Can We Be?",cat:"study",created:"2026-03-10",content:`<h2>Course Overview</h2>
+<p><strong>Professor:</strong> Uri Simonsohn — Thinking with Data (TWD), MiBA 2025/2026</p>
+<h3>Three Bins of Content</h3>
+<p><strong>Bin 1</strong> — Intuitive understanding of data analytical concepts (e.g., What IS p-hacking?)<br/>
+<strong>Bin 2</strong> — Statistical procedures (e.g., What is the false-positive rate?)<br/>
+<strong>Bin 3</strong> — Doing things in R (e.g., Monte Carlo simulations)</p>
+<h3>Full Topic List</h3>
+<p>1. Statistics is about how wrong we may be (this class)<br/>2. Multiple comparisons and p-hacking<br/>3. Statistical challenges with A/B Testing<br/>4. Evaluating interventions & regression to the mean<br/>5. Getting from correlation to causation<br/>6. Regression pitfalls and alternatives (GAM)<br/>7. Thinking without data</p>
+<h3>Grading</h3>
+<p>Quiz 1: 35% (days 1–4), Quiz 2: 35% (days 5–8), Participation + TWARKing can modify grades.</p>
 
-<h3>Linear Regression</h3>
-<p>The simplest regression model fits a straight line: <em>y = wx + b</em>. We minimise the sum of squared residuals using <strong>ordinary least squares</strong> or <strong>gradient descent</strong>. Regularisation techniques like <strong>Ridge (L2)</strong> and <strong>Lasso (L1)</strong> help prevent overfitting by penalising large weights. Lasso can drive coefficients to exactly zero, performing feature selection automatically.</p>
+<h2>A/B Testing Introduction</h2>
+<p>A/B tests are corporate experiments. You randomly <strong>assign</strong> customers to treatment arms (A vs B), then measure outcomes.</p>
+<h3>Random Sample vs Random Assignment</h3>
+<p><strong>Random Sample:</strong> Choose observations at random from a population → gives representative sample → useful for description (polling).<br/>
+<strong>Random Assignment:</strong> Assign observations at random to conditions A or B → gives causal inference → tells you what CAUSED the difference. This is what A/B testing does.</p>
+<h3>When Do Companies Run A/B Tests?</h3>
+<p><strong>Mostly:</strong> Fine-tuning small decisions before rollout (€5 off vs €4.99 off, subject line A vs B).<br/>
+<strong>Seldom (but more valuable):</strong> Testing big strategic decisions (buy Google ads vs don't, fixed pricing vs pay-what-you-want, WFH vs office only).</p>
+<p>Professor's opinion: There are big returns to A/B testing CLOSER to what academics want — testing bigger, strategic decisions rather than just button colours.</p>
 
-<h3>Logistic Regression</h3>
-<p>Despite its name, logistic regression is a <strong>classification</strong> algorithm. It passes the linear combination through a <strong>sigmoid function</strong> σ(z) = 1/(1+e^-z) to produce probabilities between 0 and 1. The decision boundary is the set of points where σ(z) = 0.5. For multi-class problems, we extend to <strong>softmax regression</strong>.</p>
+<h3>Real A/B Test Examples</h3>
+<p><strong>Example 1 — Uber Apologies:</strong> After top-5% delay rides, riders randomly got: (A) nothing, (B) apology, (C) $5 promo, (D) both. Measured revenue per customer over next month.</p>
+<p><strong>Example 2 — Chilean Supermarket:</strong> Does offering 30% discount now make future 10% discounts less effective? Treatment period (5 weeks) with 30% vs 10%, then testing period with 10% on other products.</p>
+<p><strong>Example 3 — US Mobile Operator:</strong> Can proactive calls prevent churn? Control (N=10,058) vs Treatment call (N=54,089). Result: calling customers reminded them to think about their plan — some switched to competitors. The call caused MORE churn. Lesson: A/B tests can reveal your "solution" makes things worse.</p>
 
-<h3>Decision Trees & Random Forests</h3>
-<p>Decision trees split data recursively using feature thresholds that maximise information gain (or minimise Gini impurity). They are interpretable but prone to overfitting. <strong>Random forests</strong> address this by training many trees on bootstrapped samples with random feature subsets — an <strong>ensemble method</strong> called bagging. The final prediction is the majority vote (classification) or average (regression).</p>
+<h2>The T-Test</h2>
+<p>Step 1: Compute mean of A → M(A)<br/>Step 2: Compute mean of B → M(B)<br/>Step 3: Difference = M(B) − M(A)<br/>Step 4: How likely could random noise produce this difference if no real effect?<br/>Step 5: T-test gives you that probability → the <strong>p-value</strong>.</p>
+<h3>Common (Wrong) Usage</h3>
+<p>If p < .05 → "It worked, implement B." If p > .05 → "It failed, A = B." Both conclusions are often incorrect.</p>
+<h3>Netflix Example</h3>
+<p>Netflix tested showing % thumbs-up ratings on thumbnails. Result: <strong>p = .011, CI = [1.1, 8.2]</strong>. Even academic papers misuse p-values — some journals have banned them entirely.</p>
 
-<h3>Support Vector Machines</h3>
-<p>SVMs find the hyperplane that maximises the <strong>margin</strong> between classes. The kernel trick maps data to higher dimensions where linear separation becomes possible. Common kernels: linear, polynomial, <strong>RBF (radial basis function)</strong>. SVMs work well in high-dimensional spaces but scale poorly to very large datasets compared to tree-based methods.</p>
+<h2>Track Record Analogy — Intuition for P and CI</h2>
+<p>The fundamental equation of statistics: <strong>Estimate = Truth + Error</strong></p>
+<p>We observe the estimate, want to know the truth, need to guess the error. Statistics quantifies how wrong an estimate could be.</p>
+<h3>The Larry Analogy</h3>
+<p>Larry (senior marketing guy) predicts +9 minutes increase. How wrong could he be? Look at his track record.</p>
+<p><strong>Version 1 (small errors):</strong> Errors of +3, -1, -2, +4, -3. His prediction is credible — act on it.</p>
+<p><strong>Version 2 (large errors):</strong> Errors of -8, +28, -25, -41, +23. His prediction could easily be completely wrong — don't act confidently.</p>
+<h3>How This Maps to P and CI</h3>
+<p><strong>P-value:</strong> Take the estimate. Ask: what if the error is so large the true effect is zero? How likely is that scenario? If p < .05 → that scenario is unlikely.</p>
+<p><strong>Confidence Interval:</strong> Take the estimate. Add/subtract the biggest plausible error (top 5%). CI = Estimate ± top-5%-error. Tells you the range of values you cannot rule out.</p>
+<p>Netflix: p = .011 means 1.1% chance of an error this large if true effect were zero. CI = [1.1, 8.2] means you can't rule out effects between 1.1 and 8.2 minutes.</p>
 
-<h3>Evaluation Metrics</h3>
-<p>For regression: MSE, RMSE, MAE, R². For classification: accuracy, precision, recall, F1-score, AUC-ROC. Always use <strong>cross-validation</strong> (typically 5-fold or 10-fold) to get reliable estimates. In imbalanced datasets, accuracy is misleading — use precision-recall curves and F1 instead.</p>
+<h2>Linking P and CI</h2>
+<p>P and CI are two sides of the same coin.</p>
+<p>If 0 is INSIDE the CI → cannot rule out zero effect → p > .05<br/>
+If 0 is OUTSIDE the CI → can rule out zero → p < .05</p>
+<p>Examples: CI = [−3, +21] → p > .05 | CI = [0, +18] → p ≈ .05 | CI = [4, 14] → p < .05</p>
+<p><strong>Key insight:</strong> The more precise your data, the narrower the CI, and the more likely you are to rule out 0 if there's truly an effect.</p>
 
-<p><strong>Key takeaway:</strong> No single algorithm dominates. The best approach depends on data size, feature types, interpretability needs, and computational budget. Start simple (logistic regression, random forest) before trying complex models.</p>
+<h2>From P and CI to Decisions</h2>
+<p>After an A/B test, three possible conclusions: (1) A is better, (2) B is better, (3) Still don't know — get more data.</p>
+<p><strong>CIs make it easy to determine which case you're in. P-values alone do NOT.</strong></p>
+<h3>Decision Logic Using CIs</h3>
+<p><strong>Case 1:</strong> Worst case still pretty good (CI = [4, 14]) → implement B.<br/>
+<strong>Case 2:</strong> Best case not good enough (CI = [−14, −4]) → stick with A.<br/>
+<strong>Case 3:</strong> Best case great, worst case bad (CI = [−6, +20]) → get more data or weigh risks.</p>
+<p>Five different A/B tests with p > .05 can have wildly different CIs — without the CI, you can't distinguish them. P > .05 alone is NOT a decision.</p>
 
-<p><em>Exam prep:</em> Be able to derive the gradient descent update rule for linear regression and explain the bias-variance tradeoff with concrete examples. Review the scikit-learn API for all algorithms above.</p>`},
+<h2>Four Common Errors with P-Values</h2>
+<h3>Error 1: p > .05 means the effect IS zero</h3>
+<p>Most common and dangerous mistake. p > .05 means "we lack evidence" — NOT "we've proven no effect." Example: urology paper with CI [0.93, 1.59] includes 60%+ higher mortality at upper bound. Correct conclusion: need more data, not "no association."</p>
+<h3>Error 2: Using p < .05 as the cutoff for every decision</h3>
+<p>5% threshold is arbitrary (Fisher, 1926). Set your threshold based on: "How bad is it if I'm wrong?" Avis example: doubling fleet (high cost) needs very high confidence, but sending an email link (low cost) only needs moderate confidence.</p>
+<h3>Error 3: p < .05 means the effect is worth pursuing</h3>
+<p>Statistical significance ≠ practical significance. Standing desks: p < .0001 but effect = 0.16 cal/min = less than half an apple per school day. Practically meaningless. With big data, trivially small effects are often statistically significant.</p>
+<h3>Error 4: Paying attention to imprecise estimates</h3>
+<p>When CI is very wide (e.g., [−50, +70]), even the SIGN of the estimate tells you nothing. Don't get excited about the direction of a noisy estimate.</p>
 
-n2:{title:"Deep Learning — Neural Networks & CNNs",created:"2026-02-12",content:`<h2>Neural Networks Fundamentals</h2>
-<p>Deep learning extends traditional machine learning by stacking multiple layers of neurons to learn hierarchical representations. A basic <strong>feedforward neural network</strong> (multilayer perceptron) consists of an input layer, one or more hidden layers, and an output layer. Each neuron computes a weighted sum of its inputs, adds a bias, and passes the result through an <strong>activation function</strong>.</p>
-
-<h3>Activation Functions</h3>
-<p>The choice of activation function dramatically affects training dynamics:</p>
-<ul>
-<li><strong>ReLU</strong> (Rectified Linear Unit): f(x) = max(0,x) — fast to compute, avoids vanishing gradients for positive values, but can suffer from "dying ReLU" (neurons stuck at zero)</li>
-<li><strong>Sigmoid</strong>: σ(x) = 1/(1+e^-x) — outputs between 0-1, used for binary classification output layers. Suffers from vanishing gradients for extreme values</li>
-<li><strong>Tanh</strong>: outputs between -1 and 1, zero-centered (better than sigmoid for hidden layers)</li>
-<li><strong>Leaky ReLU</strong>: f(x) = max(0.01x, x) — fixes the dying ReLU problem</li>
-<li><strong>GELU</strong>: used in modern transformers, smooth approximation of ReLU</li>
-</ul>
-
-<h3>Backpropagation & Gradient Descent</h3>
-<p><strong>Backpropagation</strong> is the algorithm that computes gradients of the loss function with respect to every weight in the network using the chain rule. Combined with an optimiser, these gradients update the weights to minimise the loss. Key optimisers:</p>
-<ul>
-<li><strong>SGD</strong> (Stochastic Gradient Descent) — simple but can oscillate</li>
-<li><strong>Adam</strong> — adaptive learning rates, combines momentum and RMSProp. The default choice for most deep learning tasks</li>
-<li><strong>AdamW</strong> — Adam with proper weight decay, used in modern transformer training</li>
-</ul>
-
-<h3>Convolutional Neural Networks (CNNs)</h3>
-<p>CNNs are designed for grid-like data, especially images. They use three key operations:</p>
-<ul>
-<li><strong>Convolution</strong>: learnable filters slide over the input, detecting local patterns (edges, textures, shapes). Early layers detect simple features; deeper layers detect complex ones</li>
-<li><strong>Pooling</strong>: reduces spatial dimensions (max pooling takes the largest value in each region). Makes the network translation-invariant</li>
-<li><strong>Fully connected layers</strong>: at the end of the network, flatten features and produce final predictions</li>
-</ul>
-
-<h3>Famous CNN Architectures</h3>
-<p>LeNet (1998, handwriting) → AlexNet (2012, ImageNet breakthrough) → VGG (2014, deeper is better) → ResNet (2015, skip connections solve vanishing gradients) → EfficientNet (2019, compound scaling). Modern vision models increasingly use <strong>Vision Transformers (ViT)</strong> which apply the transformer architecture from NLP to image patches.</p>
-
-<h3>Practical Tips</h3>
-<p>Use batch normalisation between layers. Apply dropout (0.2-0.5) for regularisation. Start with a pre-trained model and fine-tune (transfer learning) when possible — ImageNet pre-trained ResNets are a strong baseline. Libraries: <strong>PyTorch</strong> (research standard), <strong>TensorFlow/Keras</strong> (production), <strong>scikit-learn</strong> (classical ML only).</p>
-
-<p><strong>CNN Assignment due Feb 28:</strong> Build an image classifier using PyTorch. Dataset: CIFAR-10. Target: >85% test accuracy. Must include data augmentation and a training curve plot.</p>`},
-
-n3:{title:"Natural Language Processing & Transformers",created:"2026-02-14",content:`<h2>NLP — From Bag of Words to Transformers</h2>
-<p>Natural Language Processing is the field of AI focused on enabling machines to understand, interpret, and generate human language. It has undergone a revolution in the last five years, moving from statistical methods to deep learning approaches that achieve near-human performance on many benchmarks.</p>
-
-<h3>Classical NLP Pipeline</h3>
-<p>Traditional NLP involves several preprocessing steps: <strong>tokenisation</strong> (splitting text into words or subwords), <strong>stemming/lemmatisation</strong> (reducing words to base forms), <strong>stop word removal</strong>, and <strong>feature extraction</strong>. The simplest representation is <strong>Bag of Words</strong> — a vector of word counts, ignoring order. <strong>TF-IDF</strong> improves this by weighing terms by their importance across documents.</p>
-
-<h3>Word Embeddings</h3>
-<p>A major breakthrough was representing words as dense vectors in continuous space. <strong>Word2Vec</strong> (2013) trains shallow neural networks to predict context words, producing embeddings where semantic relationships are captured as vector arithmetic: king - man + woman ≈ queen. <strong>GloVe</strong> achieves similar results through matrix factorisation of co-occurrence statistics. These embeddings capture meaning but are static — each word has one representation regardless of context.</p>
-
-<h3>The Transformer Architecture</h3>
-<p>The 2017 paper "Attention Is All You Need" introduced the <strong>transformer</strong>, which replaced recurrent networks with <strong>self-attention mechanisms</strong>. The key innovation: every token attends to every other token in parallel, with learned attention weights determining which tokens are most relevant to each other. This allows:</p>
-<ul>
-<li>Parallel processing (unlike sequential RNNs)</li>
-<li>Long-range dependencies without information bottlenecks</li>
-<li>Scalability to very large models and datasets</li>
-</ul>
-
-<h3>Self-Attention Mechanism</h3>
-<p>Each token produces three vectors: <strong>Query (Q)</strong>, <strong>Key (K)</strong>, and <strong>Value (V)</strong>. Attention scores are computed as: Attention(Q,K,V) = softmax(QK^T / √d_k) × V. The scaling factor √d_k prevents gradients from vanishing. <strong>Multi-head attention</strong> runs this in parallel with different learned projections, allowing the model to attend to information from different representation subspaces.</p>
-
-<h3>LLMs: GPT, BERT, and Beyond</h3>
-<p><strong>BERT</strong> (2018) uses bidirectional transformers pre-trained with masked language modelling — predicting randomly masked words from context. Excellent for understanding tasks (classification, NER, QA). <strong>GPT</strong> (2018-2024) uses autoregressive transformers that predict the next token, scaling to billions of parameters. GPT-4 and Claude demonstrate emergent reasoning abilities at scale.</p>
-
-<p>Current frontier: <strong>Gemini</strong>, <strong>Claude</strong>, <strong>GPT-4</strong> are multimodal, handling text, images, and code. Fine-tuning with RLHF (Reinforcement Learning from Human Feedback) aligns models with human preferences. RAG (Retrieval-Augmented Generation) grounds outputs in external knowledge.</p>
-
-<p><strong>Connection to coursework:</strong> Our machine learning models use feature engineering that NLP automates. Understanding embeddings helps with the recommendation system project. The attention mechanism is also used in computer vision (ViT) and time-series forecasting.</p>`},
-
-n4:{title:"Corporate Finance — Valuation Methods",created:"2026-02-16",content:`<h2>Valuation — Core Methods</h2>
-<p>Valuation is the process of determining the present value of an asset, company, or project. It sits at the heart of corporate finance, investment banking, and venture capital. Every financial decision — whether to invest, acquire, or divest — ultimately rests on a valuation judgement.</p>
-
-<h3>Discounted Cash Flow (DCF)</h3>
-<p>The DCF method values an asset based on the present value of its expected future cash flows. The formula: PV = Σ(CF_t / (1+r)^t) where CF_t is the cash flow at time t and r is the discount rate. For a firm, we use <strong>Free Cash Flow to Firm (FCFF)</strong> = EBIT(1-t) + D&A - CapEx - ΔNWC. The discount rate is the <strong>WACC</strong>.</p>
-
-<h3>WACC — Weighted Average Cost of Capital</h3>
-<p>WACC represents the blended cost of all capital sources:</p>
-<p><em>WACC = (E/V × Re) + (D/V × Rd × (1-T))</em></p>
-<ul>
-<li>E = Market value of equity, D = Market value of debt, V = E + D</li>
-<li>Re = Cost of equity (from CAPM: Rf + β(Rm - Rf))</li>
-<li>Rd = Cost of debt (yield on existing debt or comparable bonds)</li>
-<li>T = Corporate tax rate (debt interest is tax-deductible)</li>
-</ul>
-<p>Example: E=600M, D=400M, Re=12%, Rd=6%, T=25% → WACC = 0.6×12% + 0.4×6%×0.75 = 7.2% + 1.8% = 9.0%</p>
-
-<h3>NPV and IRR</h3>
-<p><strong>Net Present Value (NPV)</strong> is the sum of all discounted cash flows minus the initial investment. A positive NPV means the project creates value. <strong>Internal Rate of Return (IRR)</strong> is the discount rate that makes NPV = 0. Accept projects where IRR > WACC. Caution: IRR can give misleading results for non-conventional cash flows or mutually exclusive projects — always defer to NPV in those cases.</p>
-
-<h3>Comparable Company Analysis (Comps)</h3>
-<p>A relative valuation method: find publicly traded companies similar to the target and apply their valuation multiples. Common multiples: <strong>EV/EBITDA</strong> (enterprise value to earnings before interest, taxes, depreciation, amortisation), <strong>P/E</strong> (price to earnings), <strong>P/Revenue</strong> (common for high-growth SaaS). Select peers by industry, size, growth, and margins. Apply a premium or discount based on the target's relative position.</p>
-
-<h3>Modigliani-Miller Theorem</h3>
-<p>In a perfect market (no taxes, no bankruptcy costs, symmetric information), capital structure is irrelevant — the value of a firm is determined solely by its real assets and growth prospects, not by how it's financed. With taxes, debt creates a <strong>tax shield</strong> (Rd × T × D), making levered firms more valuable. This is why private equity uses leverage — it amplifies equity returns while the tax shield reduces cost of capital.</p>
-
-<p><strong>Exam: March 15</strong> — will cover DCF, WACC calculation, NPV/IRR comparison, and Modigliani-Miller propositions. Practice calculating WACC from raw data and building a 5-year DCF model.</p>`},
-
-n5:{title:"Quantum Computing — Fundamentals",created:"2026-02-18",content:`<h2>Quantum Computing — Beyond Classical Bits</h2>
-<p>Quantum computing harnesses the principles of quantum mechanics to process information in fundamentally different ways than classical computers. While a classical bit can be either 0 or 1, a <strong>qubit</strong> can exist in a <strong>superposition</strong> of both states simultaneously. This, combined with <strong>entanglement</strong> and <strong>interference</strong>, enables quantum computers to solve certain problems exponentially faster than any classical machine.</p>
-
-<h3>Qubits and Superposition</h3>
-<p>A qubit's state is described by |ψ⟩ = α|0⟩ + β|1⟩, where α and β are complex amplitudes satisfying |α|² + |β|² = 1. When measured, the qubit collapses to |0⟩ with probability |α|² or |1⟩ with probability |β|². Before measurement, however, the qubit exists in both states — this is superposition. With n qubits, we can represent 2^n states simultaneously, giving quantum computers their potential exponential advantage.</p>
-
-<h3>Quantum Gates</h3>
-<p>Quantum gates manipulate qubits through unitary transformations:</p>
-<ul>
-<li><strong>Hadamard (H)</strong>: Creates equal superposition. H|0⟩ = (|0⟩+|1⟩)/√2</li>
-<li><strong>Pauli-X</strong>: Quantum NOT gate. Flips |0⟩ ↔ |1⟩</li>
-<li><strong>Pauli-Z</strong>: Phase flip. Adds a phase of -1 to |1⟩</li>
-<li><strong>CNOT</strong>: Controlled-NOT, a two-qubit gate essential for creating entanglement. Flips the target qubit if the control qubit is |1⟩</li>
-<li><strong>Toffoli</strong>: Three-qubit gate, universal for classical computation</li>
-</ul>
-
-<h3>Quantum Entanglement</h3>
-<p>When two qubits become entangled, the state of one instantly determines the state of the other, regardless of distance. The Bell state |Φ+⟩ = (|00⟩ + |11⟩)/√2 is maximally entangled — measuring one qubit immediately reveals the other. Einstein called this "spooky action at a distance," but <strong>Bell's theorem</strong> proved no local hidden variable theory can explain the correlations. Applications include quantum teleportation, superdense coding, and quantum key distribution (QKD).</p>
-
-<h3>Key Algorithms</h3>
-<ul>
-<li><strong>Shor's algorithm</strong>: Factors large integers in polynomial time (classical best is sub-exponential). Threatens RSA encryption. Uses quantum Fourier transform to find periodicity.</li>
-<li><strong>Grover's algorithm</strong>: Searches an unsorted database of N items in O(√N) time vs O(N) classically. Quadratic speedup.</li>
-</ul>
-
-<h3>Decoherence — The Main Challenge</h3>
-<p>Qubits are extremely fragile. Interaction with the environment causes <strong>decoherence</strong> — loss of quantum information. Current quantum computers operate at near absolute zero (~15 millikelvin) to minimise thermal noise. Error correction is essential: the <strong>surface code</strong> requires roughly 1000 physical qubits per logical qubit. This is why current "NISQ" (Noisy Intermediate-Scale Quantum) devices with 50-1000 qubits are limited in practical applications.</p>
-
-<p><strong>Connection to other courses:</strong> Shor's algorithm impacts cryptography in our cybersecurity module. Quantum machine learning is an emerging intersection — variational quantum circuits can be trained like neural networks. Monte Carlo simulation (used in finance for option pricing) could see quantum speedup via quantum amplitude estimation.</p>`},
-
-n6:{title:"Data Ethics & AI Regulation",created:"2026-02-20",content:`<h2>Ethics in Data Science and AI</h2>
-<p>As machine learning systems are deployed in high-stakes domains — hiring, lending, criminal justice, healthcare — the ethical implications demand serious attention. This is not just a philosophical concern; regulators worldwide are introducing binding legislation, and companies face real consequences for ethical failures.</p>
-
-<h3>Bias in Machine Learning</h3>
-<p>ML models can amplify existing biases in training data. A hiring algorithm trained on historical data where most senior engineers were male will learn to penalise female applicants — even if gender is not an explicit feature. This is because correlated features (name, university, extracurriculars) serve as proxies. Amazon discovered this with their recruiting tool in 2018 and scrapped it.</p>
-<p>Types of bias:</p>
-<ul>
-<li><strong>Selection bias</strong>: Training data doesn't represent the population</li>
-<li><strong>Measurement bias</strong>: Features are measured differently across groups</li>
-<li><strong>Aggregation bias</strong>: One model for diverse subgroups fails for minorities</li>
-<li><strong>Representation bias</strong>: Underrepresentation of certain groups in data collection</li>
-</ul>
-
-<h3>Fairness Metrics</h3>
-<p>Quantifying fairness is itself contentious — different definitions can be mathematically incompatible:</p>
-<ul>
-<li><strong>Demographic parity</strong>: Equal positive prediction rates across groups</li>
-<li><strong>Equalised odds</strong>: Equal true positive and false positive rates across groups</li>
-<li><strong>Individual fairness</strong>: Similar individuals receive similar predictions</li>
-<li><strong>Counterfactual fairness</strong>: Would the prediction change if a protected attribute were different?</li>
-</ul>
-<p>The <strong>impossibility theorem</strong> (Chouldechova 2017) proves that except in trivial cases, you cannot satisfy demographic parity, equalised odds, and calibration simultaneously. Teams must make explicit value judgements about which definition matters most for their context.</p>
-
-<h3>The EU AI Act</h3>
-<p>The EU AI Act (entered force 2024) classifies AI systems by risk level:</p>
-<ul>
-<li><strong>Unacceptable risk</strong>: Banned — social scoring, real-time biometric surveillance (with exceptions for law enforcement)</li>
-<li><strong>High risk</strong>: Requires conformity assessments, documentation, human oversight — includes hiring, credit scoring, education, law enforcement</li>
-<li><strong>Limited risk</strong>: Transparency obligations — chatbots must disclose they are AI</li>
-<li><strong>Minimal risk</strong>: No restrictions — spam filters, video games</li>
-</ul>
-
-<h3>Explainability</h3>
-<p>GDPR's "right to explanation" means individuals can demand to know why an automated decision was made about them. This creates tension with deep learning — a 100-million-parameter neural network is inherently opaque. Techniques like <strong>SHAP</strong> (Shapley Additive Explanations), <strong>LIME</strong> (Local Interpretable Model-agnostic Explanations), and attention visualisation help, but are approximations, not true explanations of the model's internal reasoning.</p>
-
-<p><strong>Link to finance:</strong> Credit scoring models face strict fairness requirements under the Equal Credit Opportunity Act. Link to NLP: LLMs can generate biased or harmful text — RLHF alignment is partly an ethics intervention. Link to our startup project: any AI product we build must consider these regulations from day one.</p>`},
+<h2>Final Summary</h2>
+<p>Always compute, report, and request <strong>confidence intervals</strong>. P-values are seldom useful on their own for decisions.</p>
+<p><strong>Act on p > .05:</strong> When worst case (lower CI bound) is not bad, but best case is good.<br/>
+<strong>Pass on p < .05:</strong> When even best case isn't appealing enough to justify cost.<br/>
+<strong>Get more data:</strong> When CI spans both actionably good and actionably bad territory.</p>`},
 
 // ── CAREER & PROJECTS ──────────────────────────────────────
 
