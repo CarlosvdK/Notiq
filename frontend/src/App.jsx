@@ -6,6 +6,8 @@
 // │  PASTE YOUR API KEYS HERE (line 10-11)                   │
 // └───────────────────────────────────────────────────────────┘
 const GEMINI_KEY = import.meta.env.VITE_GEMINI_KEY || "";    // ← set in .env as VITE_GEMINI_KEY
+const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_KEY || ""; // ← set in .env as VITE_ANTHROPIC_KEY
+const AI_KEY = ANTHROPIC_KEY || GEMINI_KEY; // prefer Anthropic, fallback to Gemini
 const YOUTUBE_KEY = import.meta.env.VITE_YOUTUBE_KEY || "";   // ← set in .env as VITE_YOUTUBE_KEY
 //
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
@@ -773,11 +775,24 @@ const geminiCall=async(prompt,key,opts={},signal)=>{
     return d?.candidates?.[0]?.content?.parts?.[0]?.text||null;
   }catch(e){return null;}
 };
+const claudeCall=async(prompt,opts={},signal)=>{
+  if(!ANTHROPIC_KEY)return null;
+  try{
+    const r=await fetch("/api/claude",{method:"POST",signal,headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({prompt,maxTokens:opts.maxOutputTokens||300,temperature:opts.temperature??0.3})});
+    if(signal?.aborted)return null;const d=await r.json();
+    return d?.text||null;
+  }catch(e){return null;}
+};
+const aiCall=async(prompt,key,opts={},signal)=>{
+  if(ANTHROPIC_KEY)return claudeCall(prompt,opts,signal);
+  return geminiCall(prompt,key,opts,signal);
+};
 
 // ── Copilot-style autocomplete ──
 async function geminiComplete(ctx,meta,key,signal){
   const contextBlock=meta.context?`\nReference context provided by the user:\n${meta.context.slice(0,1500)}\n\nUse the above reference material to make your suggestions more accurate and specific to this subject.\n`:"";
-  return geminiCall(
+  return aiCall(
     `You are an intelligent autocomplete engine for a note-taking app, similar to GitHub Copilot. Predict what the user will type next.\n\n`+
     `Note title: "${meta.title}"\n`+contextBlock+
     `\nCurrent content (end of note):\n${ctx}\n\n`+
@@ -796,7 +811,7 @@ async function geminiComplete(ctx,meta,key,signal){
 
 // ── Note analysis ──
 async function geminiAnalyze(content,q,key,signal){
-  return geminiCall("Notes:\n"+content.replace(/<[^>]+>/g,"")+"\n\n"+q+"\nBe concise (3-5 sentences).",key,{maxOutputTokens:200,temperature:0.5},signal);
+  return aiCall("Notes:\n"+content.replace(/<[^>]+>/g,"")+"\n\n"+q+"\nBe concise (3-5 sentences).",key,{maxOutputTokens:200,temperature:0.5},signal);
 }
 
 // ── YouTube search ──
@@ -806,7 +821,7 @@ async function ytSearch(query,key,max=3){if(!key)return[];try{const r=await fetc
 async function geminiExtractTopic(content,key,signal){
   const plain=content.replace(/<[^>]+>/g,"").slice(-800);
   if(plain.length<30)return null;
-  return geminiCall(
+  return aiCall(
     `Given these notes, extract the single most specific learning topic the user is currently writing about. Output ONLY a short YouTube search query (3-6 words), nothing else. No quotes.\n\n${plain}`,
     key,{maxOutputTokens:25,temperature:0.1},signal
   );
@@ -816,7 +831,7 @@ async function geminiExtractTopic(content,key,signal){
 async function geminiExtractEntities(noteTitle,noteContent,key){
   if(!key||!noteContent.trim())return null;
   const plain=noteContent.replace(/<[^>]+>/g,"").slice(0,1500);
-  const raw=await geminiCall(
+  const raw=await aiCall(
     `Analyze this note and extract key concepts.\n\nNote: "${noteTitle}"\n${plain}\n\n`+
     `Return ONLY valid JSON: {"concepts":["concept1","concept2"],"summary":"one sentence summary"}\n`+
     `Rules: 3-8 lowercase concepts (specific topics/techniques/entities). One-sentence summary. JSON only, no markdown.`,
@@ -836,7 +851,7 @@ async function geminiTransformNote(noteTitle,noteContent,format,key){
     flashcards:`Create flashcards for studying. Return ONLY valid JSON:\n{"cards":[{"front":"question or term","back":"answer or definition"}]}\nGenerate 5-8 flashcards covering key concepts.`,
     mindmap:`Create a mind map. Return ONLY valid JSON:\n{"root":"central topic","branches":[{"label":"branch","children":["sub1","sub2"]}]}\n3-5 branches with 2-4 children each.`
   };
-  const raw=await geminiCall(`Note: "${noteTitle}"\n\n${plain}\n\n${prompts[format]}`,key,{maxOutputTokens:800,temperature:0.3});
+  const raw=await aiCall(`Note: "${noteTitle}"\n\n${plain}\n\n${prompts[format]}`,key,{maxOutputTokens:800,temperature:0.3});
   if(!raw)return null;
   try{const m=raw.match(/\{[\s\S]*\}/);return m?JSON.parse(m[0]):null;}catch{return null;}
 }
@@ -1628,11 +1643,7 @@ Return ONLY valid JSON (no markdown fences) with this exact structure:
 
 Notes:\n${digest}`;
     try{
-      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:1500,temperature:0.4,responseMimeType:"application/json"}})
-      });
-      const d=await r.json();const txt=d?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const txt=await aiCall(prompt,geminiKey,{maxOutputTokens:1500,temperature:0.4});
       if(txt){setAiData(JSON.parse(txt));}
     }catch(e){console.error("Insights error:",e);}
     setLd(false);
@@ -1643,11 +1654,7 @@ Notes:\n${digest}`;
     const weakDigest=weakTopics.map(d=>`"${d.section}" (confidence: ${d.score}/10, from note: ${d.noteTitle})`).join("\n");
     const prompt=`Create a focused study plan for a student who is weak in these topics:\n${weakDigest}\n\nReturn ONLY valid JSON:\n{"plan":[{"topic":"topic name","confidence":3,"priority":"high/medium","actions":["specific action 1","specific action 2"],"timeEstimate":"2 hours","resources":["resource suggestion"]}],"summary":"One paragraph overview of the study plan","schedule":"Suggested weekly schedule"}`;
     try{
-      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:1200,temperature:0.4,responseMimeType:"application/json"}})
-      });
-      const d=await r.json();const txt=d?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const txt=await aiCall(prompt,geminiKey,{maxOutputTokens:1200,temperature:0.4});
       if(txt){setStudyPlan(JSON.parse(txt));}
     }catch(e){console.error("Study plan error:",e);}
     setSpLd(false);
@@ -1764,7 +1771,7 @@ Notes:\n${digest}`;
         </div>))}</>}
     </div>}
 
-    {!geminiKey&&<IBox icon="!" text="Add a Gemini API key in .env to unlock AI-powered insights."/>}
+    {!geminiKey&&<IBox icon="!" text="Add an API key (VITE_ANTHROPIC_KEY or VITE_GEMINI_KEY) in .env to unlock AI-powered insights."/>}
 
     {/* AI Analysis results */}
     {aiData&&<div>
@@ -1834,11 +1841,7 @@ function SummaryPage({notes,folders,geminiKey}){
     const digest=filtered.map(n=>`[${n.title}] (${n.cat||"uncategorized"})\n${(n.content||"").replace(/<[^>]+>/g,"").slice(0,400)}`).join("\n---\n");
     const prompt=`Summarize these ${filtered.length} notes concisely. Group by theme. Return ONLY valid JSON:\n{"overview":"2-3 sentence overview","groups":[{"theme":"Theme","notes":["note title 1"],"summary":"group summary"}],"keyTakeaways":["takeaway 1","takeaway 2"]}\n\nNotes:\n${digest}`;
     try{
-      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:1200,temperature:0.3,responseMimeType:"application/json"}})
-      });
-      const d=await r.json();const txt=d?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const txt=await aiCall(prompt,geminiKey,{maxOutputTokens:1200,temperature:0.3});
       if(txt)setSummary(JSON.parse(txt));
     }catch(e){console.error("Summary error:",e);}
     setLoading(false);
@@ -1950,7 +1953,7 @@ function LinksPage({notes,geminiKey,onSelectNote}){
       <button className="grad-btn" onClick={analyze} disabled={loading||!geminiKey} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",opacity:loading?.6:1}}>
         {loading?"Analyzing...":links?"Re-analyze":"Build Graph"}</button>
     </div>
-    {!geminiKey&&<div style={{...S.glass,padding:16,color:"#b0bec5",fontSize:13}}>Gemini API key required for knowledge graph.</div>}
+    {!geminiKey&&<div style={{...S.glass,padding:16,color:"#b0bec5",fontSize:13}}>API key required for knowledge graph.</div>}
     {loading&&<div style={{textAlign:"center",padding:48,color:"#8492a6"}}>
       <div style={{fontSize:14,marginBottom:8,color:"#b0bec5"}}>{progress}</div>
       <div style={{fontSize:12}}>Extracting concepts with Gemini and finding connections</div>
@@ -2128,11 +2131,7 @@ function NoteInsightsPanel({noteIds,notes,topicSections,confidence,geminiKey,tit
     const weakDigest=weakTopics.map(d=>`"${d.section}" (confidence: ${d.score}/10, from note: ${d.noteTitle})`).join("\n");
     const prompt=`Create a focused study plan for a student who is weak in these topics:\n${weakDigest}\n\nReturn ONLY valid JSON:\n{"plan":[{"topic":"topic name","confidence":3,"priority":"high/medium","actions":["action 1","action 2"],"timeEstimate":"2 hours","resources":["resource"]}],"summary":"One paragraph overview","schedule":"Suggested weekly schedule"}`;
     try{
-      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:1200,temperature:0.3,responseMimeType:"application/json"}})
-      });
-      const d=await r.json();const txt=d?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const txt=await aiCall(prompt,geminiKey,{maxOutputTokens:1200,temperature:0.3});
       if(txt)setStudyPlan(JSON.parse(txt));
     }catch(e){console.error("Study plan error:",e);}
     setSpLd(false);
@@ -3325,16 +3324,16 @@ function NotiqApp(){
     timerRef.current=setTimeout(async()=>{
       const plain=html.replace(/<[^>]+>/g,"");if(plain.length<15)return;
       const localGhost=getGhost(html);
-      if(localGhost&&!GEMINI_KEY){setGhostData(localGhost);return;}
+      if(localGhost&&!AI_KEY){setGhostData(localGhost);return;}
       if(localGhost)setGhostData(localGhost);
-      if(!GEMINI_KEY)return;
+      if(!AI_KEY)return;
       if(abortRef.current)abortRef.current.abort();
       const ac=new AbortController();abortRef.current=ac;
       setGhostLoading(true);
       const pLines=plain.split("\n").filter(l=>l.trim());
       const ctx=pLines.slice(-10).join("\n");
       const ragCtx=active?.context||"";
-      const r=await geminiComplete(ctx,{title:active?.title||"",context:ragCtx},GEMINI_KEY,ac.signal);
+      const r=await geminiComplete(ctx,{title:active?.title||"",context:ragCtx},AI_KEY,ac.signal);
       if(!ac.signal.aborted){setGhostData(r||localGhost);setGhostLoading(false);}
     },500);
     // ── YouTube pipeline ──
@@ -3346,14 +3345,14 @@ function NotiqApp(){
       setYtLoading(true);
       let q=null;
       const ytCtx=active?.context?"\n\nNote context: "+active.context.slice(0,500):"";
-      if(GEMINI_KEY)q=await geminiExtractTopic(html+ytCtx,GEMINI_KEY,ac.signal);
+      if(AI_KEY)q=await geminiExtractTopic(html+ytCtx,AI_KEY,ac.signal);
       if(!q){q=plain.split("\n").filter(l=>l.trim()).slice(-2).join(" ").slice(0,80);}
       if(ac.signal.aborted)return;
       if(q.length<5){setYtLoading(false);return;}
       const r=await ytSearch(q,YOUTUBE_KEY,4);
       if(!ac.signal.aborted){setYtResults(r);setYtLoading(false);}
     },1800);
-    if(GEMINI_KEY&&html.replace(/<[^>]+>/g,"").length>100){setTimeout(async()=>{const r=await geminiAnalyze(html,"Most important takeaway? One sentence.",GEMINI_KEY);setAiInsight(r);},3500);}
+    if(AI_KEY&&html.replace(/<[^>]+>/g,"").length>100){setTimeout(async()=>{const r=await geminiAnalyze(html,"Most important takeaway? One sentence.",AI_KEY);setAiInsight(r);},3500);}
   },[activeNote,parseSections]);
 
   const acceptGhost=useCallback(()=>{setGhostData(null);},[]);
@@ -3410,7 +3409,7 @@ function NotiqApp(){
       <div style={{position:"absolute",bottom:"15%",right:"10%",width:600,height:600,background:"radial-gradient(circle,rgba(149,113,205,0.05) 0%,transparent 65%)"}}/>
     </div>
     {showNewNoteModal&&<NewNoteModal folders={folders} activeFolder={activeFolder} activeSubfolder={activeSubfolder} onClose={()=>setShowNewNoteModal(false)} onCreate={createNote}/>}
-    {showTransformPopup&&active&&<TransformPopup note={active} geminiKey={GEMINI_KEY} selectedText={window.getSelection()?.toString()||""} onClose={()=>setShowTransformPopup(false)}/>}
+    {showTransformPopup&&active&&<TransformPopup note={active} geminiKey={AI_KEY} selectedText={window.getSelection()?.toString()||""} onClose={()=>setShowTransformPopup(false)}/>}
     <Sidebar folders={folders} notes={notes} activeNote={activeNote} activeFolder={activeFolder} activeSubfolder={activeSubfolder}
       onSelect={selectNote} onSelectFolder={setActiveFolder} onSelectSubfolder={setActiveSubfolder} onCreateFolder={createFolder} onCreateSubfolder={createSubfolder} onSelectParent={selectParent} onSelectFolderView={selectFolderView} onSelectSubfolderView={selectSubfolderView} onOpenNewNote={()=>setShowNewNoteModal(true)}/>
     <div style={S.main}>
@@ -3436,7 +3435,7 @@ function NotiqApp(){
             </button>
           </div>
         </div>
-        {showInsightsPanel&&<div style={{padding:"12px 32px 0"}}><NoteInsightsPanel noteIds={combinedItems.map(c=>c.id)} notes={notes} topicSections={topicSections} confidence={confidence} geminiKey={GEMINI_KEY} title={combinedTitle} onClose={()=>setShowInsightsPanel(false)}/></div>}
+        {showInsightsPanel&&<div style={{padding:"12px 32px 0"}}><NoteInsightsPanel noteIds={combinedItems.map(c=>c.id)} notes={notes} topicSections={topicSections} confidence={confidence} geminiKey={AI_KEY} title={combinedTitle} onClose={()=>setShowInsightsPanel(false)}/></div>}
         <CombinedView hideTitle title={combinedTitle} items={combinedItems} onSelect={selectNote} onAddLesson={t=>combinedParentId&&addLesson(combinedParentId,t)} parentId={combinedParentId} onChangeNote={(id,html)=>setNotes(p=>({...p,[id]:{...p[id],content:html}}))}/></div>}
       {page==="notes"&&!viewMode&&active&&(
         <div style={{display:"flex",flex:1,overflow:"hidden"}}>
@@ -3451,7 +3450,7 @@ function NotiqApp(){
                 {active.ragFiles?.length>0&&<span style={{fontSize:10,color:"#8492a6"}}>({active.ragFiles.length} file{active.ragFiles.length!==1?"s":""})</span>}
               </div>}
             </div>
-            {showInsightsPanel&&<NoteInsightsPanel noteIds={[activeNote]} notes={notes} topicSections={topicSections} confidence={confidence} geminiKey={GEMINI_KEY} title={active.title} onClose={()=>setShowInsightsPanel(false)}/>}
+            {showInsightsPanel&&<NoteInsightsPanel noteIds={[activeNote]} notes={notes} topicSections={topicSections} confidence={confidence} geminiKey={AI_KEY} title={active.title} onClose={()=>setShowInsightsPanel(false)}/>}
             <div style={{display:"flex",gap:8,marginBottom:6}}>
               <button data-tut="insights" onClick={()=>setShowInsightsPanel(p=>!p)} style={{padding:"10px 24px",borderRadius:12,border:"none",background:showInsightsPanel?"linear-gradient(135deg,#7b93f5,#9571cd)":"linear-gradient(135deg,rgba(149,113,205,0.15),rgba(123,147,245,0.15))",color:showInsightsPanel?"#fff":"var(--t-purple)",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
@@ -3473,9 +3472,9 @@ function NotiqApp(){
         <p style={{color:"#b0bec5",fontSize:15,lineHeight:1.6,margin:"0 0 8px"}}>Select a note from the sidebar or create a new one to get started.</p>
         <p style={{color:"#8492a6",fontSize:12}}>Your AI-powered writing companion is ready.</p>
       </div></div>}
-      {page==="insights"&&<InsightsPage notes={notes} folders={folders} knowledge={knowledge} onAddTopic={addTopic} geminiKey={GEMINI_KEY} topicSections={topicSections} confidence={confidence} insightsFolder={insightsFolder} setInsightsFolder={setInsightsFolder}/>}
-      {page==="summary"&&<SummaryPage notes={notes} folders={folders} geminiKey={GEMINI_KEY}/>}
-      {page==="links"&&<LinksPage notes={notes} geminiKey={GEMINI_KEY} onSelectNote={selectNote}/>}
+      {page==="insights"&&<InsightsPage notes={notes} folders={folders} knowledge={knowledge} onAddTopic={addTopic} geminiKey={AI_KEY} topicSections={topicSections} confidence={confidence} insightsFolder={insightsFolder} setInsightsFolder={setInsightsFolder}/>}
+      {page==="summary"&&<SummaryPage notes={notes} folders={folders} geminiKey={AI_KEY}/>}
+      {page==="links"&&<LinksPage notes={notes} geminiKey={AI_KEY} onSelectNote={selectNote}/>}
     </div>
   </div>);
 }
