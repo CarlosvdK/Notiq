@@ -1838,7 +1838,12 @@ function LinksPage({notes,geminiKey,onSelectNote}){
     if(!analyzedRef.current&&geminiKey){analyzedRef.current=true;analyze();}
   },[geminiKey,analyze]);
 
-  // Force-directed layout simulation
+  // Pre-compute connection counts (avoid recalculating in render/mouse handlers)
+  const connCountRef=useRef({});const maxConnRef=useRef(1);const nodeColorRef=useRef({});
+  const settledRef=useRef(false);const selectedRef=useRef(null);
+  selectedRef.current=selectedNode;
+
+  // Force-directed layout simulation — runs once when links/entities change, does NOT restart on selection
   useEffect(()=>{
     if(!links||!canvasRef.current)return;
     const nodeIds=Object.keys(entities);if(nodeIds.length===0)return;
@@ -1851,51 +1856,58 @@ function LinksPage({notes,geminiKey,onSelectNote}){
       pos[id]={x:W/2+Math.cos(angle)*(W*0.3),y:H/2+Math.sin(angle)*(H*0.3)};
       vel[id]={x:0,y:0};
     });
-    posRef.current=pos;velRef.current=vel;
+    posRef.current=pos;velRef.current=vel;settledRef.current=false;
 
     const connCount={};nodeIds.forEach(id=>{connCount[id]=links.filter(l=>l.from===id||l.to===id).length;});
     const maxConn=Math.max(1,...Object.values(connCount));
+    connCountRef.current=connCount;maxConnRef.current=maxConn;
 
     const colors=["#7b93f5","#9571cd","#f59b7b","#71cda5","#cd71b8","#71b8cd","#cdc171","#f57b93"];
     const nodeColor={};nodeIds.forEach((id,i)=>nodeColor[id]=colors[i%colors.length]);
+    nodeColorRef.current=nodeColor;
 
     let frame=0;
     const draw=()=>{
       frame++;
       const cooling=Math.max(0.01,1-frame/300);
-      // Force simulation
-      nodeIds.forEach(id=>{vel[id]={x:0,y:0};});
-      // Repulsion between all nodes
-      for(let i=0;i<nodeIds.length;i++){
-        for(let j=i+1;j<nodeIds.length;j++){
-          const a=nodeIds[i],b=nodeIds[j];
-          let dx=pos[b].x-pos[a].x,dy=pos[b].y-pos[a].y;
-          const dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
-          const force=800/(dist*dist);
-          const fx=dx/dist*force,fy=dy/dist*force;
-          vel[a].x-=fx;vel[a].y-=fy;vel[b].x+=fx;vel[b].y+=fy;
+      const simulating=frame<350;
+      // Only run physics while not settled
+      if(simulating){
+        nodeIds.forEach(id=>{vel[id]={x:0,y:0};});
+        // Repulsion between all nodes
+        for(let i=0;i<nodeIds.length;i++){
+          for(let j=i+1;j<nodeIds.length;j++){
+            const a=nodeIds[i],b=nodeIds[j];
+            let dx=pos[b].x-pos[a].x,dy=pos[b].y-pos[a].y;
+            const dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
+            const force=800/(dist*dist);
+            const fx=dx/dist*force,fy=dy/dist*force;
+            vel[a].x-=fx;vel[a].y-=fy;vel[b].x+=fx;vel[b].y+=fy;
+          }
         }
+        // Attraction along edges
+        links.forEach(l=>{
+          const dx=pos[l.to].x-pos[l.from].x,dy=pos[l.to].y-pos[l.from].y;
+          const dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
+          const force=(dist-150)*0.005*l.strength;
+          const fx=dx/dist*force,fy=dy/dist*force;
+          vel[l.from].x+=fx;vel[l.from].y+=fy;vel[l.to].x-=fx;vel[l.to].y-=fy;
+        });
+        // Center gravity
+        nodeIds.forEach(id=>{
+          vel[id].x+=(W/2-pos[id].x)*0.002;
+          vel[id].y+=(H/2-pos[id].y)*0.002;
+        });
+        // Apply velocities
+        nodeIds.forEach(id=>{
+          if(dragRef.current===id)return;
+          pos[id].x+=vel[id].x*cooling;pos[id].y+=vel[id].y*cooling;
+          pos[id].x=Math.max(40,Math.min(W-40,pos[id].x));
+          pos[id].y=Math.max(40,Math.min(H-40,pos[id].y));
+        });
       }
-      // Attraction along edges
-      links.forEach(l=>{
-        const dx=pos[l.to].x-pos[l.from].x,dy=pos[l.to].y-pos[l.from].y;
-        const dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
-        const force=(dist-150)*0.005*l.strength;
-        const fx=dx/dist*force,fy=dy/dist*force;
-        vel[l.from].x+=fx;vel[l.from].y+=fy;vel[l.to].x-=fx;vel[l.to].y-=fy;
-      });
-      // Center gravity
-      nodeIds.forEach(id=>{
-        vel[id].x+=(W/2-pos[id].x)*0.002;
-        vel[id].y+=(H/2-pos[id].y)*0.002;
-      });
-      // Apply velocities
-      nodeIds.forEach(id=>{
-        if(dragRef.current===id)return;
-        pos[id].x+=vel[id].x*cooling;pos[id].y+=vel[id].y*cooling;
-        pos[id].x=Math.max(40,Math.min(W-40,pos[id].x));
-        pos[id].y=Math.max(40,Math.min(H-40,pos[id].y));
-      });
+      // Read selectedNode from ref to avoid re-creating the effect
+      const curSel=selectedRef.current;
       // Draw
       ctx.clearRect(0,0,W,H);
       // Glow effect background
@@ -1905,7 +1917,7 @@ function LinksPage({notes,geminiKey,onSelectNote}){
       // Draw edges
       links.forEach(l=>{
         const f=pos[l.from],t=pos[l.to];if(!f||!t)return;
-        const isSel=selectedNode&&(l.from===selectedNode||l.to===selectedNode);
+        const isSel=curSel&&(l.from===curSel||l.to===curSel);
         const isHov=hoverRef.current&&(l.from===hoverRef.current||l.to===hoverRef.current);
         ctx.beginPath();ctx.moveTo(f.x,f.y);
         // Curved edges
@@ -1922,7 +1934,7 @@ function LinksPage({notes,geminiKey,onSelectNote}){
       });
       // Draw nodes
       nodeIds.forEach(id=>{
-        const p=pos[id];const note=notes[id];const isSel=selectedNode===id;const isHov=hoverRef.current===id;
+        const p=pos[id];const note=notes[id];const isSel=curSel===id;const isHov=hoverRef.current===id;
         const conns=connCount[id]||0;const r=14+conns/maxConn*16+(isSel?4:isHov?2:0);
         const color=nodeColor[id];
         // Outer glow
@@ -1946,29 +1958,73 @@ function LinksPage({notes,geminiKey,onSelectNote}){
           ctx.fillStyle="#fff";ctx.font="700 8px Inter,sans-serif";ctx.fillText(conns,p.x+r*0.7,p.y-r*0.7+3);
         }
       });
-      setPositions({...pos});
-      animRef.current=requestAnimationFrame(draw);
+      posRef.current=pos;
+      // Keep animating during simulation; after settled, only redraw on interaction
+      if(simulating){
+        animRef.current=requestAnimationFrame(draw);
+      }else{
+        settledRef.current=true;
+      }
     };
     animRef.current=requestAnimationFrame(draw);
     return()=>{if(animRef.current)cancelAnimationFrame(animRef.current);};
-  },[links,entities,selectedNode,notes]);
+  },[links,entities,notes]);
 
-  // Canvas mouse interaction
+  // Redraw canvas on selection/hover changes without restarting physics
+  const redrawCanvas=useCallback(()=>{
+    if(!links||!canvasRef.current||!settledRef.current)return;
+    const nodeIds=Object.keys(entities);if(nodeIds.length===0)return;
+    const canvas=canvasRef.current;const ctx=canvas.getContext("2d");
+    const W=canvas.width,H=canvas.height;const pos=posRef.current;
+    const connCount=connCountRef.current;const maxConn=maxConnRef.current;const nodeColor=nodeColorRef.current;
+    const curSel=selectedNode;
+    ctx.clearRect(0,0,W,H);
+    const grad=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.5);
+    grad.addColorStop(0,"rgba(123,147,245,0.03)");grad.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+    links.forEach(l=>{
+      const f=pos[l.from],t=pos[l.to];if(!f||!t)return;
+      const isSel=curSel&&(l.from===curSel||l.to===curSel);
+      const isHov=hoverRef.current&&(l.from===hoverRef.current||l.to===hoverRef.current);
+      ctx.beginPath();ctx.moveTo(f.x,f.y);
+      const mx=(f.x+t.x)/2+(f.y-t.y)*0.1,my=(f.y+t.y)/2+(t.x-f.x)*0.1;
+      ctx.quadraticCurveTo(mx,my,t.x,t.y);
+      ctx.strokeStyle=isSel?"rgba(123,147,245,0.6)":isHov?"rgba(149,113,205,0.4)":"rgba(123,147,245,0.12)";
+      ctx.lineWidth=Math.min(3,l.strength)+(isSel||isHov?1.5:0);
+      ctx.stroke();
+      if(isSel||isHov){ctx.fillStyle="rgba(149,113,205,0.8)";ctx.font="600 9px Inter,sans-serif";ctx.textAlign="center";ctx.fillText(l.concepts[0],(f.x+t.x)/2,(f.y+t.y)/2-8);}
+    });
+    nodeIds.forEach(id=>{
+      const p=pos[id];const note=notes[id];const isSel=curSel===id;const isHov=hoverRef.current===id;
+      const conns=connCount[id]||0;const r=14+conns/maxConn*16+(isSel?4:isHov?2:0);
+      const color=nodeColor[id];
+      if(isSel||isHov){const g=ctx.createRadialGradient(p.x,p.y,r*0.5,p.x,p.y,r*2.5);g.addColorStop(0,color+"40");g.addColorStop(1,color+"00");ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,r*2.5,0,Math.PI*2);ctx.fill();}
+      const ng=ctx.createRadialGradient(p.x-r*0.3,p.y-r*0.3,0,p.x,p.y,r);ng.addColorStop(0,color+"50");ng.addColorStop(1,color+"20");
+      ctx.fillStyle=ng;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=isSel?color:color+"60";ctx.lineWidth=isSel?2.5:1;ctx.stroke();
+      ctx.fillStyle=isSel?"#f1f5f9":"#c0cad8";ctx.font=`${isSel?'700':'600'} ${isSel?11:10}px Inter,sans-serif`;ctx.textAlign="center";
+      const label=(note?.title||"").length>16?(note?.title||"").slice(0,14)+"\u2026":(note?.title||"");
+      ctx.fillText(label,p.x,p.y+r+14);
+      if(conns>0){ctx.fillStyle=color+"90";ctx.beginPath();ctx.arc(p.x+r*0.7,p.y-r*0.7,7,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.font="700 8px Inter,sans-serif";ctx.fillText(conns,p.x+r*0.7,p.y-r*0.7+3);}
+    });
+  },[links,entities,selectedNode,notes]);
+  useEffect(()=>{if(settledRef.current)redrawCanvas();},[selectedNode,redrawCanvas]);
+
+  // Canvas mouse interaction — uses cached connCount from refs
   const handleCanvasClick=useCallback(e=>{
     const canvas=canvasRef.current;if(!canvas)return;
     const rect=canvas.getBoundingClientRect();
     const scaleX=canvas.width/rect.width,scaleY=canvas.height/rect.height;
     const mx=(e.clientX-rect.left)*scaleX,my=(e.clientY-rect.top)*scaleY;
     const nodeIds=Object.keys(entities);
-    const connCount={};nodeIds.forEach(id=>{connCount[id]=(links||[]).filter(l=>l.from===id||l.to===id).length;});
-    const maxC=Math.max(1,...Object.values(connCount));
+    const connCount=connCountRef.current;const maxC=maxConnRef.current;
     for(const id of nodeIds){
       const p=posRef.current[id];if(!p)continue;
       const r=14+(connCount[id]||0)/maxC*16+6;
       if(Math.sqrt((mx-p.x)**2+(my-p.y)**2)<r){setSelectedNode(prev=>prev===id?null:id);return;}
     }
     setSelectedNode(null);
-  },[entities,links]);
+  },[entities]);
 
   const handleCanvasMove=useCallback(e=>{
     const canvas=canvasRef.current;if(!canvas)return;
@@ -1976,17 +2032,19 @@ function LinksPage({notes,geminiKey,onSelectNote}){
     const scaleX=canvas.width/rect.width,scaleY=canvas.height/rect.height;
     const mx=(e.clientX-rect.left)*scaleX,my=(e.clientY-rect.top)*scaleY;
     const nodeIds=Object.keys(entities);
-    const connCount={};nodeIds.forEach(id=>{connCount[id]=(links||[]).filter(l=>l.from===id||l.to===id).length;});
-    const maxC=Math.max(1,...Object.values(connCount));
+    const connCount=connCountRef.current;const maxC=maxConnRef.current;
     let found=null;
     for(const id of nodeIds){
       const p=posRef.current[id];if(!p)continue;
       const r=14+(connCount[id]||0)/maxC*16+6;
       if(Math.sqrt((mx-p.x)**2+(my-p.y)**2)<r){found=id;break;}
     }
-    hoverRef.current=found;
-    canvas.style.cursor=found?"pointer":"default";
-  },[entities,links]);
+    if(hoverRef.current!==found){
+      hoverRef.current=found;
+      canvas.style.cursor=found?"pointer":"default";
+      if(settledRef.current)redrawCanvas();
+    }
+  },[entities,redrawCanvas]);
 
   const nodeIds=Object.keys(entities);
   const selEnt=selectedNode&&entities[selectedNode];
@@ -3262,6 +3320,7 @@ function NotiqApp(){
 });
   const[insightsFolder,setInsightsFolder]=useState("academics"); // which root folder insights are for
   const timerRef=useRef(null);const ytRef=useRef(null);const abortRef=useRef(null);const ytAbortRef=useRef(null);
+  const insightAbortRef=useRef(null);const lastGhostCtx=useRef("");const lastYtQuery=useRef("");
   useEffect(()=>{
     let s=document.getElementById("nt-theme");
     if(!s){s=document.createElement("style");s.id="nt-theme";document.head.appendChild(s);}
@@ -3344,42 +3403,64 @@ function NotiqApp(){
   };
 
   const handleChange=useCallback(html=>{
-    setNotes(p=>({...p,[activeNote]:{...p[activeNote],content:html}}));
+    setNotes(p=>{
+      const cur=p[activeNote];
+      return {...p,[activeNote]:{...cur,content:html}};
+    });
     // Parse sections on content change
     parseSections(activeNote,html);
-    // ── Copilot-style autocomplete: abort previous, debounce 500ms ──
+    const plain=html.replace(/<[^>]+>/g,"");
+    // ── Copilot-style autocomplete: abort previous, debounce 600ms ──
     if(timerRef.current)clearTimeout(timerRef.current);
     timerRef.current=setTimeout(async()=>{
-      const plain=html.replace(/<[^>]+>/g,"");if(plain.length<15)return;
+      if(plain.length<15)return;
+      const pLines=plain.split("\n").filter(l=>l.trim());
+      const ctx=pLines.slice(-10).join("\n");
+      // Skip if context hasn't changed meaningfully (dedup)
+      if(ctx===lastGhostCtx.current)return;
+      lastGhostCtx.current=ctx;
       const localGhost=getGhost(html);
       if(!AI_KEY){if(localGhost)setGhostData(localGhost);return;}
       if(abortRef.current)abortRef.current.abort();
       const ac=new AbortController();abortRef.current=ac;
       setGhostLoading(true);
-      const pLines=plain.split("\n").filter(l=>l.trim());
-      const ctx=pLines.slice(-10).join("\n");
-      const ragCtx=active?.context||"";
-      const r=await geminiComplete(ctx,{title:active?.title||"",context:ragCtx},AI_KEY,ac.signal);
+      // Access latest note state via functional read
+      const curNote=notes[activeNote];
+      const ragCtx=curNote?.context||"";
+      const r=await geminiComplete(ctx,{title:curNote?.title||"",context:ragCtx},AI_KEY,ac.signal);
       if(!ac.signal.aborted){setGhostData(r||localGhost);setGhostLoading(false);}
-    },500);
-    // ── YouTube pipeline ──
+    },600);
+    // ── YouTube pipeline: debounce 2s, skip duplicate queries ──
     if(ytRef.current)clearTimeout(ytRef.current);
     ytRef.current=setTimeout(async()=>{
-      if(!YOUTUBE_KEY)return;const plain=html.replace(/<[^>]+>/g,"");if(plain.length<30)return;
+      if(!YOUTUBE_KEY||plain.length<30)return;
       if(ytAbortRef.current)ytAbortRef.current.abort();
       const ac=new AbortController();ytAbortRef.current=ac;
-      setYtLoading(true);
+      const curNote=notes[activeNote];
+      const ytCtx=curNote?.context?"\n\nNote context: "+curNote.context.slice(0,500):"";
       let q=null;
-      const ytCtx=active?.context?"\n\nNote context: "+active.context.slice(0,500):"";
       if(AI_KEY)q=await geminiExtractTopic(html+ytCtx,AI_KEY,ac.signal);
       if(!q){q=plain.split("\n").filter(l=>l.trim()).slice(-2).join(" ").slice(0,80);}
       if(ac.signal.aborted)return;
-      if(q.length<5){setYtLoading(false);return;}
+      if(q.length<5){return;}
+      // Skip search if query hasn't changed (dedup)
+      if(q===lastYtQuery.current)return;
+      lastYtQuery.current=q;
+      setYtLoading(true);
       const r=await ytSearch(q,YOUTUBE_KEY,4);
       if(!ac.signal.aborted){setYtResults(r);setYtLoading(false);}
-    },1800);
-    if(AI_KEY&&html.replace(/<[^>]+>/g,"").length>100){setTimeout(async()=>{const r=await geminiAnalyze(html,"Most important takeaway? One sentence.",AI_KEY);setAiInsight(r);},3500);}
-  },[activeNote,parseSections]);
+    },2000);
+    // ── AI insight: debounce 3.5s with proper abort ──
+    if(AI_KEY&&plain.length>100){
+      if(insightAbortRef.current)insightAbortRef.current.abort();
+      const iac=new AbortController();insightAbortRef.current=iac;
+      setTimeout(async()=>{
+        if(iac.signal.aborted)return;
+        const r=await geminiAnalyze(html,"Most important takeaway? One sentence.",AI_KEY,iac.signal);
+        if(!iac.signal.aborted)setAiInsight(r);
+      },3500);
+    }
+  },[activeNote,notes,parseSections]);
 
   const acceptGhost=useCallback(()=>{setGhostData(null);},[]);
 
