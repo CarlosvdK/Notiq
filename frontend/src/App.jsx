@@ -685,19 +685,11 @@ const aiCall=async(prompt,key,opts={},signal)=>{
 async function geminiComplete(ctx,meta,key,signal){
   const contextBlock=meta.context?`\nReference context provided by the user:\n${meta.context.slice(0,1500)}\n\nUse the above reference material to make your suggestions more accurate and specific to this subject.\n`:"";
   return aiCall(
-    `You are an intelligent autocomplete engine for a note-taking app, similar to GitHub Copilot. Predict what the user will type next.\n\n`+
-    `Note title: "${meta.title}"\n`+contextBlock+
-    `\nCurrent content (end of note):\n${ctx}\n\n`+
-    `Rules:\n`+
-    `- Output ONLY the continuation text — no explanations, no quotes, no prefixes like "Here's..."\n`+
-    `- Continue from EXACTLY where the text ends, do not repeat any existing text\n`+
-    `- Match the writing style, formatting, and structure already used\n`+
-    `- If using bullet points (- or *), continue the list naturally\n`+
-    `- If using numbered items, continue the numbering\n`+
-    `- Be specific and knowledgeable about the subject matter\n`+
-    `- Suggest 1-4 lines maximum\n`+
-    `- If the last line is incomplete, complete it first then optionally add more`,
-    key,{maxOutputTokens:120,temperature:0.15,stopSequences:["\n\n\n"]},signal
+    `Autocomplete: predict what the user types next. Output ONLY the raw continuation text.\n\n`+
+    `Title: "${meta.title}"\n`+contextBlock+
+    `Content:\n${ctx}\n\n`+
+    `Rules: output continuation only, no quotes/prefixes/explanations. Match style. 1-2 lines max. Be specific.`,
+    key,{maxOutputTokens:60,temperature:0.15,stopSequences:["\n\n\n"]},signal
   );
 }
 
@@ -1801,13 +1793,18 @@ function SummaryPage({notes,folders,geminiKey}){
 // ══════════════════════════════════════════════════════════════
 // SECTION 12A: KNOWLEDGE GRAPH (multi-call LLM entity extraction)
 // ══════════════════════════════════════════════════════════════
-function LinksPage({notes,geminiKey,onSelectNote}){
+function LinksPage({notes,folders,geminiKey,onSelectNote}){
   const[links,setLinks]=useState(null);const[loading,setLoading]=useState(false);
   const[selectedNode,setSelectedNode]=useState(null);const[entities,setEntities]=useState({});
   const[progress,setProgress]=useState("");
-  const[positions,setPositions]=useState({});
   const canvasRef=useRef(null);const animRef=useRef(null);const posRef=useRef({});const velRef=useRef({});
   const analyzedRef=useRef(false);const dragRef=useRef(null);const hoverRef=useRef(null);
+
+  // Folder color mapping for category-based node coloring
+  const FOLDER_COLORS={academics:{color:"#667eea",label:"Academics",icon:"\u{1F393}"},career:{color:"#22c55e",label:"Career & Projects",icon:"\u{1F4BC}"},health:{color:"#f59e0b",label:"Health & Fitness",icon:"\u{1F4AA}"},life:{color:"#e879f9",label:"Life & Planning",icon:"\u{1F30D}"}};
+  const getNoteFolder=useCallback(id=>{
+    for(const f of (folders||[])){if(f.children){for(const sub of f.children){if(sub.notes?.includes(id))return f.id;}}if(f.notes?.includes(id))return f.id;}return null;
+  },[folders]);
 
   const analyze=useCallback(async()=>{
     if(!geminiKey||loading)return;setLoading(true);setLinks(null);setEntities({});setSelectedNode(null);
@@ -1833,23 +1830,166 @@ function LinksPage({notes,geminiKey,onSelectNote}){
     setLinks(linkMap);setLoading(false);setProgress("");
   },[geminiKey,notes,loading]);
 
-  // Auto-analyze on mount
   useEffect(()=>{
     if(!analyzedRef.current&&geminiKey){analyzedRef.current=true;analyze();}
   },[geminiKey,analyze]);
 
-  // Pre-compute connection counts (avoid recalculating in render/mouse handlers)
   const connCountRef=useRef({});const maxConnRef=useRef(1);const nodeColorRef=useRef({});
   const settledRef=useRef(false);const selectedRef=useRef(null);
   selectedRef.current=selectedNode;
 
-  // Force-directed layout simulation — runs once when links/entities change, does NOT restart on selection
+  // Shared draw function used by both the simulation loop and interaction redraws
+  const rRect=(ctx,x,y,w,h,r)=>{if(ctx.roundRect){rRect(ctx,x,y,w,h,r);}else{ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);}};
+  const drawGraph=useCallback((ctx,W,H,pos,connCount,maxConn,nodeColor,curSel,links,nodeIds,notes,frame)=>{
+    ctx.clearRect(0,0,W,H);
+    // Dark background with subtle dot grid
+    ctx.fillStyle="rgba(8,10,18,0.95)";ctx.fillRect(0,0,W,H);
+    ctx.fillStyle="rgba(123,147,245,0.04)";
+    for(let x=0;x<W;x+=30)for(let y=0;y<H;y+=30){ctx.beginPath();ctx.arc(x,y,0.5,0,Math.PI*2);ctx.fill();}
+    // Radial glow at center
+    const bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.55);
+    bg.addColorStop(0,"rgba(102,126,234,0.06)");bg.addColorStop(0.5,"rgba(149,113,205,0.02)");bg.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+    // Draw edges with gradient coloring and glow
+    links.forEach(l=>{
+      const f=pos[l.from],t=pos[l.to];if(!f||!t)return;
+      const isSel=curSel&&(l.from===curSel||l.to===curSel);
+      const isHov=hoverRef.current&&(l.from===hoverRef.current||l.to===hoverRef.current);
+      const active=isSel||isHov;
+      const cFrom=nodeColor[l.from]||"#7b93f5",cTo=nodeColor[l.to]||"#9571cd";
+      // Edge glow for active edges
+      if(active){
+        ctx.beginPath();ctx.moveTo(f.x,f.y);
+        const mx=(f.x+t.x)/2+(f.y-t.y)*0.12,my=(f.y+t.y)/2+(t.x-f.x)*0.12;
+        ctx.quadraticCurveTo(mx,my,t.x,t.y);
+        ctx.strokeStyle=isSel?"rgba(123,147,245,0.2)":"rgba(149,113,205,0.15)";
+        ctx.lineWidth=Math.min(5,l.strength*2)+4;ctx.stroke();
+      }
+      // Main edge with gradient
+      ctx.beginPath();ctx.moveTo(f.x,f.y);
+      const mx=(f.x+t.x)/2+(f.y-t.y)*0.12,my=(f.y+t.y)/2+(t.x-f.x)*0.12;
+      ctx.quadraticCurveTo(mx,my,t.x,t.y);
+      const edgeGrad=ctx.createLinearGradient(f.x,f.y,t.x,t.y);
+      if(active){edgeGrad.addColorStop(0,cFrom+"cc");edgeGrad.addColorStop(1,cTo+"cc");}
+      else{edgeGrad.addColorStop(0,cFrom+"30");edgeGrad.addColorStop(1,cTo+"30");}
+      ctx.strokeStyle=edgeGrad;
+      ctx.lineWidth=active?Math.min(4,l.strength*1.5)+1:Math.min(2.5,l.strength)+0.5;
+      ctx.stroke();
+      // Concept labels on active edges — pill style
+      if(active){
+        const lx=(f.x+t.x)/2,ly=(f.y+t.y)/2-10;
+        const txt=l.concepts.slice(0,2).join(", ");
+        ctx.font="600 9px 'Inter',sans-serif";const tw=ctx.measureText(txt).width;
+        ctx.fillStyle="rgba(15,17,25,0.85)";
+        const px=6,py=3;ctx.beginPath();const rr=8;const bx=lx-tw/2-px,by=ly-7-py,bw=tw+px*2,bh=14+py*2;
+        rRect(ctx,bx,by,bw,bh,rr);ctx.fill();
+        ctx.strokeStyle=isSel?"rgba(123,147,245,0.4)":"rgba(149,113,205,0.3)";ctx.lineWidth=1;ctx.stroke();
+        ctx.fillStyle=isSel?"#a5b4fc":"#c4b5fd";ctx.textAlign="center";ctx.fillText(txt,lx,ly+3);
+      }
+      // Animated particle dots flowing along active edges
+      if(active&&typeof frame==="number"){
+        const speed=0.001;const numDots=l.strength;
+        for(let d=0;d<numDots;d++){
+          const t2=((frame*speed+d/numDots)%1);
+          const px2=(1-t2)*(1-t2)*f.x+2*(1-t2)*t2*mx+t2*t2*t.x;
+          const py2=(1-t2)*(1-t2)*f.y+2*(1-t2)*t2*my+t2*t2*t.y;
+          ctx.beginPath();ctx.arc(px2,py2,2,0,Math.PI*2);
+          ctx.fillStyle=isSel?"rgba(165,180,252,0.8)":"rgba(196,181,253,0.6)";ctx.fill();
+        }
+      }
+    });
+
+    // Draw nodes
+    nodeIds.forEach(id=>{
+      const p=pos[id];const note=notes[id];const isSel=curSel===id;const isHov=hoverRef.current===id;
+      const conns=connCount[id]||0;const baseR=18+conns/maxConn*14;const r=baseR+(isSel?5:isHov?3:0);
+      const color=nodeColor[id];
+      // Outer glow — larger and more visible
+      const glowR=isSel?r*3:isHov?r*2.5:r*1.8;
+      const g=ctx.createRadialGradient(p.x,p.y,r*0.3,p.x,p.y,glowR);
+      g.addColorStop(0,color+(isSel?"35":isHov?"25":"10"));g.addColorStop(1,color+"00");
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,glowR,0,Math.PI*2);ctx.fill();
+      // Node fill — solid gradient
+      const ng=ctx.createRadialGradient(p.x-r*0.25,p.y-r*0.25,0,p.x,p.y,r);
+      ng.addColorStop(0,color+(isSel?"e0":"a0"));ng.addColorStop(1,color+(isSel?"90":"50"));
+      ctx.fillStyle=ng;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
+      // Border
+      ctx.strokeStyle=isSel?"#ffffff90":color+"80";ctx.lineWidth=isSel?2.5:isHov?2:1.5;ctx.stroke();
+      // Inner highlight
+      const hl=ctx.createRadialGradient(p.x-r*0.3,p.y-r*0.35,0,p.x,p.y,r);
+      hl.addColorStop(0,"rgba(255,255,255,0.15)");hl.addColorStop(0.5,"rgba(255,255,255,0)");
+      ctx.fillStyle=hl;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
+      // Label with background
+      const label=(note?.title||"").length>18?(note?.title||"").slice(0,16)+"\u2026":(note?.title||"");
+      ctx.font=`${isSel?'700':'600'} ${isSel?12:11}px 'Inter',sans-serif`;
+      const tw=ctx.measureText(label).width;
+      ctx.fillStyle="rgba(8,10,18,0.75)";
+      ctx.beginPath();rRect(ctx,p.x-tw/2-6,p.y+r+6,tw+12,18,6);ctx.fill();
+      ctx.fillStyle=isSel?"#f1f5f9":isHov?"#e2e8f0":"#94a3b8";ctx.textAlign="center";
+      ctx.fillText(label,p.x,p.y+r+19);
+      // Connection count badge
+      if(conns>0){
+        const bx=p.x+r*0.65,by=p.y-r*0.65;
+        ctx.fillStyle=color;ctx.beginPath();ctx.arc(bx,by,9,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle="#fff";ctx.font="700 9px 'Inter',sans-serif";ctx.textAlign="center";
+        ctx.fillText(conns,bx,by+3);
+      }
+    });
+
+    // HUD overlay — top-left legend
+    const categories=[];const seen=new Set();
+    nodeIds.forEach(id=>{const fid=getNoteFolder(id);if(fid&&!seen.has(fid)){seen.add(fid);categories.push(fid);}});
+    if(categories.length>0){
+      const hudX=14,hudY=14;
+      ctx.fillStyle="rgba(8,10,18,0.8)";ctx.beginPath();rRect(ctx,hudX,hudY,140,categories.length*22+32,10);ctx.fill();
+      ctx.strokeStyle="rgba(123,147,245,0.15)";ctx.lineWidth=1;ctx.stroke();
+      ctx.fillStyle="#94a3b8";ctx.font="700 9px 'Inter',sans-serif";ctx.textAlign="left";
+      ctx.fillText("CATEGORIES",hudX+10,hudY+18);
+      categories.forEach((fid,i)=>{
+        const fc=FOLDER_COLORS[fid]||{color:"#7b93f5",label:fid,icon:"\u{1F4C4}"};
+        const y=hudY+34+i*22;
+        ctx.fillStyle=fc.color;ctx.beginPath();ctx.arc(hudX+18,y,5,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle="#c0cad8";ctx.font="600 10px 'Inter',sans-serif";
+        ctx.fillText(fc.label,hudX+30,y+4);
+      });
+    }
+
+    // HUD — bottom-right stats
+    const totalConcepts=[...new Set(links.flatMap(l=>l.concepts))].length;
+    const strongestLink=links.reduce((m,l)=>l.strength>m.strength?l:m,{strength:0});
+    const mostConnected=nodeIds.reduce((best,id)=>(connCount[id]||0)>(connCount[best]||0)?id:best,nodeIds[0]);
+    const statsX=W-200,statsY=H-110;
+    ctx.fillStyle="rgba(8,10,18,0.8)";ctx.beginPath();rRect(ctx,statsX,statsY,186,98,10);ctx.fill();
+    ctx.strokeStyle="rgba(123,147,245,0.15)";ctx.lineWidth=1;ctx.stroke();
+    ctx.fillStyle="#94a3b8";ctx.font="700 9px 'Inter',sans-serif";ctx.textAlign="left";
+    ctx.fillText("GRAPH INSIGHTS",statsX+10,statsY+16);
+    ctx.font="600 10px 'Inter',sans-serif";
+    ctx.fillStyle="#667eea";ctx.fillText("\u{1F517}",statsX+10,statsY+34);
+    ctx.fillStyle="#c0cad8";ctx.fillText(`${totalConcepts} shared concepts`,statsX+28,statsY+34);
+    ctx.fillStyle="#22c55e";ctx.fillText("\u{2B50}",statsX+10,statsY+52);
+    ctx.fillStyle="#c0cad8";
+    const hubName=(notes[mostConnected]?.title||"").slice(0,18);
+    ctx.fillText(`Hub: ${hubName}`,statsX+28,statsY+52);
+    ctx.fillStyle="#f59e0b";ctx.fillText("\u{1F50D}",statsX+10,statsY+70);
+    ctx.fillStyle="#c0cad8";
+    if(strongestLink.strength>0){
+      const sn1=(notes[strongestLink.from]?.title||"").slice(0,8);
+      const sn2=(notes[strongestLink.to]?.title||"").slice(0,8);
+      ctx.fillText(`Strongest: ${sn1}\u2194${sn2}`,statsX+28,statsY+70);
+    }
+    ctx.fillStyle="#e879f9";ctx.fillText("\u{1F4CA}",statsX+10,statsY+88);
+    ctx.fillStyle="#c0cad8";
+    const density=nodeIds.length>1?Math.round(links.length/(nodeIds.length*(nodeIds.length-1)/2)*100):0;
+    ctx.fillText(`Density: ${density}%`,statsX+28,statsY+88);
+  },[getNoteFolder]);
+
+  // Force-directed layout simulation
   useEffect(()=>{
     if(!links||!canvasRef.current)return;
     const nodeIds=Object.keys(entities);if(nodeIds.length===0)return;
     const canvas=canvasRef.current;const ctx=canvas.getContext("2d");
     const W=canvas.width,H=canvas.height;
-    // Initialize positions
     const pos={};const vel={};
     nodeIds.forEach((id,i)=>{
       const angle=(2*Math.PI*i)/nodeIds.length;
@@ -1862,8 +2002,11 @@ function LinksPage({notes,geminiKey,onSelectNote}){
     const maxConn=Math.max(1,...Object.values(connCount));
     connCountRef.current=connCount;maxConnRef.current=maxConn;
 
-    const colors=["#7b93f5","#9571cd","#f59b7b","#71cda5","#cd71b8","#71b8cd","#cdc171","#f57b93"];
-    const nodeColor={};nodeIds.forEach((id,i)=>nodeColor[id]=colors[i%colors.length]);
+    // Color nodes by folder category
+    const nodeColor={};nodeIds.forEach(id=>{
+      const fid=getNoteFolder(id);const fc=FOLDER_COLORS[fid];
+      nodeColor[id]=fc?fc.color:"#7b93f5";
+    });
     nodeColorRef.current=nodeColor;
 
     let frame=0;
@@ -1871,146 +2014,68 @@ function LinksPage({notes,geminiKey,onSelectNote}){
       frame++;
       const cooling=Math.max(0.01,1-frame/300);
       const simulating=frame<350;
-      // Only run physics while not settled
       if(simulating){
         nodeIds.forEach(id=>{vel[id]={x:0,y:0};});
-        // Repulsion between all nodes
         for(let i=0;i<nodeIds.length;i++){
           for(let j=i+1;j<nodeIds.length;j++){
             const a=nodeIds[i],b=nodeIds[j];
             let dx=pos[b].x-pos[a].x,dy=pos[b].y-pos[a].y;
             const dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
-            const force=800/(dist*dist);
+            const force=1200/(dist*dist);
             const fx=dx/dist*force,fy=dy/dist*force;
             vel[a].x-=fx;vel[a].y-=fy;vel[b].x+=fx;vel[b].y+=fy;
           }
         }
-        // Attraction along edges
         links.forEach(l=>{
           const dx=pos[l.to].x-pos[l.from].x,dy=pos[l.to].y-pos[l.from].y;
           const dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
-          const force=(dist-150)*0.005*l.strength;
+          const force=(dist-180)*0.004*l.strength;
           const fx=dx/dist*force,fy=dy/dist*force;
           vel[l.from].x+=fx;vel[l.from].y+=fy;vel[l.to].x-=fx;vel[l.to].y-=fy;
         });
-        // Center gravity
+        // Same-folder attraction (cluster by category)
+        for(let i=0;i<nodeIds.length;i++){
+          for(let j=i+1;j<nodeIds.length;j++){
+            const a=nodeIds[i],b=nodeIds[j];
+            if(getNoteFolder(a)===getNoteFolder(b)){
+              const dx=pos[b].x-pos[a].x,dy=pos[b].y-pos[a].y;
+              const dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
+              const force=(dist-100)*0.001;
+              vel[a].x+=dx/dist*force;vel[a].y+=dy/dist*force;
+              vel[b].x-=dx/dist*force;vel[b].y-=dy/dist*force;
+            }
+          }
+        }
         nodeIds.forEach(id=>{
           vel[id].x+=(W/2-pos[id].x)*0.002;
           vel[id].y+=(H/2-pos[id].y)*0.002;
         });
-        // Apply velocities
         nodeIds.forEach(id=>{
           if(dragRef.current===id)return;
           pos[id].x+=vel[id].x*cooling;pos[id].y+=vel[id].y*cooling;
-          pos[id].x=Math.max(40,Math.min(W-40,pos[id].x));
-          pos[id].y=Math.max(40,Math.min(H-40,pos[id].y));
+          pos[id].x=Math.max(50,Math.min(W-50,pos[id].x));
+          pos[id].y=Math.max(50,Math.min(H-50,pos[id].y));
         });
       }
-      // Read selectedNode from ref to avoid re-creating the effect
       const curSel=selectedRef.current;
-      // Draw
-      ctx.clearRect(0,0,W,H);
-      // Glow effect background
-      const grad=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.5);
-      grad.addColorStop(0,"rgba(123,147,245,0.03)");grad.addColorStop(1,"rgba(0,0,0,0)");
-      ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
-      // Draw edges
-      links.forEach(l=>{
-        const f=pos[l.from],t=pos[l.to];if(!f||!t)return;
-        const isSel=curSel&&(l.from===curSel||l.to===curSel);
-        const isHov=hoverRef.current&&(l.from===hoverRef.current||l.to===hoverRef.current);
-        ctx.beginPath();ctx.moveTo(f.x,f.y);
-        // Curved edges
-        const mx=(f.x+t.x)/2+(f.y-t.y)*0.1,my=(f.y+t.y)/2+(t.x-f.x)*0.1;
-        ctx.quadraticCurveTo(mx,my,t.x,t.y);
-        ctx.strokeStyle=isSel?"rgba(123,147,245,0.6)":isHov?"rgba(149,113,205,0.4)":"rgba(123,147,245,0.12)";
-        ctx.lineWidth=Math.min(3,l.strength)+(isSel||isHov?1.5:0);
-        ctx.stroke();
-        // Show concept label on selected/hovered edges
-        if(isSel||isHov){
-          ctx.fillStyle="rgba(149,113,205,0.8)";ctx.font="600 9px Inter,sans-serif";ctx.textAlign="center";
-          ctx.fillText(l.concepts[0],(f.x+t.x)/2,(f.y+t.y)/2-8);
-        }
-      });
-      // Draw nodes
-      nodeIds.forEach(id=>{
-        const p=pos[id];const note=notes[id];const isSel=curSel===id;const isHov=hoverRef.current===id;
-        const conns=connCount[id]||0;const r=14+conns/maxConn*16+(isSel?4:isHov?2:0);
-        const color=nodeColor[id];
-        // Outer glow
-        if(isSel||isHov){
-          const g=ctx.createRadialGradient(p.x,p.y,r*0.5,p.x,p.y,r*2.5);
-          g.addColorStop(0,color+"40");g.addColorStop(1,color+"00");
-          ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,r*2.5,0,Math.PI*2);ctx.fill();
-        }
-        // Node circle with gradient
-        const ng=ctx.createRadialGradient(p.x-r*0.3,p.y-r*0.3,0,p.x,p.y,r);
-        ng.addColorStop(0,color+"50");ng.addColorStop(1,color+"20");
-        ctx.fillStyle=ng;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
-        ctx.strokeStyle=isSel?color:color+"60";ctx.lineWidth=isSel?2.5:1;ctx.stroke();
-        // Label
-        ctx.fillStyle=isSel?"#f1f5f9":"#c0cad8";ctx.font=`${isSel?'700':'600'} ${isSel?11:10}px Inter,sans-serif`;ctx.textAlign="center";
-        const label=(note?.title||"").length>16?(note?.title||"").slice(0,14)+"\u2026":(note?.title||"");
-        ctx.fillText(label,p.x,p.y+r+14);
-        // Connection count badge
-        if(conns>0){
-          ctx.fillStyle=color+"90";ctx.beginPath();ctx.arc(p.x+r*0.7,p.y-r*0.7,7,0,Math.PI*2);ctx.fill();
-          ctx.fillStyle="#fff";ctx.font="700 8px Inter,sans-serif";ctx.fillText(conns,p.x+r*0.7,p.y-r*0.7+3);
-        }
-      });
+      drawGraph(ctx,W,H,pos,connCount,maxConn,nodeColor,curSel,links,nodeIds,notes,frame);
       posRef.current=pos;
-      // Keep animating during simulation; after settled, only redraw on interaction
-      if(simulating){
-        animRef.current=requestAnimationFrame(draw);
-      }else{
-        settledRef.current=true;
-      }
+      if(simulating){animRef.current=requestAnimationFrame(draw);}
+      else{settledRef.current=true;}
     };
     animRef.current=requestAnimationFrame(draw);
     return()=>{if(animRef.current)cancelAnimationFrame(animRef.current);};
-  },[links,entities,notes]);
+  },[links,entities,notes,drawGraph,getNoteFolder]);
 
-  // Redraw canvas on selection/hover changes without restarting physics
+  // Redraw on selection/hover without restarting physics
   const redrawCanvas=useCallback(()=>{
     if(!links||!canvasRef.current||!settledRef.current)return;
     const nodeIds=Object.keys(entities);if(nodeIds.length===0)return;
     const canvas=canvasRef.current;const ctx=canvas.getContext("2d");
-    const W=canvas.width,H=canvas.height;const pos=posRef.current;
-    const connCount=connCountRef.current;const maxConn=maxConnRef.current;const nodeColor=nodeColorRef.current;
-    const curSel=selectedNode;
-    ctx.clearRect(0,0,W,H);
-    const grad=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.5);
-    grad.addColorStop(0,"rgba(123,147,245,0.03)");grad.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
-    links.forEach(l=>{
-      const f=pos[l.from],t=pos[l.to];if(!f||!t)return;
-      const isSel=curSel&&(l.from===curSel||l.to===curSel);
-      const isHov=hoverRef.current&&(l.from===hoverRef.current||l.to===hoverRef.current);
-      ctx.beginPath();ctx.moveTo(f.x,f.y);
-      const mx=(f.x+t.x)/2+(f.y-t.y)*0.1,my=(f.y+t.y)/2+(t.x-f.x)*0.1;
-      ctx.quadraticCurveTo(mx,my,t.x,t.y);
-      ctx.strokeStyle=isSel?"rgba(123,147,245,0.6)":isHov?"rgba(149,113,205,0.4)":"rgba(123,147,245,0.12)";
-      ctx.lineWidth=Math.min(3,l.strength)+(isSel||isHov?1.5:0);
-      ctx.stroke();
-      if(isSel||isHov){ctx.fillStyle="rgba(149,113,205,0.8)";ctx.font="600 9px Inter,sans-serif";ctx.textAlign="center";ctx.fillText(l.concepts[0],(f.x+t.x)/2,(f.y+t.y)/2-8);}
-    });
-    nodeIds.forEach(id=>{
-      const p=pos[id];const note=notes[id];const isSel=curSel===id;const isHov=hoverRef.current===id;
-      const conns=connCount[id]||0;const r=14+conns/maxConn*16+(isSel?4:isHov?2:0);
-      const color=nodeColor[id];
-      if(isSel||isHov){const g=ctx.createRadialGradient(p.x,p.y,r*0.5,p.x,p.y,r*2.5);g.addColorStop(0,color+"40");g.addColorStop(1,color+"00");ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,r*2.5,0,Math.PI*2);ctx.fill();}
-      const ng=ctx.createRadialGradient(p.x-r*0.3,p.y-r*0.3,0,p.x,p.y,r);ng.addColorStop(0,color+"50");ng.addColorStop(1,color+"20");
-      ctx.fillStyle=ng;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle=isSel?color:color+"60";ctx.lineWidth=isSel?2.5:1;ctx.stroke();
-      ctx.fillStyle=isSel?"#f1f5f9":"#c0cad8";ctx.font=`${isSel?'700':'600'} ${isSel?11:10}px Inter,sans-serif`;ctx.textAlign="center";
-      const label=(note?.title||"").length>16?(note?.title||"").slice(0,14)+"\u2026":(note?.title||"");
-      ctx.fillText(label,p.x,p.y+r+14);
-      if(conns>0){ctx.fillStyle=color+"90";ctx.beginPath();ctx.arc(p.x+r*0.7,p.y-r*0.7,7,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.font="700 8px Inter,sans-serif";ctx.fillText(conns,p.x+r*0.7,p.y-r*0.7+3);}
-    });
-  },[links,entities,selectedNode,notes]);
+    drawGraph(ctx,canvas.width,canvas.height,posRef.current,connCountRef.current,maxConnRef.current,nodeColorRef.current,selectedNode,links,nodeIds,notes,null);
+  },[links,entities,selectedNode,notes,drawGraph]);
   useEffect(()=>{if(settledRef.current)redrawCanvas();},[selectedNode,redrawCanvas]);
 
-  // Canvas mouse interaction — uses cached connCount from refs
   const handleCanvasClick=useCallback(e=>{
     const canvas=canvasRef.current;if(!canvas)return;
     const rect=canvas.getBoundingClientRect();
@@ -2020,7 +2085,7 @@ function LinksPage({notes,geminiKey,onSelectNote}){
     const connCount=connCountRef.current;const maxC=maxConnRef.current;
     for(const id of nodeIds){
       const p=posRef.current[id];if(!p)continue;
-      const r=14+(connCount[id]||0)/maxC*16+6;
+      const r=18+(connCount[id]||0)/maxC*14+8;
       if(Math.sqrt((mx-p.x)**2+(my-p.y)**2)<r){setSelectedNode(prev=>prev===id?null:id);return;}
     }
     setSelectedNode(null);
@@ -2036,7 +2101,7 @@ function LinksPage({notes,geminiKey,onSelectNote}){
     let found=null;
     for(const id of nodeIds){
       const p=posRef.current[id];if(!p)continue;
-      const r=14+(connCount[id]||0)/maxC*16+6;
+      const r=18+(connCount[id]||0)/maxC*14+8;
       if(Math.sqrt((mx-p.x)**2+(my-p.y)**2)<r){found=id;break;}
     }
     if(hoverRef.current!==found){
@@ -2050,6 +2115,8 @@ function LinksPage({notes,geminiKey,onSelectNote}){
   const selEnt=selectedNode&&entities[selectedNode];
   const selNote=selectedNode&&notes[selectedNode];
   const selLinks=links?.filter(l=>l.from===selectedNode||l.to===selectedNode)||[];
+  const selFolder=selectedNode?getNoteFolder(selectedNode):null;
+  const selFolderColor=selFolder&&FOLDER_COLORS[selFolder]?FOLDER_COLORS[selFolder].color:"#7b93f5";
 
   return(<div style={{padding:"28px 36px",overflowY:"auto",flex:1}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
@@ -2072,25 +2139,33 @@ function LinksPage({notes,geminiKey,onSelectNote}){
       </div>
       <div style={{display:"flex",gap:14}}>
         <div style={{...S.glass,padding:0,overflow:"hidden",flex:2,borderRadius:20,position:"relative"}}>
-          <canvas ref={canvasRef} width={800} height={600} onClick={handleCanvasClick} onMouseMove={handleCanvasMove}
-            style={{width:"100%",height:500,display:"block",background:"rgba(0,0,0,0.15)",borderRadius:20}}/>
+          <canvas ref={canvasRef} width={1000} height={700} onClick={handleCanvasClick} onMouseMove={handleCanvasMove}
+            style={{width:"100%",height:540,display:"block",borderRadius:20}}/>
         </div>
-        <div style={{flex:1,minWidth:220}}>
-          {selEnt&&selNote?(<div style={{...S.glassAccent,padding:16,borderRadius:16}}>
-            <div style={{fontSize:15,fontWeight:700,color:"var(--t-txt)",marginBottom:4}}>{selNote.title}</div>
+        <div style={{flex:1,minWidth:240}}>
+          {selEnt&&selNote?(<div style={{...S.glassAccent,padding:16,borderRadius:16,borderLeft:`3px solid ${selFolderColor}`}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+              <span style={{fontSize:16}}>{FOLDER_COLORS[selFolder]?.icon||"\u{1F4C4}"}</span>
+              <div><div style={{fontSize:15,fontWeight:700,color:"var(--t-txt)"}}>{selNote.title}</div>
+              <div style={{fontSize:10,color:selFolderColor,fontWeight:600}}>{FOLDER_COLORS[selFolder]?.label||"Notes"}</div></div>
+            </div>
             <div style={{fontSize:11,color:"var(--t-txt2)",margin:"8px 0 10px",lineHeight:1.5}}>{selEnt.summary}</div>
             <div style={S.sh2}>Concepts</div>
             <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:12}}>
-              {selEnt.concepts.map((c,i)=><span key={i} style={{padding:"3px 10px",borderRadius:20,fontSize:11,background:"rgba(123,147,245,0.1)",color:"var(--t-a1)",border:"1px solid rgba(123,147,245,0.2)"}}>{c}</span>)}
+              {selEnt.concepts.map((c,i)=><span key={i} style={{padding:"3px 10px",borderRadius:20,fontSize:11,background:selFolderColor+"18",color:selFolderColor,border:`1px solid ${selFolderColor}30`}}>{c}</span>)}
             </div>
-            {selLinks.length>0&&<><div style={S.sh2}>Connected To</div>
-              {selLinks.map((l,i)=>{const oid=l.from===selectedNode?l.to:l.from;return(
-                <div key={i} onClick={()=>setSelectedNode(oid)} style={{padding:"8px 10px",marginBottom:4,cursor:"pointer",fontSize:12,borderRadius:10,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",transition:"background 0.15s"}}>
-                  <span style={{fontWeight:600,color:"var(--t-txt)"}}>{notes[oid]?.title}</span>
-                  <div style={{fontSize:10,color:"var(--t-txt2)",marginTop:2}}>via <span style={{color:"var(--t-a2)"}}>{l.concepts.join(", ")}</span></div>
+            {selLinks.length>0&&<><div style={S.sh2}>Connected To ({selLinks.length})</div>
+              {selLinks.map((l,i)=>{const oid=l.from===selectedNode?l.to:l.from;const ofid=getNoteFolder(oid);const ofc=FOLDER_COLORS[ofid];return(
+                <div key={i} onClick={()=>setSelectedNode(oid)} style={{padding:"8px 10px",marginBottom:4,cursor:"pointer",fontSize:12,borderRadius:10,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",transition:"background 0.15s",borderLeft:`2px solid ${ofc?.color||"#7b93f5"}`}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:12}}>{ofc?.icon||"\u{1F4C4}"}</span><span style={{fontWeight:600,color:"var(--t-txt)"}}>{notes[oid]?.title}</span></div>
+                  <div style={{fontSize:10,color:"var(--t-txt2)",marginTop:2,paddingLeft:22}}>via <span style={{color:"var(--t-a2)"}}>{l.concepts.join(", ")}</span> <span style={{color:"var(--t-txt3)"}}>({l.strength} shared)</span></div>
                 </div>);})}</>}
-            <button className="grad-btn" onClick={()=>{onSelectNote(selectedNode);}} style={{marginTop:10,padding:"7px 14px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",width:"100%"}}>Open Note</button>
-          </div>):(<div style={{...S.glass,padding:16,textAlign:"center",color:"var(--t-txt2)",fontSize:12,borderRadius:16}}>Click a node to see its concepts and connections</div>)}
+            <button className="grad-btn" onClick={()=>{onSelectNote(selectedNode);}} style={{marginTop:10,padding:"7px 14px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${selFolderColor},${selFolderColor}cc)`,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",width:"100%"}}>Open Note</button>
+          </div>):(<div style={{...S.glass,padding:20,textAlign:"center",color:"var(--t-txt2)",fontSize:12,borderRadius:16}}>
+            <div style={{fontSize:28,marginBottom:8,opacity:0.5}}>{"\u{1F578}\uFE0F"}</div>
+            <div style={{fontWeight:600,marginBottom:4}}>Select a node</div>
+            <div>Click any node to explore its concepts and connections</div>
+          </div>)}
         </div>
       </div>
       {links.length===0&&<div style={{...S.glass,padding:14,textAlign:"center",color:"var(--t-txt2)",fontSize:13,marginTop:12}}>No connections found. Add more detailed content to discover links between notes.</div>}
@@ -3289,8 +3364,8 @@ export default function App(){
 
 function NotiqApp(){
   const[folders,setFolders]=useState(INIT_FOLDERS);const[notes,setNotes]=useState(INIT_NOTES);
-  const[activeNote,setActiveNote]=useState("n1");const[activeFolder,setActiveFolder]=useState("academics");
-  const[activeSubfolder,setActiveSubfolder]=useState("ml_2026");
+  const[activeNote,setActiveNote]=useState("twd1");const[activeFolder,setActiveFolder]=useState("academics");
+  const[activeSubfolder,setActiveSubfolder]=useState("twd_2026");
   const[viewMode,setViewMode]=useState(null); // null=note, "parent:id", "folder:id", "subfolder:id"
   const[page,setPage]=useState("notes");const[showAI,setShowAI]=useState(true);const[showFiles,setShowFiles]=useState(false);
   const[ghostData,setGhostData]=useState(null);const[ghostLoading,setGhostLoading]=useState(false);
@@ -3303,20 +3378,53 @@ function NotiqApp(){
   const[showInsightsPanel,setShowInsightsPanel]=useState(false);
   // Topic sections & confidence scores
   const[topicSections,setTopicSections]=useState({
-  n1:[{title:"Supervised Learning Overview",index:0},{title:"Regression vs Classification",index:1},{title:"Linear Regression",index:2},{title:"Logistic Regression",index:3},{title:"Decision Trees & Random Forests",index:4},{title:"Support Vector Machines",index:5},{title:"Evaluation Metrics",index:6}],
-  n2:[{title:"Neural Networks Fundamentals",index:0},{title:"Activation Functions",index:1},{title:"Backpropagation & Gradient Descent",index:2},{title:"Convolutional Neural Networks (CNNs)",index:3},{title:"Famous CNN Architectures",index:4},{title:"Practical Tips",index:5}],
-  n3:[{title:"NLP — From Bag of Words to Transformers",index:0},{title:"Classical NLP Pipeline",index:1},{title:"Word Embeddings",index:2},{title:"The Transformer Architecture",index:3},{title:"Self-Attention Mechanism",index:4},{title:"LLMs: GPT, BERT, and Beyond",index:5}],
-  n4:[{title:"Valuation — Core Methods",index:0},{title:"Discounted Cash Flow (DCF)",index:1},{title:"WACC — Weighted Average Cost of Capital",index:2},{title:"NPV and IRR",index:3},{title:"Comparable Company Analysis (Comps)",index:4},{title:"Modigliani-Miller Theorem",index:5}],
-  n5:[{title:"Quantum Computing — Beyond Classical Bits",index:0}],
-  n6:[{title:"Ethics in Data Science and AI",index:0}],
+  twd1:[{title:"Course Overview",index:0},{title:"A/B Testing Introduction",index:1},{title:"The T-Test",index:2},{title:"Track Record Analogy \u2014 Intuition for P and CI",index:3},{title:"Linking P and CI",index:4},{title:"From P and CI to Decisions",index:5},{title:"Four Common Errors with P-Values",index:6},{title:"Final Summary",index:7}],
+  n7:[{title:"RestaurantIQ \u2014 Analytics for Independent Restaurants",index:0},{title:"Problem Statement",index:1},{title:"Proposed Solution",index:2},{title:"Market Analysis",index:3},{title:"Technical Architecture",index:4},{title:"Go-to-Market",index:5}],
+  n8:[{title:"MVP Technical Stack & Architecture",index:0},{title:"Frontend",index:1},{title:"Backend",index:2},{title:"ML Pipeline",index:3},{title:"Infrastructure",index:4},{title:"POS Integration",index:5},{title:"Budget & Timeline",index:6}],
+  n9:[{title:"Data Science Interview Preparation",index:0},{title:"Statistics & Probability",index:1},{title:"Machine Learning Theory",index:2},{title:"Coding (Python)",index:3},{title:"Case Studies",index:4},{title:"Behavioural",index:5}],
+  n10:[{title:"Building a Portfolio \u2014 Stand Out in Applications",index:0},{title:"Site Structure",index:1},{title:"Tech Stack for the Site",index:2},{title:"Content Strategy",index:3},{title:"LinkedIn Optimisation",index:4}],
+  n11:[{title:"Push/Pull/Legs Training Split",index:0},{title:"Push Day (Chest, Shoulders, Triceps)",index:1},{title:"Pull Day (Back, Biceps, Rear Delts)",index:2},{title:"Leg Day (Quads, Hamstrings, Glutes, Calves)",index:3},{title:"Progressive Overload Protocol",index:4}],
+  n12:[{title:"Lean Bulk \u2014 Nutrition Strategy",index:0},{title:"Calorie Targets",index:1},{title:"Macronutrient Split",index:2},{title:"Meal Plan",index:3},{title:"Supplements",index:4},{title:"Tracking & Adjustments",index:5}],
+  n13:[{title:"Sleep \u2014 The Most Underrated Performance Lever",index:0},{title:"Sleep Architecture",index:1},{title:"Optimising Sleep Quality",index:2},{title:"Recovery Beyond Sleep",index:3}],
+  n14:[{title:"Sunday Meal Prep \u2014 Week of Feb 24",index:0},{title:"Shopping List",index:1},{title:"Prep Plan (2.5 hours)",index:2},{title:"Daily Schedule",index:3}],
+  n15:[{title:"February 2026 \u2014 Monthly Budget",index:0},{title:"Fixed Expenses",index:1},{title:"Variable Expenses",index:2},{title:"Monthly Summary",index:3},{title:"Investment Note",index:4}],
+  n16:[{title:"Barcelona Living Guide \u2014 A Local\u2019s Notes",index:0},{title:"Coffee & Study Spots",index:1},{title:"Food \u2014 Budget Eats",index:2},{title:"Weekend Activities",index:3},{title:"Day Trips",index:4}],
+  n17:[{title:"How I Stay Organised \u2014 Productivity Stack",index:0},{title:"Weekly Planning (Sunday, 30 min)",index:1},{title:"Daily Routine",index:2},{title:"Study Method \u2014 Active Recall & Spaced Repetition",index:3}],
+  n18:[{title:"Mom\u2019s Barcelona Visit \u2014 March 12-16",index:0},{title:"Logistics",index:1},{title:"Day 1 \u2014 Thursday: Arrival + Gothic Quarter",index:2},{title:"Day 2 \u2014 Friday: Gaud\u00ed Day",index:3},{title:"Day 3 \u2014 Saturday: Culture + Beach",index:4},{title:"Day 4 \u2014 Sunday: Relaxed Day + Departure",index:5}],
+  n19:[{title:"What I\u2019ve Learned \u2014 5 Months into the MBA",index:0},{title:"Academic Takeaways",index:1},{title:"Personal Growth",index:2},{title:"What I\u2019d Do Differently",index:3},{title:"Focus for Semester 2",index:4}],
+  n20:[{title:"AI Tools in My Daily Workflow",index:0},{title:"Code & Development",index:1},{title:"Writing & Research",index:2},{title:"Productivity",index:3},{title:"The Meta-Lesson",index:4}],
 });
   const[confidence,setConfidence]=useState({
-  "n1:0":8,"n1:1":7,"n1:2":9,"n1:3":6,"n1:4":8,"n1:5":4,"n1:6":7,
-  "n2:0":7,"n2:1":8,"n2:2":5,"n2:3":9,"n2:4":6,"n2:5":7,
-  "n3:0":6,"n3:1":5,"n3:2":7,"n3:3":9,"n3:4":4,"n3:5":8,
-  "n4:0":7,"n4:1":5,"n4:2":3,"n4:3":6,"n4:4":8,"n4:5":4,
-  "n5:0":3,
-  "n6:0":6,
+  // twd1 — Statistics class (8 sections)
+  "twd1:0":8,"twd1:1":7,"twd1:2":9,"twd1:3":6,"twd1:4":8,"twd1:5":7,"twd1:6":5,"twd1:7":9,
+  // n7 — RestaurantIQ startup (6 sections)
+  "n7:0":9,"n7:1":8,"n7:2":7,"n7:3":6,"n7:4":5,"n7:5":4,
+  // n8 — SaaS MVP (7 sections)
+  "n8:0":7,"n8:1":8,"n8:2":7,"n8:3":6,"n8:4":5,"n8:5":4,"n8:6":6,
+  // n9 — Interview Prep (6 sections)
+  "n9:0":6,"n9:1":7,"n9:2":8,"n9:3":9,"n9:4":5,"n9:5":6,
+  // n10 — Portfolio (5 sections)
+  "n10:0":7,"n10:1":8,"n10:2":9,"n10:3":6,"n10:4":5,
+  // n11 — PPL Training (5 sections)
+  "n11:0":9,"n11:1":8,"n11:2":8,"n11:3":7,"n11:4":9,
+  // n12 — Nutrition (6 sections)
+  "n12:0":7,"n12:1":8,"n12:2":7,"n12:3":6,"n12:4":5,"n12:5":6,
+  // n13 — Sleep (4 sections)
+  "n13:0":8,"n13:1":6,"n13:2":7,"n13:3":5,
+  // n14 — Meal Prep (4 sections)
+  "n14:0":9,"n14:1":8,"n14:2":7,"n14:3":8,
+  // n15 — Budget (5 sections)
+  "n15:0":7,"n15:1":9,"n15:2":6,"n15:3":8,"n15:4":4,
+  // n16 — Barcelona (5 sections)
+  "n16:0":9,"n16:1":8,"n16:2":9,"n16:3":7,"n16:4":6,
+  // n17 — Productivity (4 sections)
+  "n17:0":8,"n17:1":7,"n17:2":8,"n17:3":6,
+  // n18 — Mom's Visit (6 sections)
+  "n18:0":9,"n18:1":8,"n18:2":7,"n18:3":7,"n18:4":6,"n18:5":8,
+  // n19 — Reflections (5 sections)
+  "n19:0":7,"n19:1":8,"n19:2":6,"n19:3":5,"n19:4":7,
+  // n20 — AI Tools (5 sections)
+  "n20:0":8,"n20:1":9,"n20:2":7,"n20:3":8,"n20:4":7,
 });
   const[insightsFolder,setInsightsFolder]=useState("academics"); // which root folder insights are for
   const timerRef=useRef(null);const ytRef=useRef(null);const abortRef=useRef(null);const ytAbortRef=useRef(null);
@@ -3410,12 +3518,12 @@ function NotiqApp(){
     // Parse sections on content change
     parseSections(activeNote,html);
     const plain=html.replace(/<[^>]+>/g,"");
-    // ── Copilot-style autocomplete: abort previous, debounce 600ms ──
+    // ── Copilot-style autocomplete: abort previous, debounce 350ms ──
     if(timerRef.current)clearTimeout(timerRef.current);
     timerRef.current=setTimeout(async()=>{
       if(plain.length<15)return;
       const pLines=plain.split("\n").filter(l=>l.trim());
-      const ctx=pLines.slice(-10).join("\n");
+      const ctx=pLines.slice(-6).join("\n");
       // Skip if context hasn't changed meaningfully (dedup)
       if(ctx===lastGhostCtx.current)return;
       lastGhostCtx.current=ctx;
@@ -3429,7 +3537,7 @@ function NotiqApp(){
       const ragCtx=curNote?.context||"";
       const r=await geminiComplete(ctx,{title:curNote?.title||"",context:ragCtx},AI_KEY,ac.signal);
       if(!ac.signal.aborted){setGhostData(r||localGhost);setGhostLoading(false);}
-    },600);
+    },350);
     // ── YouTube pipeline: debounce 2s, skip duplicate queries ──
     if(ytRef.current)clearTimeout(ytRef.current);
     ytRef.current=setTimeout(async()=>{
@@ -3581,7 +3689,7 @@ function NotiqApp(){
       </div></div>}
       {page==="insights"&&<InsightsPage notes={notes} folders={folders} knowledge={knowledge} onAddTopic={addTopic} geminiKey={AI_KEY} topicSections={topicSections} confidence={confidence} insightsFolder={insightsFolder} setInsightsFolder={setInsightsFolder}/>}
       {page==="summary"&&<SummaryPage notes={notes} folders={folders} geminiKey={AI_KEY}/>}
-      {page==="links"&&<LinksPage notes={notes} geminiKey={AI_KEY} onSelectNote={selectNote}/>}
+      {page==="links"&&<LinksPage notes={notes} folders={folders} geminiKey={AI_KEY} onSelectNote={selectNote}/>}
     </div>
   </div>);
 }
