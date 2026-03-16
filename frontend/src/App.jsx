@@ -876,6 +876,12 @@ const aiCall=async(prompt,key,opts={},signal)=>{
   if(ANTHROPIC_KEY)return claudeCall(prompt,opts,signal);
   return geminiCall(prompt,key,opts,signal);
 };
+const parseAIJson=(txt)=>{
+  if(!txt)return null;
+  let s=txt.trim();
+  s=s.replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,"");
+  return JSON.parse(s);
+};
 
 // ── Copilot-style autocomplete ──
 async function geminiComplete(ctx,meta,key,signal){
@@ -1724,7 +1730,7 @@ Return ONLY valid JSON (no markdown fences) with this exact structure:
 Notes:\n${digest}`;
     try{
       const txt=await aiCall(prompt,geminiKey,{maxOutputTokens:1500,temperature:0.4});
-      if(txt){setAiData(JSON.parse(txt));}
+      if(txt){setAiData(parseAIJson(txt));}
     }catch(e){console.error("Insights error:",e);}
     setLd(false);
   };
@@ -1735,7 +1741,7 @@ Notes:\n${digest}`;
     const prompt=`Create a focused study plan for a student who is weak in these topics:\n${weakDigest}\n\nReturn ONLY valid JSON:\n{"plan":[{"topic":"topic name","confidence":3,"priority":"high/medium","actions":["specific action 1","specific action 2"],"timeEstimate":"2 hours","resources":["resource suggestion"]}],"summary":"One paragraph overview of the study plan","schedule":"Suggested weekly schedule"}`;
     try{
       const txt=await aiCall(prompt,geminiKey,{maxOutputTokens:1200,temperature:0.4});
-      if(txt){setStudyPlan(JSON.parse(txt));}
+      if(txt){setStudyPlan(parseAIJson(txt));}
     }catch(e){console.error("Study plan error:",e);}
     setSpLd(false);
   };
@@ -1900,9 +1906,8 @@ Notes:\n${digest}`;
 // ══════════════════════════════════════════════════════════════
 // SECTION 11B: SUMMARY PAGE
 // ══════════════════════════════════════════════════════════════
-function SummaryPage({notes,folders,geminiKey}){
+function SummaryPage({notes,folders,geminiKey,topicSections,confidence}){
   const[filter,setFilter]=useState({folder:"all",cat:"all"});
-  const[summary,setSummary]=useState(null);const[loading,setLoading]=useState(false);
   const[digest,setDigest]=useState(null);const[digestLoading,setDigestLoading]=useState(false);
 
   const allNotes=Object.entries(notes).map(([id,n])=>({id,...n})).filter(n=>!n.children);
@@ -1942,37 +1947,35 @@ function SummaryPage({notes,folders,geminiKey}){
   // Recent activity - notes sorted by creation date
   const recentNotes=[...allNotes].sort((a,b)=>new Date(b.created)-new Date(a.created)).slice(0,8);
 
-  const genSummary=async()=>{
-    if(!geminiKey||filtered.length===0)return;setLoading(true);
-    const digestTxt=filtered.map(n=>`[${n.title}] (${n.cat||"uncategorized"})\n${(n.content||"").replace(/<[^>]+>/g,"").slice(0,400)}`).join("\n---\n");
-    const prompt=`Summarize these ${filtered.length} notes concisely. Group by theme. Return ONLY valid JSON:\n{"overview":"2-3 sentence overview","groups":[{"theme":"Theme","notes":["note title 1"],"summary":"group summary"}],"keyTakeaways":["takeaway 1","takeaway 2"]}\n\nNotes:\n${digestTxt}`;
-    try{
-      const txt=await aiCall(prompt,geminiKey,{maxOutputTokens:1200,temperature:0.3});
-      if(txt)setSummary(JSON.parse(txt));
-    }catch(e){console.error("Summary error:",e);}
-    setLoading(false);
-  };
+  // Build low-confidence topics from topicSections + confidence
+  const weakTopics=[];
+  allNotes.forEach(n=>{
+    const secs=topicSections[n.id]||[];
+    secs.forEach((sec,i)=>{
+      const score=confidence[`${n.id}:${i}`]||0;
+      if(score>0&&score<=4)weakTopics.push({noteId:n.id,noteTitle:n.title,section:sec.title,score});
+    });
+  });
+  weakTopics.sort((a,b)=>a.score-b.score);
 
   const genDigest=async()=>{
-    if(!geminiKey||allNotes.length===0)return;setDigestLoading(true);
-    const allContent=allNotes.map(n=>`[${n.title}] (${n.cat||"uncategorized"}, folder: ${folders.find(f=>getAllFolderNoteIds(f).includes(n.id))?.name||"unknown"})\n${(n.content||"").replace(/<[^>]+>/g,"").slice(0,300)}`).join("\n---\n");
-    const prompt=`Analyze these ${allNotes.length} notes and provide a weekly study digest. Return ONLY valid JSON:\n{"themes":[{"name":"theme name","description":"1-2 sentences","noteCount":2}],"knowledgeGaps":[{"topic":"topic","reason":"why it is a gap"}],"suggestedConnections":[{"noteA":"note title","noteB":"note title","reason":"why they connect"}],"actionItems":[{"task":"action item text","source":"from which note","priority":"high/medium/low"}]}\n\nNotes:\n${allContent}`;
+    if(!geminiKey||weakTopics.length===0)return;setDigestLoading(true);
+    const weakDigest=weakTopics.map(d=>`Topic: "${d.section}" (confidence: ${d.score}/10, from note: "${d.noteTitle}")`).join("\n");
+    const noteContext=weakTopics.map(d=>{const n=notes[d.noteId];return `[${d.noteTitle}]\n${(n?.content||"").replace(/<[^>]+>/g,"").slice(0,500)}`;}).filter((v,i,a)=>a.indexOf(v)===i).join("\n---\n");
+    const prompt=`A student has these weak topics (low confidence, scored 1-4 out of 10). For each weak topic, provide a brief helpful explanation/summary (3-5 sentences) that would help them understand the topic better. Use the note content as context.\n\nWeak topics:\n${weakDigest}\n\nNote content for reference:\n${noteContext}\n\nReturn ONLY valid JSON:\n{"topics":[{"section":"topic name","noteTitle":"from which note","score":2,"explanation":"3-5 sentence helpful explanation of this topic to help the student understand it better"}]}`;
     try{
-      const txt=await aiCall(prompt,geminiKey,{maxOutputTokens:2000,temperature:0.4});
-      if(txt)setDigest(JSON.parse(txt));
+      const txt=await aiCall(prompt,geminiKey,{maxOutputTokens:2500,temperature:0.4});
+      if(txt)setDigest(parseAIJson(txt));
     }catch(e){console.error("Digest error:",e);}
     setDigestLoading(false);
   };
-
-  const priorityColor={high:"#ef4444",medium:"#f59e0b",low:"#22c55e"};
 
   return(<div style={{padding:"28px 36px",overflowY:"auto",flex:1}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
       <div><h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:0,color:"var(--t-txt)",fontWeight:800,letterSpacing:"-0.5px"}}>Study Dashboard</h2>
         <div style={{fontSize:14,color:"var(--t-txt2)",marginTop:4}}>Analytics and insights across {allNotes.length} notes</div></div>
       <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        {geminiKey&&<button className="grad-btn" onClick={genDigest} disabled={digestLoading} style={{padding:"10px 20px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#22c55e,#06b6d4)",color:"#fff",fontSize:13,fontWeight:600,cursor:digestLoading?"wait":"pointer",opacity:digestLoading?.7:1}}>{digestLoading?"Generating...":"Weekly Digest"}</button>}
-        {geminiKey&&<button className="grad-btn" onClick={genSummary} disabled={loading} style={{padding:"10px 20px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:600,cursor:loading?"wait":"pointer",opacity:loading?.7:1}}>{loading?"Summarizing...":"AI Summary"}</button>}
+        {geminiKey&&weakTopics.length>0&&<button className="grad-btn" onClick={genDigest} disabled={digestLoading} style={{padding:"10px 20px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:600,cursor:digestLoading?"wait":"pointer",opacity:digestLoading?.7:1}}>{digestLoading?"Generating...":"Weekly Digest"}</button>}
       </div>
     </div>
 
@@ -2056,45 +2059,34 @@ function SummaryPage({notes,folders,geminiKey}){
       );})}
     </div>
 
-    {/* AI Weekly Digest */}
-    {digest&&<div style={{marginBottom:20}}>
-      <div style={{...S.glassAccent,padding:16,marginBottom:14,borderLeft:"3px solid #22c55e"}}>
-        <div style={{fontSize:10,color:"#22c55e",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:10}}>Key Themes</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:8}}>
-          {digest.themes?.map((t,i)=><div key={i} style={{...S.glass,padding:12}}>
-            <div style={{fontSize:13,fontWeight:600,color:"var(--t-txt)",marginBottom:4}}>{t.name}</div>
-            <div style={{fontSize:11,color:"var(--t-txt2)",lineHeight:1.5}}>{t.description}</div>
-            <div style={{fontSize:10,color:"var(--t-txt3)",marginTop:4}}>{t.noteCount} related notes</div>
-          </div>)}
-        </div>
+    {/* Weak Topics Overview */}
+    {weakTopics.length>0&&<div style={{...S.glass,padding:16,marginBottom:20,borderLeft:"3px solid #f59e0b"}}>
+      <div style={{fontSize:10,color:"#f59e0b",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:10}}>Low Confidence Topics ({weakTopics.length})</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+        {weakTopics.map((d,i)=>(
+          <span key={i} style={{padding:"4px 10px",borderRadius:8,background:d.score<=2?"rgba(239,68,68,0.1)":"rgba(245,158,11,0.1)",border:`1px solid ${d.score<=2?"rgba(239,68,68,0.2)":"rgba(245,158,11,0.2)"}`,fontSize:11,color:d.score<=2?"#ef4444":"#f59e0b",fontWeight:600}}>
+            {d.section} <span style={{opacity:0.6}}>({d.score}/10)</span>
+          </span>
+        ))}
       </div>
-      {digest.knowledgeGaps?.length>0&&<div style={{...S.glassAccent,padding:16,marginBottom:14,borderLeft:"3px solid #f59e0b"}}>
-        <div style={{fontSize:10,color:"#f59e0b",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:10}}>Knowledge Gaps</div>
-        {digest.knowledgeGaps.map((g,i)=><div key={i} style={{padding:"8px 12px",marginBottom:4,borderRadius:8,background:"var(--t-glass)",border:"1px solid var(--t-border)"}}>
-          <div style={{fontSize:12,fontWeight:600,color:"var(--t-txt)"}}>{g.topic}</div>
-          <div style={{fontSize:11,color:"var(--t-txt2)",marginTop:2}}>{g.reason}</div>
-        </div>)}
-      </div>}
-      {digest.suggestedConnections?.length>0&&<div style={{...S.glassAccent,padding:16,marginBottom:14,borderLeft:"3px solid #7b93f5"}}>
-        <div style={{fontSize:10,color:"var(--t-a1)",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:10}}>Suggested Connections</div>
-        {digest.suggestedConnections.map((c,i)=><div key={i} style={{padding:"8px 12px",marginBottom:4,borderRadius:8,background:"var(--t-glass)",border:"1px solid var(--t-border)",display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:12,fontWeight:600,color:"var(--t-a1)"}}>{c.noteA}</span>
-          <span style={{fontSize:10,color:"var(--t-txt3)"}}>--</span>
-          <span style={{fontSize:12,fontWeight:600,color:"var(--t-a2)"}}>{c.noteB}</span>
-          <span style={{fontSize:11,color:"var(--t-txt2)",marginLeft:"auto"}}>{c.reason}</span>
-        </div>)}
-      </div>}
-      {digest.actionItems?.length>0&&<div style={{...S.glassAccent,padding:16,marginBottom:14,borderLeft:"3px solid #e879f9"}}>
-        <div style={{fontSize:10,color:"#e879f9",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:10}}>Action Items</div>
-        {digest.actionItems.map((a,i)=><div key={i} style={{padding:"8px 12px",marginBottom:4,borderRadius:8,background:"var(--t-glass)",border:"1px solid var(--t-border)",display:"flex",alignItems:"center",gap:8}}>
-          <div style={{width:6,height:6,borderRadius:"50%",background:priorityColor[a.priority]||"#7b93f5",flexShrink:0}}/>
-          <div style={{flex:1}}>
-            <div style={{fontSize:12,fontWeight:600,color:"var(--t-txt)"}}>{a.task}</div>
-            <div style={{fontSize:10,color:"var(--t-txt3)",marginTop:1}}>from: {a.source}</div>
+      {!digest&&geminiKey&&<div style={{fontSize:11,color:"var(--t-txt3)",marginTop:10}}>Click "Weekly Digest" to get AI explanations for each weak topic</div>}
+    </div>}
+
+    {/* AI Weekly Digest — explanations for weak topics */}
+    {digest&&digest.topics?.length>0&&<div style={{marginBottom:20}}>
+      <div style={{fontSize:10,color:"var(--t-a1)",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:12}}>Weekly Digest — Topic Explanations</div>
+      {digest.topics.map((t,i)=>(
+        <div key={i} style={{...S.glassAccent,padding:16,marginBottom:10,borderLeft:`3px solid ${t.score<=2?"#ef4444":"#f59e0b"}`}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={{fontSize:14,fontWeight:700,color:"var(--t-txt)"}}>{t.section}</div>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:10,padding:"2px 8px",borderRadius:6,background:t.score<=2?"rgba(239,68,68,0.12)":"rgba(245,158,11,0.12)",color:t.score<=2?"#ef4444":"#f59e0b",fontWeight:700}}>{t.score}/10</span>
+              <span style={{fontSize:10,color:"var(--t-txt3)"}}>{t.noteTitle}</span>
+            </div>
           </div>
-          <span style={{fontSize:9,padding:"2px 8px",borderRadius:20,background:(priorityColor[a.priority]||"#7b93f5")+"18",color:priorityColor[a.priority]||"#7b93f5",fontWeight:600,textTransform:"uppercase"}}>{a.priority}</span>
-        </div>)}
-      </div>}
+          <div style={{fontSize:13,color:"var(--t-txt2)",lineHeight:1.7}}>{t.explanation}</div>
+        </div>
+      ))}
     </div>}
 
     {/* Filtered note list */}
@@ -2114,26 +2106,9 @@ function SummaryPage({notes,folders,geminiKey}){
       </div>
     </div>
 
-    {/* AI Summary result */}
-    {summary&&<div>
-      {summary.overview&&<div style={{...S.glassAccent,padding:16,marginBottom:14,borderLeft:"3px solid var(--t-a1)"}}>
-        <div style={{fontSize:10,color:"var(--t-a1)",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:6}}>Overview</div>
-        <div style={{fontSize:14,color:"var(--t-txt)",lineHeight:1.6}}>{summary.overview}</div>
-      </div>}
-      {summary.groups?.map((g,i)=><div key={i} style={{...S.glass,padding:14,marginBottom:8}}>
-        <div style={{fontSize:14,fontWeight:600,color:"var(--t-txt)",marginBottom:4}}>{g.theme}</div>
-        <div style={{fontSize:12,color:"var(--t-txt2)",marginBottom:6}}>{g.summary}</div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:4}}>{g.notes?.map((t,j)=><span key={j} style={{padding:"2px 8px",borderRadius:20,fontSize:10,background:"var(--t-glass)",color:"var(--t-a1)",border:"1px solid var(--t-border)"}}>{t}</span>)}</div>
-      </div>)}
-      {summary.keyTakeaways?.length>0&&<div style={{...S.glassAccent,padding:14,marginBottom:14}}>
-        <div style={{fontSize:10,color:"var(--t-a1)",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Key Takeaways</div>
-        {summary.keyTakeaways.map((t,i)=><div key={i} style={{fontSize:13,color:"var(--t-txt3)",lineHeight:1.6,paddingLeft:10,borderLeft:"2px solid var(--t-border)",marginBottom:4}}>{t}</div>)}
-      </div>}
-    </div>}
-
-    {!summary&&!digest&&!loading&&!digestLoading&&<div style={{textAlign:"center",padding:28,color:"var(--t-txt2)"}}>
+    {weakTopics.length===0&&!digestLoading&&<div style={{textAlign:"center",padding:28,color:"var(--t-txt2)"}}>
       <div style={{fontSize:14,marginBottom:10,color:"var(--t-a1)",fontFamily:"'JetBrains Mono',monospace"}}>---</div>
-      <div style={{fontSize:14,color:"var(--t-txt3)"}}>Generate an AI summary or weekly digest for deeper insights</div>
+      <div style={{fontSize:14,color:"var(--t-txt3)"}}>Rate your confidence on topics in your notes to unlock the Weekly Digest</div>
     </div>}
   </div>);
 }
@@ -2524,13 +2499,13 @@ function NoteInsightsPanel({noteIds,notes,topicSections,confidence,geminiKey,tit
     const prompt=`Create a focused study plan for a student who is weak in these topics:\n${weakDigest}\n\nReturn ONLY valid JSON:\n{"plan":[{"topic":"topic name","confidence":3,"priority":"high/medium","actions":["action 1","action 2"],"timeEstimate":"2 hours","resources":["resource"]}],"summary":"One paragraph overview","schedule":"Suggested weekly schedule"}`;
     try{
       const txt=await aiCall(prompt,geminiKey,{maxOutputTokens:1200,temperature:0.3});
-      if(txt)setStudyPlan(JSON.parse(txt));
+      if(txt)setStudyPlan(parseAIJson(txt));
     }catch(e){console.error("Study plan error:",e);}
     setSpLd(false);
   };
 
-  return(<div style={{background:"var(--t-bg2)",border:"1px solid var(--t-border)",borderRadius:16,padding:20,marginBottom:16}}>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+  return(<div style={{background:"var(--t-bg2)",border:"1px solid var(--t-border)",borderRadius:16,padding:20,marginBottom:16,maxHeight:"50vh",overflowY:"auto"}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,position:"sticky",top:-20,background:"var(--t-bg2)",paddingTop:4,paddingBottom:8,zIndex:2}}>
       <div style={{fontSize:15,fontWeight:700,color:"var(--t-txt)"}}>Insights — {title}</div>
       <button onClick={onClose} style={{border:"none",background:"transparent",color:"var(--t-txt2)",cursor:"pointer",fontSize:18}}>{"\u00d7"}</button>
     </div>
@@ -3937,7 +3912,7 @@ function NotiqApp(){
         <p style={{color:"#8492a6",fontSize:12}}>Your AI-powered writing companion is ready.</p>
       </div></div>}
       {page==="insights"&&<InsightsPage notes={notes} folders={folders} knowledge={knowledge} onAddTopic={addTopic} geminiKey={AI_KEY} topicSections={topicSections} confidence={confidence} insightsFolder={insightsFolder} setInsightsFolder={setInsightsFolder}/>}
-      {page==="summary"&&<SummaryPage notes={notes} folders={folders} geminiKey={AI_KEY}/>}
+      {page==="summary"&&<SummaryPage notes={notes} folders={folders} geminiKey={AI_KEY} topicSections={topicSections} confidence={confidence}/>}
       {page==="links"&&<LinksPage notes={notes} folders={folders} geminiKey={AI_KEY} onSelectNote={selectNote}/>}
     </div>
   </div>);
