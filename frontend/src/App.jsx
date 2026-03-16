@@ -3198,7 +3198,7 @@ function LandingPage({onEnter}){
             <div style={{fontSize:13,color:"#f093fb",fontWeight:600,letterSpacing:3,textTransform:"uppercase",marginBottom:20,fontFamily:"'JetBrains Mono',monospace"}}>AI Study Plans</div>
             <h2 style={{fontSize:"clamp(34px, 4vw, 52px)",fontWeight:800,letterSpacing:"-2px",margin:"0 0 24px",lineHeight:1.08}}>Focus on what<br/>you don't know.</h2>
             <p style={{fontSize:17,color:"#94a3b8",lineHeight:1.8,margin:"0 0 16px"}}>Your confidence scores tell the full story. The Insights page shows a clear breakdown of where you're strong and where you're struggling, with visual charts so you can spot gaps at a glance.</p>
-            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>One click generates a structured study plan targeting your weakest areas, complete with priorities, time estimates, and specific resources. Stop wasting time on what you already know.</p>
+            <p style={{fontSize:15,color:"#64748b",lineHeight:1.7,margin:0}}>The Study Dashboard tracks your analytics and the Weekly Digest generates AI explanations for every weak topic, so you get a mini-lesson on exactly what you need to review. One click on Insights generates a structured study plan with priorities and resources.</p>
           </motion.div>
           <motion.div style={{padding:"80px 80px 80px 64px",display:"flex",alignItems:"center",justifyContent:"center"}} initial={{opacity:0,y:50}} whileInView={{opacity:1,y:0}} transition={{duration:0.9,delay:0.12,ease:[0.25,0.1,0.25,1]}} viewport={{once:true,margin:"-100px"}}>
             {/* Study plan visual demo */}
@@ -3306,7 +3306,7 @@ function Tutorial({onComplete}){
     {id:"insights",title:"Insights",desc:"View your confidence analysis: overall stats, a distribution graph, weak and strong areas, plus an AI-generated study plan targeting your weakest topics."},
     {id:"transform",title:"Transform",desc:"Highlight text and click Transform to convert your notes into a Quiz, Summary, Flashcards, or Mind Map. The AI restructures your content instantly."},
     {id:"ai-panel",title:"AI Panel",desc:"The right panel shows YouTube videos relevant to your note, plus a knowledge tracker showing your coverage of each subject. Toggle it from the top bar."},
-    {id:"summary",title:"Summary Page",desc:"Get an AI-generated overview of all your notes. Filter by folder or type, then generate themed summaries with key takeaways."},
+    {id:"summary",title:"Study Dashboard",desc:"Track your study analytics — total notes, word counts, category distribution, and recent activity. Click Weekly Digest to get AI-generated explanations for every topic you're weak in."},
     {id:"links",title:"Knowledge Graph",desc:"AI discovers hidden connections between your notes and builds a visual graph showing how topics relate across different subjects."},
     {id:"theme",title:"Theme Toggle",desc:"Switch between light and dark mode. Both are fully themed — pick whichever suits you."},
     {id:"done",title:"You're All Set!",desc:"Start by opening a note from the sidebar or create a new one. As you write, the AI handles the rest. Happy studying!"},
@@ -3471,12 +3471,16 @@ function Tutorial({onComplete}){
       case"summary":return(
         <div style={{background:"var(--t-glass)",borderRadius:10,padding:10,marginBottom:8,border:"1px solid var(--t-border)"}}>
           <div style={{display:"flex",gap:4,marginBottom:6}}>
-            <div style={{flex:1,height:22,borderRadius:5,border:"1px solid var(--t-border)",display:"flex",alignItems:"center",padding:"0 6px"}}><span style={{fontSize:8,color:"var(--t-txt2)"}}>All Folders</span></div>
-            <div style={{flex:1,height:22,borderRadius:5,border:"1px solid var(--t-border)",display:"flex",alignItems:"center",padding:"0 6px"}}><span style={{fontSize:8,color:"var(--t-txt2)"}}>All Types</span></div>
+            {[{l:"12",t:"Notes"},{l:"8.4k",t:"Words"},{l:"702",t:"Avg Len"},{l:"4",t:"Cats"}].map((s,i)=>(
+              <div key={i} style={{flex:1,textAlign:"center",animation:`tutFadeIn 0.3s ease-out ${i*0.1}s both`}}>
+                <div style={{fontSize:12,fontWeight:700,background:"var(--t-grad)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{s.l}</div>
+                <div style={{fontSize:7,color:"var(--t-txt2)",textTransform:"uppercase"}}>{s.t}</div>
+              </div>
+            ))}
           </div>
-          <div style={{padding:6,borderRadius:6,borderLeft:"3px solid var(--t-a1)",background:"rgba(123,147,245,0.05)",animation:"tutFadeIn 0.4s ease-out 0.2s both"}}>
-            <div style={{fontSize:9,fontWeight:700,color:"var(--t-a1)",textTransform:"uppercase",marginBottom:2}}>Overview</div>
-            <div style={{fontSize:10,color:"var(--t-txt2)",lineHeight:1.4}}>Your notes cover ML, finance, and health topics...</div>
+          <div style={{padding:6,borderRadius:6,borderLeft:"3px solid #f59e0b",background:"rgba(245,158,11,0.05)",animation:"tutFadeIn 0.4s ease-out 0.2s both"}}>
+            <div style={{fontSize:9,fontWeight:700,color:"#f59e0b",textTransform:"uppercase",marginBottom:2}}>Weak: Decision Trees (3/10)</div>
+            <div style={{fontSize:10,color:"var(--t-txt2)",lineHeight:1.4}}>Decision trees split data recursively using measures like Gini impurity...</div>
           </div>
         </div>
       );
