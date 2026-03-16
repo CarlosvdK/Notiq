@@ -68,6 +68,8 @@ const CM = {
 const INIT_FOLDERS = [
   {id:"academics",name:"Academics",children:[
     {id:"twd_2026",name:"Thinking With Data",notes:["twd1"]},
+    {id:"tech_skills",name:"Technical Skills",notes:["n24","n25","n26"]},
+    {id:"cs_fundamentals",name:"CS & AI Fundamentals",notes:["n21","n22","n23"]},
   ]},
   {id:"career",name:"Career & Projects",children:[
     {id:"startup",name:"RestaurantIQ Startup",notes:["n7","n8"]},
@@ -650,6 +652,200 @@ n20:{title:"AI Tools & Workflow — What I Actually Use",created:"2026-03-03",co
 <p>The second insight: <strong>AI amplifies your existing capabilities rather than replacing them</strong>. A strong data scientist using Copilot and Claude is 3-5x more productive. A non-technical person using the same tools produces plausible-looking but fundamentally flawed analysis. The tools lower the floor but raise the ceiling. Invest in fundamentals first.</p>
 
 <p><em>Update this note monthly as the tool landscape evolves. Current date: March 2026. Next review: April 2026.</em></p>`},
+
+// ── ACADEMICS: Additional Course Notes ──────────────────────
+
+n21:{title:"Prototyping & Product Design",created:"2026-03-05",content:`<h2>Prototyping — From Concept to Clickable</h2>
+<p>Prototyping is the practice of creating early, simplified versions of a product to test ideas before committing engineering resources. The goal is to <strong>fail cheaply and learn quickly</strong>. A prototype is NOT the final product — it's a communication tool, a hypothesis you can test with real users.</p>
+
+<h3>The Fidelity Spectrum</h3>
+<p><strong>Low-fidelity (Lo-fi):</strong> Paper sketches, sticky notes, whiteboard flows. Speed: minutes to create. Best for: brainstorming, early concept validation, stakeholder alignment. Cost of being wrong: zero.<br/>
+<strong>Mid-fidelity:</strong> Wireframes in Figma/Balsamiq. Clickable but no visual design. Speed: hours. Best for: user flow testing, information architecture validation.<br/>
+<strong>High-fidelity (Hi-fi):</strong> Pixel-perfect Figma prototypes with interactions, animations, real data. Speed: days. Best for: usability testing, investor demos, developer handoff.<br/>
+<strong>Coded prototypes:</strong> Functional MVPs (React, Flutter, no-code tools). Speed: days-weeks. Best for: technical feasibility validation, beta testing with real users.</p>
+
+<h3>When to Use Each Fidelity</h3>
+<p>Rule of thumb: <strong>start at the lowest fidelity that answers your current question</strong>. Don't build a hi-fi prototype to test whether users even want the feature — a 5-minute paper sketch and a conversation will tell you faster.</p>
+<p>Progression: Sketch (explore the idea) → Wireframe (test the flow) → Hi-fi mockup (test the experience) → MVP (test the market).</p>
+
+<h3>User Testing with Prototypes</h3>
+<p><strong>5-user rule (Jakob Nielsen):</strong> Testing with just 5 users uncovers ~85% of usability issues. Beyond 5, you see diminishing returns.<br/>
+<strong>Think-aloud protocol:</strong> Ask users to narrate their thought process while using the prototype. "I'm looking for... I expected this button to..." — this reveals mental model mismatches.<br/>
+<strong>Task-based testing:</strong> Give users specific tasks ("Book a table for 4 people on Friday") and observe. Measure: completion rate, time-on-task, error rate, satisfaction (SUS score).</p>
+
+<h3>Tools & Frameworks</h3>
+<p><strong>Figma:</strong> Industry standard for UI/UX design. Real-time collaboration, component libraries, prototyping mode with interactions and transitions. Free tier is generous.<br/>
+<strong>Maze/UserTesting:</strong> Remote unmoderated testing platforms — share your Figma prototype link and get heatmaps, task completion data, video recordings.<br/>
+<strong>Design Sprint (Google Ventures):</strong> 5-day structured process: Map → Sketch → Decide → Prototype → Test. Forces rapid iteration. Used by Slack, Blue Bottle Coffee, Flatiron Health.</p>
+
+<h3>Common Mistakes</h3>
+<p>1. <strong>Over-investing in fidelity too early</strong> — building pixel-perfect mockups before validating the concept wastes time.<br/>
+2. <strong>Testing with colleagues instead of real users</strong> — they know too much about the product, can't give unbiased feedback.<br/>
+3. <strong>Falling in love with the prototype</strong> — sunk cost fallacy. The prototype is disposable by design.<br/>
+4. <strong>Not defining success criteria before testing</strong> — "did users like it?" is not measurable. "Did 4/5 users complete the booking flow in under 60 seconds?" is.</p>`},
+
+n22:{title:"AI & Machine Learning Fundamentals",created:"2026-03-06",content:`<h2>AI & ML — Core Concepts and Taxonomy</h2>
+<p>Artificial Intelligence is the broad field of creating systems that can perform tasks typically requiring human intelligence. Machine Learning is a subset: systems that <strong>learn from data</strong> rather than being explicitly programmed. Deep Learning is a subset of ML using neural networks with many layers.</p>
+
+<h3>The ML Pipeline</h3>
+<p>Every ML project follows roughly the same pipeline:<br/>
+1. <strong>Problem Definition:</strong> Classification? Regression? Clustering? Recommendation? The problem type determines everything downstream.<br/>
+2. <strong>Data Collection & Cleaning:</strong> 80% of ML work. Handle missing values, outliers, duplicates. Data quality > model complexity.<br/>
+3. <strong>Feature Engineering:</strong> Transform raw data into useful features. Domain knowledge matters enormously here.<br/>
+4. <strong>Model Selection:</strong> Start simple (logistic regression, decision trees) before trying complex models. Occam's razor applies.<br/>
+5. <strong>Training & Validation:</strong> Train/test split (80/20) or k-fold cross-validation. Never evaluate on training data.<br/>
+6. <strong>Evaluation:</strong> Choose metrics that match your business objective. Accuracy is misleading for imbalanced datasets — use F1, AUC-ROC, precision-recall.<br/>
+7. <strong>Deployment & Monitoring:</strong> Model drift is real. Retrain periodically. Monitor prediction distributions.</p>
+
+<h3>Supervised vs Unsupervised vs Reinforcement</h3>
+<p><strong>Supervised Learning:</strong> Labeled data (input → known output). Classification (categorical output) or Regression (continuous output). Examples: spam detection, price prediction, medical diagnosis.<br/>
+<strong>Unsupervised Learning:</strong> No labels. Find structure in data. Clustering (K-means, DBSCAN), Dimensionality Reduction (PCA, t-SNE), Anomaly Detection. Examples: customer segmentation, topic modeling.<br/>
+<strong>Reinforcement Learning:</strong> Agent learns by interacting with an environment. Reward/penalty signals. Examples: game AI (AlphaGo), robotics, recommendation systems, autonomous driving.</p>
+
+<h3>Bias-Variance Tradeoff</h3>
+<p>The fundamental tension in ML:<br/>
+<strong>Bias:</strong> Error from oversimplified models. Underfitting — model can't capture the underlying pattern. High bias = model is too simple.<br/>
+<strong>Variance:</strong> Error from over-complex models. Overfitting — model memorises training data noise. High variance = model is too complex.<br/>
+<strong>Sweet spot:</strong> Model complex enough to capture real patterns but simple enough to generalise. Regularisation (L1/L2), cross-validation, and ensemble methods help find this balance.</p>
+
+<h3>Key Algorithms Cheat Sheet</h3>
+<p><strong>Linear/Logistic Regression:</strong> Simple, interpretable, fast. Baseline for any ML project.<br/>
+<strong>Decision Trees:</strong> Interpretable, handles non-linear data. Prone to overfitting → use Random Forests or Gradient Boosting.<br/>
+<strong>SVM:</strong> Effective in high-dimensional spaces. Kernel trick for non-linear boundaries.<br/>
+<strong>Neural Networks:</strong> Universal function approximators. Require lots of data. CNNs for images, RNNs/Transformers for sequences.<br/>
+<strong>K-Nearest Neighbors:</strong> Simple, no training phase. Slow at inference for large datasets. Curse of dimensionality.</p>
+
+<h3>Ethical Considerations</h3>
+<p>ML models can perpetuate and amplify biases in training data. Key concerns: fairness across demographic groups, transparency/explainability (XAI), privacy (differential privacy, federated learning), and accountability. The EU AI Act (2024) classifies AI systems by risk level and mandates transparency for high-risk applications.</p>`},
+
+n23:{title:"Cloud Computing with AWS",created:"2026-03-07",content:`<h2>AWS Cloud — Architecture & Core Services</h2>
+<p>Amazon Web Services provides 200+ cloud services. For a data science / startup context, the critical services fall into: <strong>Compute, Storage, Database, ML, and Networking</strong>. The cloud's value proposition: pay-as-you-go, scale instantly, no hardware management.</p>
+
+<h3>Core Compute Services</h3>
+<p><strong>EC2 (Elastic Compute Cloud):</strong> Virtual machines (instances). Choose CPU, RAM, GPU, storage. Instance types: t3 (burstable, cheap), m5 (general purpose), c5 (compute-optimised), p3/g4 (GPU for ML). Pricing: On-Demand (pay per hour), Reserved (1-3 year commitment, ~40% savings), Spot (~90% savings, can be interrupted).<br/>
+<strong>Lambda:</strong> Serverless compute. Run code without managing servers. Pay per invocation (first 1M requests free/month). Max 15 min runtime. Use for: API backends, data processing triggers, scheduled tasks.<br/>
+<strong>ECS/EKS:</strong> Container orchestration. ECS is AWS-native, EKS runs Kubernetes. Use when you need Docker containers at scale.<br/>
+<strong>Fargate:</strong> Serverless containers — no EC2 instance management. Good middle ground between Lambda and ECS.</p>
+
+<h3>Storage & Databases</h3>
+<p><strong>S3 (Simple Storage Service):</strong> Object storage. Unlimited capacity. Tiers: Standard (frequent access), IA (infrequent), Glacier (archive, retrieval in minutes-hours). Use for: data lakes, static websites, ML training data, backups.<br/>
+<strong>RDS:</strong> Managed relational databases (PostgreSQL, MySQL, MariaDB). Automated backups, read replicas, Multi-AZ for high availability.<br/>
+<strong>DynamoDB:</strong> NoSQL key-value store. Single-digit millisecond latency at any scale. Good for: session data, user profiles, real-time analytics.<br/>
+<strong>Redshift:</strong> Data warehouse for analytics. Columnar storage, SQL-based. Handles petabyte-scale data. Competes with Snowflake/BigQuery.</p>
+
+<h3>ML & AI Services</h3>
+<p><strong>SageMaker:</strong> End-to-end ML platform. Jupyter notebooks, training jobs (distributed), model hosting, A/B testing endpoints. SageMaker Studio = IDE for ML. AutoML with SageMaker Autopilot.<br/>
+<strong>Bedrock:</strong> Managed foundation models (Claude, Llama, Titan). API access to LLMs without managing infrastructure. Fine-tuning and RAG built in.<br/>
+<strong>Comprehend/Rekognition/Textract:</strong> Pre-built AI services for NLP, image analysis, document processing. No ML expertise needed.</p>
+
+<h3>Networking & Security</h3>
+<p><strong>VPC (Virtual Private Cloud):</strong> Isolated network in AWS. Subnets (public/private), security groups (firewall rules), NACLs. Every production workload should run in a VPC.<br/>
+<strong>IAM (Identity & Access Management):</strong> Users, roles, policies. Principle of least privilege. Never use root account for daily work. Use roles for EC2/Lambda, not access keys.<br/>
+<strong>CloudFront:</strong> CDN. Cache content at 400+ edge locations globally. Use for: static assets, API caching, low-latency content delivery.</p>
+
+<h3>Architecture Patterns</h3>
+<p><strong>Three-tier:</strong> Presentation (CloudFront + S3) → Application (ECS/Lambda + ALB) → Data (RDS/DynamoDB). Classic and reliable.<br/>
+<strong>Serverless:</strong> API Gateway → Lambda → DynamoDB. Zero servers to manage. Great for MVPs and variable workloads.<br/>
+<strong>Data pipeline:</strong> S3 (raw) → Glue (ETL) → Athena (query) or Redshift (warehouse) → QuickSight (visualisation).<br/>
+<strong>ML pipeline:</strong> S3 (data) → SageMaker Processing → SageMaker Training → SageMaker Endpoint → API Gateway.</p>`},
+
+n24:{title:"R Programming — Statistics & Visualisation",created:"2026-03-08",content:`<h2>R Programming — From Base R to Tidyverse</h2>
+<p>R is the language of statisticians and data analysts. While Python dominates ML engineering, R excels at <strong>statistical analysis, data manipulation, and publication-quality visualisations</strong>. The TWD course uses R extensively for simulations and hypothesis testing.</p>
+
+<h3>Base R Essentials</h3>
+<p><strong>Data types:</strong> numeric, character, logical, factor (categorical). Vectors are the fundamental unit: <code>x <- c(1, 2, 3, 4, 5)</code>.<br/>
+<strong>Data frames:</strong> Tabular data (like a spreadsheet). <code>df <- data.frame(name=c("A","B"), score=c(85,92))</code>. Access columns with <code>df$score</code> or <code>df[,"score"]</code>.<br/>
+<strong>Functions:</strong> <code>mean(x)</code>, <code>sd(x)</code>, <code>median(x)</code>, <code>summary(df)</code>, <code>str(df)</code>. Custom: <code>my_func <- function(x) { x^2 + 1 }</code>.<br/>
+<strong>Subsetting:</strong> <code>df[df$score > 90, ]</code> — rows where score > 90. <code>df[1:5, c("name","score")]</code> — first 5 rows, specific columns.</p>
+
+<h3>Tidyverse — Modern R</h3>
+<p>The tidyverse is a collection of packages that share a consistent design philosophy. Core packages:<br/>
+<strong>dplyr:</strong> Data manipulation verbs — <code>filter()</code>, <code>select()</code>, <code>mutate()</code>, <code>summarise()</code>, <code>group_by()</code>, <code>arrange()</code>. The pipe operator <code>%>%</code> (or <code>|></code>) chains operations: <code>df %>% filter(score > 80) %>% group_by(course) %>% summarise(avg = mean(score))</code>.<br/>
+<strong>ggplot2:</strong> Grammar of graphics. Build plots layer by layer: <code>ggplot(df, aes(x=score, y=grade)) + geom_point() + geom_smooth(method="lm") + theme_minimal()</code>. Geoms: <code>geom_bar()</code>, <code>geom_histogram()</code>, <code>geom_boxplot()</code>, <code>geom_line()</code>, <code>geom_density()</code>.<br/>
+<strong>tidyr:</strong> Reshape data. <code>pivot_longer()</code> (wide → long), <code>pivot_wider()</code> (long → wide). Essential for ggplot which expects tidy (long) format.<br/>
+<strong>readr:</strong> Fast file reading. <code>read_csv()</code> instead of <code>read.csv()</code> — faster, better defaults, tibble output.</p>
+
+<h3>Statistical Tests in R</h3>
+<p><strong>T-test:</strong> <code>t.test(group_a, group_b)</code> — compares means. Returns t-statistic, p-value, confidence interval. <code>t.test(score ~ group, data=df)</code> for formula interface.<br/>
+<strong>ANOVA:</strong> <code>aov(score ~ treatment, data=df)</code> — compare means across 3+ groups. Post-hoc: <code>TukeyHSD()</code>.<br/>
+<strong>Chi-squared:</strong> <code>chisq.test(table(df$gender, df$preference))</code> — test independence of categorical variables.<br/>
+<strong>Linear Regression:</strong> <code>lm(y ~ x1 + x2, data=df)</code>. Check with <code>summary(model)</code>, <code>plot(model)</code> for diagnostics (residuals, Q-Q plot, leverage).<br/>
+<strong>Monte Carlo simulation:</strong> <code>replicate(10000, { sample_mean <- mean(sample(data, 30, replace=TRUE)); sample_mean })</code> — bootstrap distribution of the mean.</p>
+
+<h3>R Markdown & Reproducibility</h3>
+<p>R Markdown (.Rmd) combines code, output, and narrative in one document. Renders to HTML, PDF, Word, slides. This is how most academic R work is submitted — professor sees code, output, and interpretation together. YAML header for settings, code chunks with <code>{r}</code> tags, inline R with backtick-r syntax.</p>`},
+
+n25:{title:"SQL — Querying & Database Design",created:"2026-03-09",content:`<h2>SQL — From SELECT to Window Functions</h2>
+<p>SQL (Structured Query Language) is the universal language for relational databases. Every data role requires it — data science, analytics, engineering, product management. It's declarative: you describe WHAT you want, not HOW to get it.</p>
+
+<h3>Core Query Anatomy</h3>
+<p>Execution order matters (different from writing order):<br/>
+<strong>FROM</strong> → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT<br/>
+Writing order: <code>SELECT columns FROM table WHERE condition GROUP BY column HAVING aggregate_condition ORDER BY column LIMIT n</code>.</p>
+<p><strong>Filtering:</strong> <code>WHERE status = 'active' AND created_at >= '2026-01-01'</code>. Use <code>IN</code>, <code>BETWEEN</code>, <code>LIKE</code>, <code>IS NULL</code>.<br/>
+<strong>Aggregation:</strong> <code>SELECT department, COUNT(*), AVG(salary) FROM employees GROUP BY department HAVING COUNT(*) > 5</code>.<br/>
+<strong>Sorting:</strong> <code>ORDER BY salary DESC, name ASC</code>. <code>NULLS LAST</code> for explicit null handling.</p>
+
+<h3>JOINs — The Heart of SQL</h3>
+<p><strong>INNER JOIN:</strong> Only matching rows from both tables. Most common.<br/>
+<strong>LEFT JOIN:</strong> All rows from left table + matching from right (NULLs where no match). Essential for "find customers who haven't ordered."<br/>
+<strong>RIGHT JOIN:</strong> Mirror of LEFT. Rarely used — just swap table order and use LEFT.<br/>
+<strong>FULL OUTER JOIN:</strong> All rows from both tables. Useful for finding mismatches.<br/>
+<strong>CROSS JOIN:</strong> Cartesian product (every row × every row). Use sparingly — generates N×M rows.<br/>
+<strong>Self JOIN:</strong> Table joined to itself. Use for hierarchical data (manager → employee), finding duplicates.</p>
+
+<h3>Window Functions — Advanced Analytics</h3>
+<p>Window functions compute values across a set of rows related to the current row, without collapsing rows (unlike GROUP BY).<br/>
+<strong>ROW_NUMBER():</strong> <code>ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC)</code> — rank within each department.<br/>
+<strong>RANK() / DENSE_RANK():</strong> Same but handles ties differently. RANK skips, DENSE_RANK doesn't.<br/>
+<strong>LAG() / LEAD():</strong> Access previous/next row's value. <code>LAG(revenue, 1) OVER (ORDER BY month)</code> — previous month's revenue. Essential for calculating growth rates.<br/>
+<strong>Running totals:</strong> <code>SUM(revenue) OVER (ORDER BY month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)</code>.<br/>
+<strong>Moving averages:</strong> <code>AVG(revenue) OVER (ORDER BY month ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)</code> — 3-month moving average.</p>
+
+<h3>CTEs & Subqueries</h3>
+<p><strong>CTE (Common Table Expression):</strong> <code>WITH monthly AS (SELECT ... ) SELECT * FROM monthly WHERE ...</code>. Improves readability. Can be recursive for hierarchical data (org charts, category trees).<br/>
+<strong>Subqueries:</strong> Queries inside queries. Scalar subquery (returns one value): <code>WHERE salary > (SELECT AVG(salary) FROM employees)</code>. Correlated subquery: references outer query — slower but sometimes necessary.</p>
+
+<h3>Database Design Principles</h3>
+<p><strong>Normalisation:</strong> 1NF (atomic values, no repeating groups) → 2NF (no partial dependencies) → 3NF (no transitive dependencies). Reduces redundancy, improves integrity. Most production databases are in 3NF or BCNF.<br/>
+<strong>Indexing:</strong> B-tree indexes speed up reads but slow down writes. Index columns used in WHERE, JOIN, ORDER BY. Don't over-index — each index costs storage and write performance.<br/>
+<strong>ACID properties:</strong> Atomicity (all or nothing), Consistency (valid state → valid state), Isolation (concurrent transactions don't interfere), Durability (committed data survives crashes).</p>`},
+
+n26:{title:"Python — Data Science & Engineering",created:"2026-03-10",content:`<h2>Python for Data Science — Libraries & Patterns</h2>
+<p>Python is the lingua franca of data science, ML engineering, and backend development. Its strength is the ecosystem: NumPy for numerics, pandas for data, scikit-learn for ML, matplotlib/seaborn for visualisation, and frameworks like FastAPI/Django for deployment.</p>
+
+<h3>NumPy — Numerical Computing</h3>
+<p><strong>Arrays:</strong> <code>np.array([1, 2, 3])</code>. Vectorised operations are 10-100x faster than Python loops. <code>a * 2</code>, <code>np.dot(a, b)</code>, <code>a.reshape(3, 2)</code>.<br/>
+<strong>Broadcasting:</strong> Operations between arrays of different shapes. <code>matrix + row_vector</code> automatically broadcasts.<br/>
+<strong>Key functions:</strong> <code>np.mean()</code>, <code>np.std()</code>, <code>np.random.normal(0, 1, 1000)</code>, <code>np.linspace(0, 10, 100)</code>, <code>np.where(condition, x, y)</code>.<br/>
+<strong>Linear algebra:</strong> <code>np.linalg.inv()</code>, <code>np.linalg.eig()</code>, <code>np.linalg.svd()</code>. Essential for PCA, regression, neural networks.</p>
+
+<h3>pandas — Data Manipulation</h3>
+<p><strong>DataFrames:</strong> <code>pd.read_csv('data.csv')</code>. Inspect: <code>df.head()</code>, <code>df.info()</code>, <code>df.describe()</code>, <code>df.shape</code>.<br/>
+<strong>Selection:</strong> <code>df['column']</code>, <code>df[['col1','col2']]</code>, <code>df.loc[row_label, col_label]</code>, <code>df.iloc[row_idx, col_idx]</code>.<br/>
+<strong>Filtering:</strong> <code>df[df['age'] > 25]</code>, <code>df.query('age > 25 and city == "Barcelona"')</code>.<br/>
+<strong>GroupBy:</strong> <code>df.groupby('department').agg({'salary': ['mean', 'median'], 'id': 'count'})</code>.<br/>
+<strong>Merging:</strong> <code>pd.merge(df1, df2, on='id', how='left')</code> — same concept as SQL JOINs.<br/>
+<strong>Missing data:</strong> <code>df.isna().sum()</code>, <code>df.fillna(0)</code>, <code>df.dropna(subset=['critical_col'])</code>.<br/>
+<strong>Apply:</strong> <code>df['col'].apply(lambda x: x.lower())</code> — apply function to each element. Avoid loops.</p>
+
+<h3>scikit-learn — ML in Practice</h3>
+<p>Consistent API: <code>model.fit(X_train, y_train)</code> → <code>model.predict(X_test)</code> → <code>model.score(X_test, y_test)</code>.<br/>
+<strong>Preprocessing:</strong> <code>StandardScaler()</code>, <code>MinMaxScaler()</code>, <code>OneHotEncoder()</code>, <code>LabelEncoder()</code>. Always fit on train, transform on test.<br/>
+<strong>Model selection:</strong> <code>train_test_split(X, y, test_size=0.2, random_state=42)</code>. <code>cross_val_score(model, X, y, cv=5)</code>.<br/>
+<strong>Pipelines:</strong> <code>Pipeline([('scaler', StandardScaler()), ('model', RandomForestClassifier())])</code> — chains preprocessing + model. Prevents data leakage.<br/>
+<strong>Hyperparameter tuning:</strong> <code>GridSearchCV(model, param_grid, cv=5, scoring='f1')</code> or <code>RandomizedSearchCV</code> for large search spaces.</p>
+
+<h3>Visualisation — matplotlib & seaborn</h3>
+<p><strong>matplotlib:</strong> Low-level, full control. <code>plt.figure(figsize=(10,6))</code>, <code>plt.plot(x, y)</code>, <code>plt.scatter()</code>, <code>plt.bar()</code>, <code>plt.hist()</code>. Subplots: <code>fig, axes = plt.subplots(2, 2)</code>.<br/>
+<strong>seaborn:</strong> High-level, beautiful defaults. <code>sns.heatmap(df.corr())</code>, <code>sns.boxplot(x='dept', y='salary', data=df)</code>, <code>sns.pairplot(df)</code>, <code>sns.regplot(x='x', y='y', data=df)</code>.<br/>
+<strong>plotly:</strong> Interactive plots for dashboards. <code>px.scatter(df, x='x', y='y', color='category', hover_data=['name'])</code>.</p>
+
+<h3>Best Practices</h3>
+<p><strong>Virtual environments:</strong> Always use <code>venv</code> or <code>conda</code>. <code>pip freeze > requirements.txt</code> for reproducibility.<br/>
+<strong>Code style:</strong> PEP 8. Use <code>black</code> for formatting, <code>flake8</code> for linting, <code>mypy</code> for type checking.<br/>
+<strong>Notebooks vs scripts:</strong> Jupyter for exploration, <code>.py</code> scripts for production. Refactor notebook code into functions/modules before deploying.<br/>
+<strong>Version control:</strong> Git + GitHub. <code>.gitignore</code> for data files and <code>.env</code>. Never commit API keys.</p>`},
 
 };
 
@@ -1707,6 +1903,7 @@ Notes:\n${digest}`;
 function SummaryPage({notes,folders,geminiKey}){
   const[filter,setFilter]=useState({folder:"all",cat:"all"});
   const[summary,setSummary]=useState(null);const[loading,setLoading]=useState(false);
+  const[digest,setDigest]=useState(null);const[digestLoading,setDigestLoading]=useState(false);
 
   const allNotes=Object.entries(notes).map(([id,n])=>({id,...n})).filter(n=>!n.children);
   const filtered=allNotes.filter(n=>{
@@ -1720,10 +1917,35 @@ function SummaryPage({notes,folders,geminiKey}){
 
   const cats=[...new Set(allNotes.map(n=>n.cat).filter(Boolean))];
 
+  // Study analytics computations
+  const totalWords=allNotes.reduce((s,n)=>{const w=(n.content||"").replace(/<[^>]+>/g,"").split(/\s+/).filter(Boolean).length;return s+w;},0);
+  const avgLength=allNotes.length>0?Math.round(totalWords/allNotes.length):0;
+  const catCounts={};allNotes.forEach(n=>{const c=n.cat||"uncategorized";catCounts[c]=(catCounts[c]||0)+1;});
+  const folderWordCounts={};folders.forEach(f=>{
+    const fIds=getAllFolderNoteIds(f);
+    const wc=allNotes.filter(n=>fIds.includes(n.id)).reduce((s,n)=>(s+(n.content||"").replace(/<[^>]+>/g,"").split(/\s+/).filter(Boolean).length),0);
+    folderWordCounts[f.name]=wc;
+  });
+  const maxFolderWords=Math.max(1,...Object.values(folderWordCounts));
+
+  // Category distribution for conic-gradient pie chart
+  const catEntries=Object.entries(catCounts);
+  const catTotal=catEntries.reduce((s,[,v])=>s+v,0);
+  let catGradParts=[];let cumPct=0;
+  catEntries.forEach(([c,v])=>{
+    const pct=(v/catTotal)*100;const color=CM[c]?.c||"#7b93f5";
+    catGradParts.push(`${color} ${cumPct}% ${cumPct+pct}%`);
+    cumPct+=pct;
+  });
+  const pieGradient=`conic-gradient(${catGradParts.join(", ")})`;
+
+  // Recent activity - notes sorted by creation date
+  const recentNotes=[...allNotes].sort((a,b)=>new Date(b.created)-new Date(a.created)).slice(0,8);
+
   const genSummary=async()=>{
     if(!geminiKey||filtered.length===0)return;setLoading(true);
-    const digest=filtered.map(n=>`[${n.title}] (${n.cat||"uncategorized"})\n${(n.content||"").replace(/<[^>]+>/g,"").slice(0,400)}`).join("\n---\n");
-    const prompt=`Summarize these ${filtered.length} notes concisely. Group by theme. Return ONLY valid JSON:\n{"overview":"2-3 sentence overview","groups":[{"theme":"Theme","notes":["note title 1"],"summary":"group summary"}],"keyTakeaways":["takeaway 1","takeaway 2"]}\n\nNotes:\n${digest}`;
+    const digestTxt=filtered.map(n=>`[${n.title}] (${n.cat||"uncategorized"})\n${(n.content||"").replace(/<[^>]+>/g,"").slice(0,400)}`).join("\n---\n");
+    const prompt=`Summarize these ${filtered.length} notes concisely. Group by theme. Return ONLY valid JSON:\n{"overview":"2-3 sentence overview","groups":[{"theme":"Theme","notes":["note title 1"],"summary":"group summary"}],"keyTakeaways":["takeaway 1","takeaway 2"]}\n\nNotes:\n${digestTxt}`;
     try{
       const txt=await aiCall(prompt,geminiKey,{maxOutputTokens:1200,temperature:0.3});
       if(txt)setSummary(JSON.parse(txt));
@@ -1731,12 +1953,26 @@ function SummaryPage({notes,folders,geminiKey}){
     setLoading(false);
   };
 
+  const genDigest=async()=>{
+    if(!geminiKey||allNotes.length===0)return;setDigestLoading(true);
+    const allContent=allNotes.map(n=>`[${n.title}] (${n.cat||"uncategorized"}, folder: ${folders.find(f=>getAllFolderNoteIds(f).includes(n.id))?.name||"unknown"})\n${(n.content||"").replace(/<[^>]+>/g,"").slice(0,300)}`).join("\n---\n");
+    const prompt=`Analyze these ${allNotes.length} notes and provide a weekly study digest. Return ONLY valid JSON:\n{"themes":[{"name":"theme name","description":"1-2 sentences","noteCount":2}],"knowledgeGaps":[{"topic":"topic","reason":"why it is a gap"}],"suggestedConnections":[{"noteA":"note title","noteB":"note title","reason":"why they connect"}],"actionItems":[{"task":"action item text","source":"from which note","priority":"high/medium/low"}]}\n\nNotes:\n${allContent}`;
+    try{
+      const txt=await aiCall(prompt,geminiKey,{maxOutputTokens:2000,temperature:0.4});
+      if(txt)setDigest(JSON.parse(txt));
+    }catch(e){console.error("Digest error:",e);}
+    setDigestLoading(false);
+  };
+
+  const priorityColor={high:"#ef4444",medium:"#f59e0b",low:"#22c55e"};
+
   return(<div style={{padding:"28px 36px",overflowY:"auto",flex:1}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-      <div><h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:0,color:"var(--t-txt)",fontWeight:800,letterSpacing:"-0.5px"}}>Summary</h2>
-        <div style={{fontSize:14,color:"var(--t-txt2)",marginTop:4}}>{filtered.length} notes</div></div>
+      <div><h2 style={{fontFamily:"'Inter',system-ui,sans-serif",fontSize:26,margin:0,color:"var(--t-txt)",fontWeight:800,letterSpacing:"-0.5px"}}>Study Dashboard</h2>
+        <div style={{fontSize:14,color:"var(--t-txt2)",marginTop:4}}>Analytics and insights across {allNotes.length} notes</div></div>
       <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        {geminiKey&&<button className="grad-btn" onClick={genSummary} disabled={loading} style={{padding:"10px 24px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:600,cursor:loading?"wait":"pointer",opacity:loading?.7:1}}>{loading?"Summarizing...":"Generate Summary"}</button>}
+        {geminiKey&&<button className="grad-btn" onClick={genDigest} disabled={digestLoading} style={{padding:"10px 20px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#22c55e,#06b6d4)",color:"#fff",fontSize:13,fontWeight:600,cursor:digestLoading?"wait":"pointer",opacity:digestLoading?.7:1}}>{digestLoading?"Generating...":"Weekly Digest"}</button>}
+        {geminiKey&&<button className="grad-btn" onClick={genSummary} disabled={loading} style={{padding:"10px 20px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:13,fontWeight:600,cursor:loading?"wait":"pointer",opacity:loading?.7:1}}>{loading?"Summarizing...":"AI Summary"}</button>}
       </div>
     </div>
 
@@ -1752,18 +1988,130 @@ function SummaryPage({notes,folders,geminiKey}){
       </select>
     </div>
 
-    {/* Note list */}
-    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10,marginBottom:20}}>
-      {filtered.map(n=>{const words=(n.content||"").replace(/<[^>]+>/g,"").split(/\s+/).filter(Boolean).length;return(
-        <div key={n.id} style={{...S.glass,padding:14}}>
-          <div style={{fontSize:14,fontWeight:600,color:"var(--t-txt)",marginBottom:4}}>{n.title}</div>
-          <div style={{display:"flex",gap:6,alignItems:"center"}}>
-            {n.cat&&<span style={S.tag(n.cat)}>{CM[n.cat]?.lb||n.cat}</span>}
-            <span style={{fontSize:10,color:"var(--t-txt2)"}}>{words} words</span>
-            <span style={{fontSize:10,color:"var(--t-txt2)"}}>{n.created}</span>
+    {/* Study Analytics Cards */}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
+      <div style={S.statCard}><div style={S.statN}>{allNotes.length}</div><div style={S.statL}>Total Notes</div></div>
+      <div style={S.statCard}><div style={S.statN}>{totalWords.toLocaleString()}</div><div style={S.statL}>Total Words</div></div>
+      <div style={S.statCard}><div style={S.statN}>{avgLength}</div><div style={S.statL}>Avg Note Length</div></div>
+      <div style={S.statCard}><div style={S.statN}>{cats.length}</div><div style={S.statL}>Categories</div></div>
+    </div>
+
+    {/* Charts Row */}
+    <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:14,marginBottom:20}}>
+      {/* Word Count Bar Chart */}
+      <div style={{...S.glass,padding:16}}>
+        <div style={{fontSize:10,color:"var(--t-a1)",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:12}}>Words Per Folder</div>
+        {Object.entries(folderWordCounts).map(([name,wc])=>(
+          <div key={name} style={{marginBottom:8}}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--t-txt)",marginBottom:3}}>
+              <span style={{fontWeight:600}}>{name}</span><span style={{color:"var(--t-txt2)"}}>{wc.toLocaleString()}</span>
+            </div>
+            <div style={{...S.pBar,height:8}}><div style={{height:"100%",borderRadius:6,background:"linear-gradient(135deg,var(--t-a1),var(--t-a2))",width:`${(wc/maxFolderWords)*100}%`,transition:"width 0.6s ease"}}/></div>
+          </div>
+        ))}
+      </div>
+      {/* Category Pie Chart */}
+      <div style={{...S.glass,padding:16,display:"flex",flexDirection:"column",alignItems:"center"}}>
+        <div style={{fontSize:10,color:"var(--t-a1)",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:12,alignSelf:"flex-start"}}>Category Distribution</div>
+        <div style={{width:120,height:120,borderRadius:"50%",background:pieGradient,marginBottom:12}}/>
+        <div style={{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center"}}>
+          {catEntries.map(([c,v])=><div key={c} style={{display:"flex",alignItems:"center",gap:4,fontSize:10}}>
+            <div style={{width:8,height:8,borderRadius:2,background:CM[c]?.c||"#7b93f5"}}/>
+            <span style={{color:"var(--t-txt2)"}}>{CM[c]?.lb||c} ({v})</span>
+          </div>)}
+        </div>
+      </div>
+    </div>
+
+    {/* Notes per category breakdown */}
+    <div style={{...S.glass,padding:16,marginBottom:20}}>
+      <div style={{fontSize:10,color:"var(--t-a1)",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:10}}>Notes Per Category</div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        {catEntries.map(([c,v])=><div key={c} style={{...S.glass,padding:"8px 14px",display:"flex",alignItems:"center",gap:6}}>
+          <div style={{width:10,height:10,borderRadius:3,background:CM[c]?.c||"#7b93f5"}}/>
+          <span style={{fontSize:13,fontWeight:600,color:"var(--t-txt)"}}>{v}</span>
+          <span style={{fontSize:11,color:"var(--t-txt2)"}}>{CM[c]?.lb||c}</span>
+        </div>)}
+      </div>
+    </div>
+
+    {/* Recent Activity Timeline */}
+    <div style={{...S.glass,padding:16,marginBottom:20}}>
+      <div style={{fontSize:10,color:"var(--t-a1)",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:12}}>Recent Activity</div>
+      {recentNotes.map((n,i)=>{const words=(n.content||"").replace(/<[^>]+>/g,"").split(/\s+/).filter(Boolean).length;return(
+        <div key={n.id} style={{display:"flex",gap:12,marginBottom:i<recentNotes.length-1?10:0,paddingBottom:i<recentNotes.length-1?10:0,borderBottom:i<recentNotes.length-1?"1px solid var(--t-border)":"none"}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:40}}>
+            <div style={{width:10,height:10,borderRadius:"50%",background:CM[n.cat]?.c||"var(--t-a1)",border:"2px solid var(--t-glass)"}}/>
+            {i<recentNotes.length-1&&<div style={{flex:1,width:1,background:"var(--t-border)",marginTop:4}}/>}
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:600,color:"var(--t-txt)"}}>{n.title}</div>
+            <div style={{display:"flex",gap:6,alignItems:"center",marginTop:2}}>
+              {n.cat&&<span style={S.tag(n.cat)}>{CM[n.cat]?.lb||n.cat}</span>}
+              <span style={{fontSize:10,color:"var(--t-txt2)"}}>{words} words</span>
+              <span style={{fontSize:10,color:"var(--t-txt3)"}}>{n.created}</span>
+            </div>
           </div>
         </div>
       );})}
+    </div>
+
+    {/* AI Weekly Digest */}
+    {digest&&<div style={{marginBottom:20}}>
+      <div style={{...S.glassAccent,padding:16,marginBottom:14,borderLeft:"3px solid #22c55e"}}>
+        <div style={{fontSize:10,color:"#22c55e",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:10}}>Key Themes</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:8}}>
+          {digest.themes?.map((t,i)=><div key={i} style={{...S.glass,padding:12}}>
+            <div style={{fontSize:13,fontWeight:600,color:"var(--t-txt)",marginBottom:4}}>{t.name}</div>
+            <div style={{fontSize:11,color:"var(--t-txt2)",lineHeight:1.5}}>{t.description}</div>
+            <div style={{fontSize:10,color:"var(--t-txt3)",marginTop:4}}>{t.noteCount} related notes</div>
+          </div>)}
+        </div>
+      </div>
+      {digest.knowledgeGaps?.length>0&&<div style={{...S.glassAccent,padding:16,marginBottom:14,borderLeft:"3px solid #f59e0b"}}>
+        <div style={{fontSize:10,color:"#f59e0b",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:10}}>Knowledge Gaps</div>
+        {digest.knowledgeGaps.map((g,i)=><div key={i} style={{padding:"8px 12px",marginBottom:4,borderRadius:8,background:"var(--t-glass)",border:"1px solid var(--t-border)"}}>
+          <div style={{fontSize:12,fontWeight:600,color:"var(--t-txt)"}}>{g.topic}</div>
+          <div style={{fontSize:11,color:"var(--t-txt2)",marginTop:2}}>{g.reason}</div>
+        </div>)}
+      </div>}
+      {digest.suggestedConnections?.length>0&&<div style={{...S.glassAccent,padding:16,marginBottom:14,borderLeft:"3px solid #7b93f5"}}>
+        <div style={{fontSize:10,color:"var(--t-a1)",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:10}}>Suggested Connections</div>
+        {digest.suggestedConnections.map((c,i)=><div key={i} style={{padding:"8px 12px",marginBottom:4,borderRadius:8,background:"var(--t-glass)",border:"1px solid var(--t-border)",display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:12,fontWeight:600,color:"var(--t-a1)"}}>{c.noteA}</span>
+          <span style={{fontSize:10,color:"var(--t-txt3)"}}>--</span>
+          <span style={{fontSize:12,fontWeight:600,color:"var(--t-a2)"}}>{c.noteB}</span>
+          <span style={{fontSize:11,color:"var(--t-txt2)",marginLeft:"auto"}}>{c.reason}</span>
+        </div>)}
+      </div>}
+      {digest.actionItems?.length>0&&<div style={{...S.glassAccent,padding:16,marginBottom:14,borderLeft:"3px solid #e879f9"}}>
+        <div style={{fontSize:10,color:"#e879f9",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:10}}>Action Items</div>
+        {digest.actionItems.map((a,i)=><div key={i} style={{padding:"8px 12px",marginBottom:4,borderRadius:8,background:"var(--t-glass)",border:"1px solid var(--t-border)",display:"flex",alignItems:"center",gap:8}}>
+          <div style={{width:6,height:6,borderRadius:"50%",background:priorityColor[a.priority]||"#7b93f5",flexShrink:0}}/>
+          <div style={{flex:1}}>
+            <div style={{fontSize:12,fontWeight:600,color:"var(--t-txt)"}}>{a.task}</div>
+            <div style={{fontSize:10,color:"var(--t-txt3)",marginTop:1}}>from: {a.source}</div>
+          </div>
+          <span style={{fontSize:9,padding:"2px 8px",borderRadius:20,background:(priorityColor[a.priority]||"#7b93f5")+"18",color:priorityColor[a.priority]||"#7b93f5",fontWeight:600,textTransform:"uppercase"}}>{a.priority}</span>
+        </div>)}
+      </div>}
+    </div>}
+
+    {/* Filtered note list */}
+    <div style={{...S.glass,padding:16,marginBottom:20}}>
+      <div style={{fontSize:10,color:"var(--t-a1)",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:10}}>Filtered Notes ({filtered.length})</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}}>
+        {filtered.map(n=>{const words=(n.content||"").replace(/<[^>]+>/g,"").split(/\s+/).filter(Boolean).length;return(
+          <div key={n.id} style={{...S.glass,padding:14}}>
+            <div style={{fontSize:14,fontWeight:600,color:"var(--t-txt)",marginBottom:4}}>{n.title}</div>
+            <div style={{display:"flex",gap:6,alignItems:"center"}}>
+              {n.cat&&<span style={S.tag(n.cat)}>{CM[n.cat]?.lb||n.cat}</span>}
+              <span style={{fontSize:10,color:"var(--t-txt2)"}}>{words} words</span>
+              <span style={{fontSize:10,color:"var(--t-txt2)"}}>{n.created}</span>
+            </div>
+          </div>
+        );})}
+      </div>
     </div>
 
     {/* AI Summary result */}
@@ -1783,31 +2131,48 @@ function SummaryPage({notes,folders,geminiKey}){
       </div>}
     </div>}
 
-    {!summary&&!loading&&<div style={{textAlign:"center",padding:48,color:"var(--t-txt2)"}}>
+    {!summary&&!digest&&!loading&&!digestLoading&&<div style={{textAlign:"center",padding:28,color:"var(--t-txt2)"}}>
       <div style={{fontSize:14,marginBottom:10,color:"var(--t-a1)",fontFamily:"'JetBrains Mono',monospace"}}>---</div>
-      <div style={{fontSize:14,color:"var(--t-txt3)"}}>Select filters and generate an AI summary of your notes</div>
+      <div style={{fontSize:14,color:"var(--t-txt3)"}}>Generate an AI summary or weekly digest for deeper insights</div>
     </div>}
   </div>);
 }
 
 // ══════════════════════════════════════════════════════════════
-// SECTION 12A: KNOWLEDGE GRAPH (multi-call LLM entity extraction)
+// SECTION 12A: KNOWLEDGE GRAPH (SVG-based, multi-call LLM entity extraction)
 // ══════════════════════════════════════════════════════════════
+function NodeShape({x,y,r,shape,color,selected,onMouseEnter,onMouseLeave,onClick}){
+  const fillOp=selected?0.25:0.12;const sw=selected?2.5:1.5;
+  const props={fill:color,fillOpacity:fillOp,stroke:color,strokeWidth:sw,cursor:"pointer",onMouseEnter,onMouseLeave,onClick,style:{transition:"fill-opacity 0.2s, stroke-width 0.2s"}};
+  if(shape==="diamond"){
+    const pts=`${x},${y-r} ${x+r},${y} ${x},${y+r} ${x-r},${y}`;
+    return <polygon points={pts} {...props}/>;
+  }
+  if(shape==="hexagon"){
+    const pts=Array.from({length:6},(_,i)=>{const a=Math.PI/3*i-Math.PI/6;return `${x+r*Math.cos(a)},${y+r*Math.sin(a)}`;}).join(" ");
+    return <polygon points={pts} {...props}/>;
+  }
+  if(shape==="square"){
+    const s=r*1.4;
+    return <rect x={x-s/2} y={y-s/2} width={s} height={s} rx={r*0.25} {...props}/>;
+  }
+  return <circle cx={x} cy={y} r={r} {...props}/>;
+}
+
 function LinksPage({notes,folders,geminiKey,onSelectNote}){
   const[links,setLinks]=useState(null);const[loading,setLoading]=useState(false);
   const[selectedNode,setSelectedNode]=useState(null);const[entities,setEntities]=useState({});
   const[progress,setProgress]=useState("");
-  const canvasRef=useRef(null);const animRef=useRef(null);const posRef=useRef({});const velRef=useRef({});
-  const analyzedRef=useRef(false);const dragRef=useRef(null);const hoverRef=useRef(null);
+  const[nodePositions,setNodePositions]=useState({});const[hoveredEdge,setHoveredEdge]=useState(null);
+  const analyzedRef=useRef(false);
 
-  // Folder color mapping for category-based node coloring
-  const FOLDER_COLORS={academics:{color:"#667eea",label:"Academics",icon:"\u{1F393}"},career:{color:"#22c55e",label:"Career & Projects",icon:"\u{1F4BC}"},health:{color:"#f59e0b",label:"Health & Fitness",icon:"\u{1F4AA}"},life:{color:"#e879f9",label:"Life & Planning",icon:"\u{1F30D}"}};
+  const FOLDER_COLORS={academics:{color:"#667eea",label:"Academics",shape:"circle"},career:{color:"#22c55e",label:"Career & Projects",shape:"diamond"},health:{color:"#f59e0b",label:"Health & Fitness",shape:"hexagon"},life:{color:"#e879f9",label:"Life & Planning",shape:"square"}};
   const getNoteFolder=useCallback(id=>{
     for(const f of (folders||[])){if(f.children){for(const sub of f.children){if(sub.notes?.includes(id))return f.id;}}if(f.notes?.includes(id))return f.id;}return null;
   },[folders]);
 
   const analyze=useCallback(async()=>{
-    if(!geminiKey||loading)return;setLoading(true);setLinks(null);setEntities({});setSelectedNode(null);
+    if(!geminiKey||loading)return;setLoading(true);setLinks(null);setEntities({});setSelectedNode(null);setNodePositions({});
     const noteList=Object.entries(notes).filter(([_,n])=>!n.children&&(n.content||"").replace(/<[^>]+>/g,"").trim().length>20);
     const results={};
     for(let i=0;i<noteList.length;i+=4){
@@ -1827,296 +2192,84 @@ function LinksPage({notes,folders,geminiKey,onSelectNote}){
         if(shared.length>0)linkMap.push({from:ids[i],to:ids[j],concepts:shared,strength:shared.length});
       }
     }
+    // Run force simulation synchronously to compute final positions
+    const W=900,H=600;
+    const pos={};const vel={};
+    ids.forEach((id,i)=>{
+      const angle=(2*Math.PI*i)/ids.length;
+      pos[id]={x:W/2+Math.cos(angle)*(W*0.3),y:H/2+Math.sin(angle)*(H*0.3)};
+      vel[id]={x:0,y:0};
+    });
+    const getNF=nid=>{for(const f of (folders||[])){if(f.children){for(const sub of f.children){if(sub.notes?.includes(nid))return f.id;}}if(f.notes?.includes(nid))return f.id;}return null;};
+    for(let frame=0;frame<400;frame++){
+      const cooling=Math.max(0.01,1-frame/350);
+      ids.forEach(id=>{vel[id]={x:0,y:0};});
+      for(let i=0;i<ids.length;i++){
+        for(let j=i+1;j<ids.length;j++){
+          const a=ids[i],b=ids[j];
+          let dx=pos[b].x-pos[a].x,dy=pos[b].y-pos[a].y;
+          const dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
+          const force=1200/(dist*dist);
+          const fx=dx/dist*force,fy=dy/dist*force;
+          vel[a].x-=fx;vel[a].y-=fy;vel[b].x+=fx;vel[b].y+=fy;
+        }
+      }
+      linkMap.forEach(l=>{
+        const dx=pos[l.to].x-pos[l.from].x,dy=pos[l.to].y-pos[l.from].y;
+        const dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
+        const force=(dist-180)*0.004*l.strength;
+        const fx=dx/dist*force,fy=dy/dist*force;
+        vel[l.from].x+=fx;vel[l.from].y+=fy;vel[l.to].x-=fx;vel[l.to].y-=fy;
+      });
+      for(let i=0;i<ids.length;i++){
+        for(let j=i+1;j<ids.length;j++){
+          const a=ids[i],b=ids[j];
+          if(getNF(a)===getNF(b)){
+            const dx=pos[b].x-pos[a].x,dy=pos[b].y-pos[a].y;
+            const dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
+            const force=(dist-100)*0.001;
+            vel[a].x+=dx/dist*force;vel[a].y+=dy/dist*force;
+            vel[b].x-=dx/dist*force;vel[b].y-=dy/dist*force;
+          }
+        }
+      }
+      ids.forEach(id=>{
+        vel[id].x+=(W/2-pos[id].x)*0.002;
+        vel[id].y+=(H/2-pos[id].y)*0.002;
+        pos[id].x+=vel[id].x*cooling;pos[id].y+=vel[id].y*cooling;
+        pos[id].x=Math.max(50,Math.min(W-50,pos[id].x));
+        pos[id].y=Math.max(50,Math.min(H-50,pos[id].y));
+      });
+    }
+    setNodePositions({...pos});
     setLinks(linkMap);setLoading(false);setProgress("");
-  },[geminiKey,notes,loading]);
+  },[geminiKey,notes,loading,folders]);
 
   useEffect(()=>{
     if(!analyzedRef.current&&geminiKey){analyzedRef.current=true;analyze();}
   },[geminiKey,analyze]);
 
-  const connCountRef=useRef({});const maxConnRef=useRef(1);const nodeColorRef=useRef({});
-  const settledRef=useRef(false);const selectedRef=useRef(null);
-  selectedRef.current=selectedNode;
-
-  // Shared draw function used by both the simulation loop and interaction redraws
-  const rRect=(ctx,x,y,w,h,r)=>{if(ctx.roundRect){rRect(ctx,x,y,w,h,r);}else{ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);}};
-  const drawGraph=useCallback((ctx,W,H,pos,connCount,maxConn,nodeColor,curSel,links,nodeIds,notes,frame)=>{
-    ctx.clearRect(0,0,W,H);
-    // Dark background with subtle dot grid
-    ctx.fillStyle="rgba(8,10,18,0.95)";ctx.fillRect(0,0,W,H);
-    ctx.fillStyle="rgba(123,147,245,0.04)";
-    for(let x=0;x<W;x+=30)for(let y=0;y<H;y+=30){ctx.beginPath();ctx.arc(x,y,0.5,0,Math.PI*2);ctx.fill();}
-    // Radial glow at center
-    const bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.55);
-    bg.addColorStop(0,"rgba(102,126,234,0.06)");bg.addColorStop(0.5,"rgba(149,113,205,0.02)");bg.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-
-    // Draw edges with gradient coloring and glow
-    links.forEach(l=>{
-      const f=pos[l.from],t=pos[l.to];if(!f||!t)return;
-      const isSel=curSel&&(l.from===curSel||l.to===curSel);
-      const isHov=hoverRef.current&&(l.from===hoverRef.current||l.to===hoverRef.current);
-      const active=isSel||isHov;
-      const cFrom=nodeColor[l.from]||"#7b93f5",cTo=nodeColor[l.to]||"#9571cd";
-      // Edge glow for active edges
-      if(active){
-        ctx.beginPath();ctx.moveTo(f.x,f.y);
-        const mx=(f.x+t.x)/2+(f.y-t.y)*0.12,my=(f.y+t.y)/2+(t.x-f.x)*0.12;
-        ctx.quadraticCurveTo(mx,my,t.x,t.y);
-        ctx.strokeStyle=isSel?"rgba(123,147,245,0.2)":"rgba(149,113,205,0.15)";
-        ctx.lineWidth=Math.min(5,l.strength*2)+4;ctx.stroke();
-      }
-      // Main edge with gradient
-      ctx.beginPath();ctx.moveTo(f.x,f.y);
-      const mx=(f.x+t.x)/2+(f.y-t.y)*0.12,my=(f.y+t.y)/2+(t.x-f.x)*0.12;
-      ctx.quadraticCurveTo(mx,my,t.x,t.y);
-      const edgeGrad=ctx.createLinearGradient(f.x,f.y,t.x,t.y);
-      if(active){edgeGrad.addColorStop(0,cFrom+"cc");edgeGrad.addColorStop(1,cTo+"cc");}
-      else{edgeGrad.addColorStop(0,cFrom+"30");edgeGrad.addColorStop(1,cTo+"30");}
-      ctx.strokeStyle=edgeGrad;
-      ctx.lineWidth=active?Math.min(4,l.strength*1.5)+1:Math.min(2.5,l.strength)+0.5;
-      ctx.stroke();
-      // Concept labels on active edges — pill style
-      if(active){
-        const lx=(f.x+t.x)/2,ly=(f.y+t.y)/2-10;
-        const txt=l.concepts.slice(0,2).join(", ");
-        ctx.font="600 9px 'Inter',sans-serif";const tw=ctx.measureText(txt).width;
-        ctx.fillStyle="rgba(15,17,25,0.85)";
-        const px=6,py=3;ctx.beginPath();const rr=8;const bx=lx-tw/2-px,by=ly-7-py,bw=tw+px*2,bh=14+py*2;
-        rRect(ctx,bx,by,bw,bh,rr);ctx.fill();
-        ctx.strokeStyle=isSel?"rgba(123,147,245,0.4)":"rgba(149,113,205,0.3)";ctx.lineWidth=1;ctx.stroke();
-        ctx.fillStyle=isSel?"#a5b4fc":"#c4b5fd";ctx.textAlign="center";ctx.fillText(txt,lx,ly+3);
-      }
-      // Animated particle dots flowing along active edges
-      if(active&&typeof frame==="number"){
-        const speed=0.001;const numDots=l.strength;
-        for(let d=0;d<numDots;d++){
-          const t2=((frame*speed+d/numDots)%1);
-          const px2=(1-t2)*(1-t2)*f.x+2*(1-t2)*t2*mx+t2*t2*t.x;
-          const py2=(1-t2)*(1-t2)*f.y+2*(1-t2)*t2*my+t2*t2*t.y;
-          ctx.beginPath();ctx.arc(px2,py2,2,0,Math.PI*2);
-          ctx.fillStyle=isSel?"rgba(165,180,252,0.8)":"rgba(196,181,253,0.6)";ctx.fill();
-        }
-      }
-    });
-
-    // Draw nodes
-    nodeIds.forEach(id=>{
-      const p=pos[id];const note=notes[id];const isSel=curSel===id;const isHov=hoverRef.current===id;
-      const conns=connCount[id]||0;const baseR=18+conns/maxConn*14;const r=baseR+(isSel?5:isHov?3:0);
-      const color=nodeColor[id];
-      // Outer glow — larger and more visible
-      const glowR=isSel?r*3:isHov?r*2.5:r*1.8;
-      const g=ctx.createRadialGradient(p.x,p.y,r*0.3,p.x,p.y,glowR);
-      g.addColorStop(0,color+(isSel?"35":isHov?"25":"10"));g.addColorStop(1,color+"00");
-      ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,glowR,0,Math.PI*2);ctx.fill();
-      // Node fill — solid gradient
-      const ng=ctx.createRadialGradient(p.x-r*0.25,p.y-r*0.25,0,p.x,p.y,r);
-      ng.addColorStop(0,color+(isSel?"e0":"a0"));ng.addColorStop(1,color+(isSel?"90":"50"));
-      ctx.fillStyle=ng;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
-      // Border
-      ctx.strokeStyle=isSel?"#ffffff90":color+"80";ctx.lineWidth=isSel?2.5:isHov?2:1.5;ctx.stroke();
-      // Inner highlight
-      const hl=ctx.createRadialGradient(p.x-r*0.3,p.y-r*0.35,0,p.x,p.y,r);
-      hl.addColorStop(0,"rgba(255,255,255,0.15)");hl.addColorStop(0.5,"rgba(255,255,255,0)");
-      ctx.fillStyle=hl;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
-      // Label with background
-      const label=(note?.title||"").length>18?(note?.title||"").slice(0,16)+"\u2026":(note?.title||"");
-      ctx.font=`${isSel?'700':'600'} ${isSel?12:11}px 'Inter',sans-serif`;
-      const tw=ctx.measureText(label).width;
-      ctx.fillStyle="rgba(8,10,18,0.75)";
-      ctx.beginPath();rRect(ctx,p.x-tw/2-6,p.y+r+6,tw+12,18,6);ctx.fill();
-      ctx.fillStyle=isSel?"#f1f5f9":isHov?"#e2e8f0":"#94a3b8";ctx.textAlign="center";
-      ctx.fillText(label,p.x,p.y+r+19);
-      // Connection count badge
-      if(conns>0){
-        const bx=p.x+r*0.65,by=p.y-r*0.65;
-        ctx.fillStyle=color;ctx.beginPath();ctx.arc(bx,by,9,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle="#fff";ctx.font="700 9px 'Inter',sans-serif";ctx.textAlign="center";
-        ctx.fillText(conns,bx,by+3);
-      }
-    });
-
-    // HUD overlay — top-left legend
-    const categories=[];const seen=new Set();
-    nodeIds.forEach(id=>{const fid=getNoteFolder(id);if(fid&&!seen.has(fid)){seen.add(fid);categories.push(fid);}});
-    if(categories.length>0){
-      const hudX=14,hudY=14;
-      ctx.fillStyle="rgba(8,10,18,0.8)";ctx.beginPath();rRect(ctx,hudX,hudY,140,categories.length*22+32,10);ctx.fill();
-      ctx.strokeStyle="rgba(123,147,245,0.15)";ctx.lineWidth=1;ctx.stroke();
-      ctx.fillStyle="#94a3b8";ctx.font="700 9px 'Inter',sans-serif";ctx.textAlign="left";
-      ctx.fillText("CATEGORIES",hudX+10,hudY+18);
-      categories.forEach((fid,i)=>{
-        const fc=FOLDER_COLORS[fid]||{color:"#7b93f5",label:fid,icon:"\u{1F4C4}"};
-        const y=hudY+34+i*22;
-        ctx.fillStyle=fc.color;ctx.beginPath();ctx.arc(hudX+18,y,5,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle="#c0cad8";ctx.font="600 10px 'Inter',sans-serif";
-        ctx.fillText(fc.label,hudX+30,y+4);
-      });
-    }
-
-    // HUD — bottom-right stats
-    const totalConcepts=[...new Set(links.flatMap(l=>l.concepts))].length;
-    const strongestLink=links.reduce((m,l)=>l.strength>m.strength?l:m,{strength:0});
-    const mostConnected=nodeIds.reduce((best,id)=>(connCount[id]||0)>(connCount[best]||0)?id:best,nodeIds[0]);
-    const statsX=W-200,statsY=H-110;
-    ctx.fillStyle="rgba(8,10,18,0.8)";ctx.beginPath();rRect(ctx,statsX,statsY,186,98,10);ctx.fill();
-    ctx.strokeStyle="rgba(123,147,245,0.15)";ctx.lineWidth=1;ctx.stroke();
-    ctx.fillStyle="#94a3b8";ctx.font="700 9px 'Inter',sans-serif";ctx.textAlign="left";
-    ctx.fillText("GRAPH INSIGHTS",statsX+10,statsY+16);
-    ctx.font="600 10px 'Inter',sans-serif";
-    ctx.fillStyle="#667eea";ctx.fillText("\u{1F517}",statsX+10,statsY+34);
-    ctx.fillStyle="#c0cad8";ctx.fillText(`${totalConcepts} shared concepts`,statsX+28,statsY+34);
-    ctx.fillStyle="#22c55e";ctx.fillText("\u{2B50}",statsX+10,statsY+52);
-    ctx.fillStyle="#c0cad8";
-    const hubName=(notes[mostConnected]?.title||"").slice(0,18);
-    ctx.fillText(`Hub: ${hubName}`,statsX+28,statsY+52);
-    ctx.fillStyle="#f59e0b";ctx.fillText("\u{1F50D}",statsX+10,statsY+70);
-    ctx.fillStyle="#c0cad8";
-    if(strongestLink.strength>0){
-      const sn1=(notes[strongestLink.from]?.title||"").slice(0,8);
-      const sn2=(notes[strongestLink.to]?.title||"").slice(0,8);
-      ctx.fillText(`Strongest: ${sn1}\u2194${sn2}`,statsX+28,statsY+70);
-    }
-    ctx.fillStyle="#e879f9";ctx.fillText("\u{1F4CA}",statsX+10,statsY+88);
-    ctx.fillStyle="#c0cad8";
-    const density=nodeIds.length>1?Math.round(links.length/(nodeIds.length*(nodeIds.length-1)/2)*100):0;
-    ctx.fillText(`Density: ${density}%`,statsX+28,statsY+88);
-  },[getNoteFolder]);
-
-  // Force-directed layout simulation
-  useEffect(()=>{
-    if(!links||!canvasRef.current)return;
-    const nodeIds=Object.keys(entities);if(nodeIds.length===0)return;
-    const canvas=canvasRef.current;const ctx=canvas.getContext("2d");
-    const W=canvas.width,H=canvas.height;
-    const pos={};const vel={};
-    nodeIds.forEach((id,i)=>{
-      const angle=(2*Math.PI*i)/nodeIds.length;
-      pos[id]={x:W/2+Math.cos(angle)*(W*0.3),y:H/2+Math.sin(angle)*(H*0.3)};
-      vel[id]={x:0,y:0};
-    });
-    posRef.current=pos;velRef.current=vel;settledRef.current=false;
-
-    const connCount={};nodeIds.forEach(id=>{connCount[id]=links.filter(l=>l.from===id||l.to===id).length;});
-    const maxConn=Math.max(1,...Object.values(connCount));
-    connCountRef.current=connCount;maxConnRef.current=maxConn;
-
-    // Color nodes by folder category
-    const nodeColor={};nodeIds.forEach(id=>{
-      const fid=getNoteFolder(id);const fc=FOLDER_COLORS[fid];
-      nodeColor[id]=fc?fc.color:"#7b93f5";
-    });
-    nodeColorRef.current=nodeColor;
-
-    let frame=0;
-    const draw=()=>{
-      frame++;
-      const cooling=Math.max(0.01,1-frame/300);
-      const simulating=frame<350;
-      if(simulating){
-        nodeIds.forEach(id=>{vel[id]={x:0,y:0};});
-        for(let i=0;i<nodeIds.length;i++){
-          for(let j=i+1;j<nodeIds.length;j++){
-            const a=nodeIds[i],b=nodeIds[j];
-            let dx=pos[b].x-pos[a].x,dy=pos[b].y-pos[a].y;
-            const dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
-            const force=1200/(dist*dist);
-            const fx=dx/dist*force,fy=dy/dist*force;
-            vel[a].x-=fx;vel[a].y-=fy;vel[b].x+=fx;vel[b].y+=fy;
-          }
-        }
-        links.forEach(l=>{
-          const dx=pos[l.to].x-pos[l.from].x,dy=pos[l.to].y-pos[l.from].y;
-          const dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
-          const force=(dist-180)*0.004*l.strength;
-          const fx=dx/dist*force,fy=dy/dist*force;
-          vel[l.from].x+=fx;vel[l.from].y+=fy;vel[l.to].x-=fx;vel[l.to].y-=fy;
-        });
-        // Same-folder attraction (cluster by category)
-        for(let i=0;i<nodeIds.length;i++){
-          for(let j=i+1;j<nodeIds.length;j++){
-            const a=nodeIds[i],b=nodeIds[j];
-            if(getNoteFolder(a)===getNoteFolder(b)){
-              const dx=pos[b].x-pos[a].x,dy=pos[b].y-pos[a].y;
-              const dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
-              const force=(dist-100)*0.001;
-              vel[a].x+=dx/dist*force;vel[a].y+=dy/dist*force;
-              vel[b].x-=dx/dist*force;vel[b].y-=dy/dist*force;
-            }
-          }
-        }
-        nodeIds.forEach(id=>{
-          vel[id].x+=(W/2-pos[id].x)*0.002;
-          vel[id].y+=(H/2-pos[id].y)*0.002;
-        });
-        nodeIds.forEach(id=>{
-          if(dragRef.current===id)return;
-          pos[id].x+=vel[id].x*cooling;pos[id].y+=vel[id].y*cooling;
-          pos[id].x=Math.max(50,Math.min(W-50,pos[id].x));
-          pos[id].y=Math.max(50,Math.min(H-50,pos[id].y));
-        });
-      }
-      const curSel=selectedRef.current;
-      drawGraph(ctx,W,H,pos,connCount,maxConn,nodeColor,curSel,links,nodeIds,notes,frame);
-      posRef.current=pos;
-      if(simulating){animRef.current=requestAnimationFrame(draw);}
-      else{settledRef.current=true;}
-    };
-    animRef.current=requestAnimationFrame(draw);
-    return()=>{if(animRef.current)cancelAnimationFrame(animRef.current);};
-  },[links,entities,notes,drawGraph,getNoteFolder]);
-
-  // Redraw on selection/hover without restarting physics
-  const redrawCanvas=useCallback(()=>{
-    if(!links||!canvasRef.current||!settledRef.current)return;
-    const nodeIds=Object.keys(entities);if(nodeIds.length===0)return;
-    const canvas=canvasRef.current;const ctx=canvas.getContext("2d");
-    drawGraph(ctx,canvas.width,canvas.height,posRef.current,connCountRef.current,maxConnRef.current,nodeColorRef.current,selectedNode,links,nodeIds,notes,null);
-  },[links,entities,selectedNode,notes,drawGraph]);
-  useEffect(()=>{if(settledRef.current)redrawCanvas();},[selectedNode,redrawCanvas]);
-
-  const handleCanvasClick=useCallback(e=>{
-    const canvas=canvasRef.current;if(!canvas)return;
-    const rect=canvas.getBoundingClientRect();
-    const scaleX=canvas.width/rect.width,scaleY=canvas.height/rect.height;
-    const mx=(e.clientX-rect.left)*scaleX,my=(e.clientY-rect.top)*scaleY;
-    const nodeIds=Object.keys(entities);
-    const connCount=connCountRef.current;const maxC=maxConnRef.current;
-    for(const id of nodeIds){
-      const p=posRef.current[id];if(!p)continue;
-      const r=18+(connCount[id]||0)/maxC*14+8;
-      if(Math.sqrt((mx-p.x)**2+(my-p.y)**2)<r){setSelectedNode(prev=>prev===id?null:id);return;}
-    }
-    setSelectedNode(null);
-  },[entities]);
-
-  const handleCanvasMove=useCallback(e=>{
-    const canvas=canvasRef.current;if(!canvas)return;
-    const rect=canvas.getBoundingClientRect();
-    const scaleX=canvas.width/rect.width,scaleY=canvas.height/rect.height;
-    const mx=(e.clientX-rect.left)*scaleX,my=(e.clientY-rect.top)*scaleY;
-    const nodeIds=Object.keys(entities);
-    const connCount=connCountRef.current;const maxC=maxConnRef.current;
-    let found=null;
-    for(const id of nodeIds){
-      const p=posRef.current[id];if(!p)continue;
-      const r=18+(connCount[id]||0)/maxC*14+8;
-      if(Math.sqrt((mx-p.x)**2+(my-p.y)**2)<r){found=id;break;}
-    }
-    if(hoverRef.current!==found){
-      hoverRef.current=found;
-      canvas.style.cursor=found?"pointer":"default";
-      if(settledRef.current)redrawCanvas();
-    }
-  },[entities,redrawCanvas]);
-
   const nodeIds=Object.keys(entities);
+  const connCount={};nodeIds.forEach(id=>{connCount[id]=(links||[]).filter(l=>l.from===id||l.to===id).length;});
+  const maxConn=Math.max(1,...Object.values(connCount),1);
+
   const selEnt=selectedNode&&entities[selectedNode];
   const selNote=selectedNode&&notes[selectedNode];
   const selLinks=links?.filter(l=>l.from===selectedNode||l.to===selectedNode)||[];
   const selFolder=selectedNode?getNoteFolder(selectedNode):null;
   const selFolderColor=selFolder&&FOLDER_COLORS[selFolder]?FOLDER_COLORS[selFolder].color:"#7b93f5";
+
+  // Compute graph insights
+  const totalConcepts=links?[...new Set(links.flatMap(l=>l.concepts))].length:0;
+  const strongestLink=links?links.reduce((m,l)=>l.strength>m.strength?l:m,{strength:0}):{strength:0};
+  const mostConnected=nodeIds.length>0?nodeIds.reduce((best,id)=>(connCount[id]||0)>(connCount[best]||0)?id:best,nodeIds[0]):null;
+  const density=nodeIds.length>1&&links?Math.round(links.length/(nodeIds.length*(nodeIds.length-1)/2)*100):0;
+
+  // Collect active categories for legend
+  const activeCats=[];const seenCats=new Set();
+  nodeIds.forEach(id=>{const fid=getNoteFolder(id);if(fid&&!seenCats.has(fid)){seenCats.add(fid);activeCats.push(fid);}});
+
+  const SVG_W=900,SVG_H=600;
 
   return(<div style={{padding:"28px 36px",overflowY:"auto",flex:1}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
@@ -2135,17 +2288,92 @@ function LinksPage({notes,folders,geminiKey,onSelectNote}){
       <div style={{display:"flex",gap:8,marginBottom:16}}>
         <div className="stat-card" style={S.statCard}><div style={S.statN}>{nodeIds.length}</div><div style={S.statL}>Notes Analyzed</div></div>
         <div className="stat-card" style={S.statCard}><div style={S.statN}>{links.length}</div><div style={S.statL}>Connections</div></div>
-        <div className="stat-card" style={S.statCard}><div style={S.statN}>{[...new Set(links.flatMap(l=>l.concepts))].length}</div><div style={S.statL}>Shared Concepts</div></div>
+        <div className="stat-card" style={S.statCard}><div style={S.statN}>{totalConcepts}</div><div style={S.statL}>Shared Concepts</div></div>
       </div>
       <div style={{display:"flex",gap:14}}>
+        {/* SVG Graph */}
         <div style={{...S.glass,padding:0,overflow:"hidden",flex:2,borderRadius:20,position:"relative"}}>
-          <canvas ref={canvasRef} width={1000} height={700} onClick={handleCanvasClick} onMouseMove={handleCanvasMove}
-            style={{width:"100%",height:540,display:"block",borderRadius:20}}/>
+          <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} style={{width:"100%",height:540,display:"block",borderRadius:20}}>
+            <defs>
+              <radialGradient id="kg-bg-glow" cx="50%" cy="50%" r="55%">
+                <stop offset="0%" stopColor="var(--t-a1)" stopOpacity="0.04"/>
+                <stop offset="100%" stopColor="var(--t-bg)" stopOpacity="0"/>
+              </radialGradient>
+            </defs>
+            <rect width={SVG_W} height={SVG_H} fill="var(--t-bg)" rx={20}/>
+            <rect width={SVG_W} height={SVG_H} fill="url(#kg-bg-glow)" rx={20}/>
+            {/* Edges */}
+            {links.map((l,i)=>{
+              const f=nodePositions[l.from],t=nodePositions[l.to];if(!f||!t)return null;
+              const isSel=selectedNode&&(l.from===selectedNode||l.to===selectedNode);
+              const isHov=hoveredEdge===i;
+              const active=isSel||isHov;
+              const mx=(f.x+t.x)/2+(f.y-t.y)*0.12,my=(f.y+t.y)/2+(t.x-f.x)*0.12;
+              const d=`M ${f.x} ${f.y} Q ${mx} ${my} ${t.x} ${t.y}`;
+              const color=FOLDER_COLORS[getNoteFolder(l.from)]?.color||"var(--t-a1)";
+              return(<motion.g key={`edge-${i}`}>
+                <motion.path d={d} fill="none" stroke={active?color:"var(--t-border)"} strokeWidth={active?Math.min(3,l.strength*1.2)+1:Math.min(2,l.strength*0.8)+0.5} strokeOpacity={active?0.7:0.3}
+                  initial={{pathLength:0,opacity:0}} animate={{pathLength:1,opacity:1}}
+                  transition={{duration:1.2,delay:0.2+i*0.05,ease:"easeOut"}}
+                  onMouseEnter={()=>setHoveredEdge(i)} onMouseLeave={()=>setHoveredEdge(null)}
+                  style={{cursor:"default"}}/>
+                {active&&<>
+                  <rect x={(f.x+t.x)/2-40} y={(f.y+t.y)/2-12} width={80} height={18} rx={9} fill="var(--t-glass)" stroke="var(--t-border)" strokeWidth={0.5}/>
+                  <text x={(f.x+t.x)/2} y={(f.y+t.y)/2+1} textAnchor="middle" fill="var(--t-a1)" fontSize={8} fontWeight={600} fontFamily="'Inter',sans-serif">{l.concepts.slice(0,2).join(", ")}</text>
+                </>}
+              </motion.g>);
+            })}
+            {/* Nodes */}
+            {nodeIds.map((id,i)=>{
+              const p=nodePositions[id];if(!p)return null;
+              const note=notes[id];const isSel=selectedNode===id;
+              const conns=connCount[id]||0;const r=18+conns/maxConn*12;
+              const fid=getNoteFolder(id);const fc=FOLDER_COLORS[fid]||{color:"#7b93f5",shape:"circle"};
+              const label=(note?.title||"").length>18?(note?.title||"").slice(0,16)+"\u2026":(note?.title||"");
+              return(<motion.g key={`node-${id}`} style={{cursor:"pointer"}}
+                initial={{scale:0,opacity:0}} animate={{scale:1,opacity:1}}
+                transition={{delay:0.4+i*0.08,type:"spring",stiffness:120,damping:20}}>
+                <NodeShape x={p.x} y={p.y} r={r} shape={fc.shape} color={fc.color} selected={isSel}
+                  onClick={()=>setSelectedNode(prev=>prev===id?null:id)}
+                  onMouseEnter={()=>{}} onMouseLeave={()=>{}}/>
+                {/* Label */}
+                <rect x={p.x-40} y={p.y+r+4} width={80} height={16} rx={4} fill="var(--t-glass)" fillOpacity={0.8}/>
+                <text x={p.x} y={p.y+r+15} textAnchor="middle" fill="var(--t-txt)" fontSize={10} fontWeight={isSel?700:600} fontFamily="'Inter',sans-serif">{label}</text>
+                {/* Connection badge */}
+                {conns>0&&<>
+                  <circle cx={p.x+r*0.65} cy={p.y-r*0.65} r={8} fill={fc.color} fillOpacity={0.9}/>
+                  <text x={p.x+r*0.65} y={p.y-r*0.65+3} textAnchor="middle" fill="#fff" fontSize={8} fontWeight={700} fontFamily="'Inter',sans-serif">{conns}</text>
+                </>}
+              </motion.g>);
+            })}
+          </svg>
+          {/* Glass HUD overlay */}
+          <div style={{position:"absolute",top:12,left:12,pointerEvents:"none"}}>
+            <div style={{...S.glass,padding:"10px 14px",minWidth:130}}>
+              <div style={{fontSize:9,color:"var(--t-txt2)",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Categories</div>
+              {activeCats.map(fid=>{const fc=FOLDER_COLORS[fid]||{color:"#7b93f5",label:fid,shape:"circle"};return(
+                <div key={fid} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                  <div style={{width:8,height:8,borderRadius:fc.shape==="square"?2:fc.shape==="diamond"?1:"50%",background:fc.color,transform:fc.shape==="diamond"?"rotate(45deg)":"none"}}/>
+                  <span style={{fontSize:10,color:"var(--t-txt2)",fontWeight:600}}>{fc.label}</span>
+                </div>
+              );})}
+            </div>
+          </div>
+          <div style={{position:"absolute",bottom:12,right:12,pointerEvents:"none"}}>
+            <div style={{...S.glass,padding:"10px 14px",minWidth:170}}>
+              <div style={{fontSize:9,color:"var(--t-txt2)",fontWeight:700,textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Graph Insights</div>
+              <div style={{fontSize:10,color:"var(--t-txt2)",marginBottom:3}}><span style={{color:"var(--t-a1)",fontWeight:600}}>{totalConcepts}</span> shared concepts</div>
+              {mostConnected&&<div style={{fontSize:10,color:"var(--t-txt2)",marginBottom:3}}>Hub: <span style={{color:"var(--t-a1)",fontWeight:600}}>{(notes[mostConnected]?.title||"").slice(0,18)}</span></div>}
+              {strongestLink.strength>0&&<div style={{fontSize:10,color:"var(--t-txt2)",marginBottom:3}}>Strongest: <span style={{color:"var(--t-a2)",fontWeight:600}}>{(notes[strongestLink.from]?.title||"").slice(0,8)}</span> -- <span style={{color:"var(--t-a2)",fontWeight:600}}>{(notes[strongestLink.to]?.title||"").slice(0,8)}</span></div>}
+              <div style={{fontSize:10,color:"var(--t-txt2)"}}>Density: <span style={{color:"var(--t-a1)",fontWeight:600}}>{density}%</span></div>
+            </div>
+          </div>
         </div>
+        {/* Detail panel */}
         <div style={{flex:1,minWidth:240}}>
           {selEnt&&selNote?(<div style={{...S.glassAccent,padding:16,borderRadius:16,borderLeft:`3px solid ${selFolderColor}`}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-              <span style={{fontSize:16}}>{FOLDER_COLORS[selFolder]?.icon||"\u{1F4C4}"}</span>
+              <div style={{width:12,height:12,borderRadius:FOLDER_COLORS[selFolder]?.shape==="square"?3:"50%",background:selFolderColor,transform:FOLDER_COLORS[selFolder]?.shape==="diamond"?"rotate(45deg)":"none"}}/>
               <div><div style={{fontSize:15,fontWeight:700,color:"var(--t-txt)"}}>{selNote.title}</div>
               <div style={{fontSize:10,color:selFolderColor,fontWeight:600}}>{FOLDER_COLORS[selFolder]?.label||"Notes"}</div></div>
             </div>
@@ -2156,13 +2384,16 @@ function LinksPage({notes,folders,geminiKey,onSelectNote}){
             </div>
             {selLinks.length>0&&<><div style={S.sh2}>Connected To ({selLinks.length})</div>
               {selLinks.map((l,i)=>{const oid=l.from===selectedNode?l.to:l.from;const ofid=getNoteFolder(oid);const ofc=FOLDER_COLORS[ofid];return(
-                <div key={i} onClick={()=>setSelectedNode(oid)} style={{padding:"8px 10px",marginBottom:4,cursor:"pointer",fontSize:12,borderRadius:10,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",transition:"background 0.15s",borderLeft:`2px solid ${ofc?.color||"#7b93f5"}`}}>
-                  <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:12}}>{ofc?.icon||"\u{1F4C4}"}</span><span style={{fontWeight:600,color:"var(--t-txt)"}}>{notes[oid]?.title}</span></div>
+                <div key={i} onClick={()=>setSelectedNode(oid)} style={{padding:"8px 10px",marginBottom:4,cursor:"pointer",fontSize:12,borderRadius:10,background:"var(--t-glass)",border:"1px solid var(--t-border)",transition:"background 0.15s",borderLeft:`2px solid ${ofc?.color||"#7b93f5"}`}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    <div style={{width:8,height:8,borderRadius:ofc?.shape==="square"?2:"50%",background:ofc?.color||"#7b93f5",transform:ofc?.shape==="diamond"?"rotate(45deg)":"none"}}/>
+                    <span style={{fontWeight:600,color:"var(--t-txt)"}}>{notes[oid]?.title}</span>
+                  </div>
                   <div style={{fontSize:10,color:"var(--t-txt2)",marginTop:2,paddingLeft:22}}>via <span style={{color:"var(--t-a2)"}}>{l.concepts.join(", ")}</span> <span style={{color:"var(--t-txt3)"}}>({l.strength} shared)</span></div>
                 </div>);})}</>}
             <button className="grad-btn" onClick={()=>{onSelectNote(selectedNode);}} style={{marginTop:10,padding:"7px 14px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${selFolderColor},${selFolderColor}cc)`,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",width:"100%"}}>Open Note</button>
           </div>):(<div style={{...S.glass,padding:20,textAlign:"center",color:"var(--t-txt2)",fontSize:12,borderRadius:16}}>
-            <div style={{fontSize:28,marginBottom:8,opacity:0.5}}>{"\u{1F578}\uFE0F"}</div>
+            <div style={{fontSize:28,marginBottom:8,opacity:0.5}}>--</div>
             <div style={{fontWeight:600,marginBottom:4}}>Select a node</div>
             <div>Click any node to explore its concepts and connections</div>
           </div>)}
@@ -3393,6 +3624,12 @@ function NotiqApp(){
   n18:[{title:"Mom\u2019s Barcelona Visit \u2014 March 12-16",index:0},{title:"Logistics",index:1},{title:"Day 1 \u2014 Thursday: Arrival + Gothic Quarter",index:2},{title:"Day 2 \u2014 Friday: Gaud\u00ed Day",index:3},{title:"Day 3 \u2014 Saturday: Culture + Beach",index:4},{title:"Day 4 \u2014 Sunday: Relaxed Day + Departure",index:5}],
   n19:[{title:"What I\u2019ve Learned \u2014 5 Months into the MBA",index:0},{title:"Academic Takeaways",index:1},{title:"Personal Growth",index:2},{title:"What I\u2019d Do Differently",index:3},{title:"Focus for Semester 2",index:4}],
   n20:[{title:"AI Tools in My Daily Workflow",index:0},{title:"Code & Development",index:1},{title:"Writing & Research",index:2},{title:"Productivity",index:3},{title:"The Meta-Lesson",index:4}],
+  n21:[{title:"Prototyping \u2014 From Concept to Clickable",index:0},{title:"The Fidelity Spectrum",index:1},{title:"When to Use Each Fidelity",index:2},{title:"User Testing with Prototypes",index:3},{title:"Tools & Frameworks",index:4},{title:"Common Mistakes",index:5}],
+  n22:[{title:"AI & ML \u2014 Core Concepts and Taxonomy",index:0},{title:"The ML Pipeline",index:1},{title:"Supervised vs Unsupervised vs Reinforcement",index:2},{title:"Bias-Variance Tradeoff",index:3},{title:"Key Algorithms Cheat Sheet",index:4},{title:"Ethical Considerations",index:5}],
+  n23:[{title:"AWS Cloud \u2014 Architecture & Core Services",index:0},{title:"Core Compute Services",index:1},{title:"Storage & Databases",index:2},{title:"ML & AI Services",index:3},{title:"Networking & Security",index:4},{title:"Architecture Patterns",index:5}],
+  n24:[{title:"R Programming \u2014 From Base R to Tidyverse",index:0},{title:"Base R Essentials",index:1},{title:"Tidyverse \u2014 Modern R",index:2},{title:"Statistical Tests in R",index:3},{title:"R Markdown & Reproducibility",index:4}],
+  n25:[{title:"SQL \u2014 From SELECT to Window Functions",index:0},{title:"Core Query Anatomy",index:1},{title:"JOINs \u2014 The Heart of SQL",index:2},{title:"Window Functions \u2014 Advanced Analytics",index:3},{title:"CTEs & Subqueries",index:4},{title:"Database Design Principles",index:5}],
+  n26:[{title:"Python for Data Science \u2014 Libraries & Patterns",index:0},{title:"NumPy \u2014 Numerical Computing",index:1},{title:"pandas \u2014 Data Manipulation",index:2},{title:"scikit-learn \u2014 ML in Practice",index:3},{title:"Visualisation \u2014 matplotlib & seaborn",index:4},{title:"Best Practices",index:5}],
 });
   const[confidence,setConfidence]=useState({
   // twd1 — Statistics class (8 sections)
@@ -3425,6 +3662,18 @@ function NotiqApp(){
   "n19:0":7,"n19:1":8,"n19:2":6,"n19:3":5,"n19:4":7,
   // n20 — AI Tools (5 sections)
   "n20:0":8,"n20:1":9,"n20:2":7,"n20:3":8,"n20:4":7,
+  // n21 — Prototyping (6 sections)
+  "n21:0":7,"n21:1":8,"n21:2":6,"n21:3":5,"n21:4":9,"n21:5":6,
+  // n22 — AI/ML Fundamentals (6 sections)
+  "n22:0":8,"n22:1":7,"n22:2":9,"n22:3":6,"n22:4":8,"n22:5":5,
+  // n23 — AWS Cloud (6 sections)
+  "n23:0":5,"n23:1":6,"n23:2":7,"n23:3":4,"n23:4":3,"n23:5":6,
+  // n24 — R Programming (5 sections)
+  "n24:0":7,"n24:1":6,"n24:2":8,"n24:3":9,"n24:4":7,
+  // n25 — SQL (6 sections)
+  "n25:0":9,"n25:1":8,"n25:2":9,"n25:3":6,"n25:4":7,"n25:5":5,
+  // n26 — Python (6 sections)
+  "n26:0":8,"n26:1":9,"n26:2":8,"n26:3":7,"n26:4":6,"n26:5":8,
 });
   const[insightsFolder,setInsightsFolder]=useState("academics"); // which root folder insights are for
   const timerRef=useRef(null);const ytRef=useRef(null);const abortRef=useRef(null);const ytAbortRef=useRef(null);
