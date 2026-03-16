@@ -3052,7 +3052,7 @@ function LandingPage({onEnter}){
 
             <motion.p initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.6,duration:0.8}}
               style={{fontSize:20,color:"#94a3b8",lineHeight:1.75,maxWidth:560,margin:"0 0 48px"}}>
-              Notes that learn with you. Notiq predicts what you'll write next, tracks what you actually understand, and builds personalised study plans to fill the gaps.
+              Stop missing half the lecture because you're busy writing. Notiq's AI finishes your sentences so you can stay focused on what's being taught — then tracks what you actually understand and fills the gaps.
             </motion.p>
 
             <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.8,duration:0.6}}
@@ -3067,7 +3067,7 @@ function LandingPage({onEnter}){
 
             <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:1.2,duration:0.8}}
               style={{display:"flex",gap:40,marginTop:56}}>
-              {[["Real-time AI","autocomplete as you type"],["Knowledge Gaps","tracked per topic"],["Study Plans","generated in seconds"]].map(([n,l],i)=>(
+              {[["Less Typing","AI finishes your notes"],["More Listening","never miss a lecture moment"],["Deeper Learning","study plans for your weak spots"]].map(([n,l],i)=>(
                 <div key={i}><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:16,fontWeight:700,color:"#667eea"}}>{n}</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>{l}</div></div>
               ))}
             </motion.div>
