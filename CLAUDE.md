@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 ## Project Overview
-Notiq is an AI-powered note-taking app. The primary codebase is the **React frontend** (`frontend/`), a single-page app built with React 19 + Vite 7. The Streamlit files (`notiq_streamlit.py`, `streamlit_v1.py`) are legacy prototypes from Assignment 1.
+Notiq is an AI-powered note-taking app. The primary codebase is the **React frontend** (`react-vite/`), a single-page app built with React 19 + Vite 7. The Streamlit files (`notiq_streamlit.py`, `streamlit_v1.py`) are legacy prototypes from Assignment 1.
 
 ## Tech Stack
 - **Frontend**: React 19, Vite 7, plain CSS (inline styles in App.jsx)
@@ -11,12 +11,12 @@ Notiq is an AI-powered note-taking app. The primary codebase is the **React fron
 - **No database** — seed data is hardcoded in App.jsx
 
 ## Key Files
-- `frontend/src/App.jsx` — entire app (components, styles, data, AI logic)
-- `frontend/src/index.css` — global CSS reset + CSS variables for theming
-- `frontend/src/App.css` — root layout
-- `frontend/index.html` — entry point
-- `frontend/vite.config.js` — Vite config
-- `frontend/.env` — API keys (VITE_GEMINI_KEY, VITE_YOUTUBE_KEY)
+- `react-vite/src/App.jsx` — entire app (components, styles, data, AI logic)
+- `react-vite/src/index.css` — global CSS reset + CSS variables for theming
+- `react-vite/src/App.css` — root layout
+- `react-vite/index.html` — entry point
+- `react-vite/vite.config.js` — Vite config
+- `react-vite/.env` — API keys (VITE_GEMINI_KEY, VITE_YOUTUBE_KEY)
 
 ## Architecture (App.jsx sections)
 1. **Theme** — Dark/light CSS variables, theme toggle
@@ -32,9 +32,9 @@ Notiq is an AI-powered note-taking app. The primary codebase is the **React fron
 
 ## Commands
 ```bash
-cd frontend && npm run dev    # Start dev server
-cd frontend && npm run build  # Production build
-cd frontend && npm run lint   # ESLint
+cd react-vite && npm run dev    # Start dev server
+cd react-vite && npm run build  # Production build
+cd react-vite && npm run lint   # ESLint
 ```
 
 ## API Keys
