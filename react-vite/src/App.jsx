@@ -942,81 +942,23 @@ async function geminiTransformNote(noteTitle,noteContent,format,key){
   try{const m=raw.match(/\{[\s\S]*\}/);return m?JSON.parse(m[0]):null;}catch{return null;}
 }
 
-const GHOST_DB = [
-  // ML concepts
-  {trigger:"random forest",ghost:"Random Forest is an ensemble method that builds multiple decision trees and merges their predictions.\n\nHow it works:\n  1. Bootstrap sampling — create N random subsets of training data\n  2. Build a decision tree on each subset (with random feature selection)\n  3. Aggregate predictions — majority vote (classification) or average (regression)\n\nKey hyperparameters:\n  - n_estimators: number of trees (100-500 typical)\n  - max_depth: tree depth limit\n  - min_samples_split: minimum samples to split a node\n  - max_features: sqrt(n) for classification, n/3 for regression\n\nAdvantages: handles non-linearity, resistant to overfitting, feature importance ranking\nLimitations: slow inference on large forests, less interpretable than single trees",
-    video:{t:"Random Forest Clearly Explained",ch:"StatQuest",v:"4.8M",url:"https://www.youtube.com/results?search_query=random+forest+statquest"}},
-  {trigger:"linear regression",ghost:"Linear Regression models the relationship Y = β₀ + β₁X₁ + β₂X₂ + ... + ε\n\nAssumptions:\n  1. Linearity — relationship between X and Y is linear\n  2. Independence — observations are independent\n  3. Homoscedasticity — constant variance of residuals\n  4. Normality — residuals are normally distributed\n\nCost function: MSE = (1/n) Σ(yᵢ - ŷᵢ)²\nOptimization: Ordinary Least Squares (OLS) or Gradient Descent\n\nR² score: proportion of variance explained (0 to 1)\nAdjusted R²: penalizes adding irrelevant features",
-    video:{t:"Linear Regression Explained",ch:"StatQuest",v:"3.2M",url:"https://www.youtube.com/results?search_query=linear+regression+statquest"}},
-  {trigger:"gradient descent",ghost:"Gradient Descent iteratively minimizes a loss function by moving in the direction of steepest descent.\n\nUpdate rule: θ = θ - α · ∂L/∂θ\n  where α = learning rate, L = loss function\n\nVariants:\n  - Batch GD: uses entire dataset per step (stable but slow)\n  - Stochastic GD: one sample per step (noisy but fast)\n  - Mini-batch GD: compromise (32-256 samples per step)\n\nAdvanced optimizers:\n  - Adam: adaptive learning rates + momentum\n  - RMSprop: running average of squared gradients\n  - AdaGrad: per-parameter learning rates\n\nLearning rate too high → diverges | too low → stuck in local minimum",
-    video:{t:"Gradient Descent Step-by-Step",ch:"3Blue1Brown",v:"7.1M",url:"https://www.youtube.com/results?search_query=gradient+descent+3blue1brown"}},
-  {trigger:"neural network",ghost:"Neural Network Architecture:\n\n  Input Layer → Hidden Layers → Output Layer\n\nEach neuron computes: output = activation(Σ(wᵢ · xᵢ) + bias)\n\nCommon activation functions:\n  - ReLU: max(0, x) — default for hidden layers\n  - Sigmoid: 1/(1+e⁻ˣ) — output layer for binary classification\n  - Softmax: e^xᵢ/Σe^xⱼ — output for multi-class\n  - Tanh: (eˣ-e⁻ˣ)/(eˣ+e⁻ˣ) — centered version of sigmoid\n\nTraining: forward pass → compute loss → backpropagation → update weights\nRegularization: dropout, L2 weight decay, batch normalization",
-    video:{t:"Neural Networks from Scratch",ch:"3Blue1Brown",v:"14M",url:"https://www.youtube.com/results?search_query=neural+networks+3blue1brown"}},
-  {trigger:"backpropagation",ghost:"Backpropagation computes gradients of the loss w.r.t. each weight using the chain rule.\n\nSteps:\n  1. Forward pass: compute predictions layer by layer\n  2. Compute loss at output (e.g. cross-entropy, MSE)\n  3. Backward pass: propagate gradients from output to input\n  4. Update weights: w = w - lr × ∂L/∂w\n\nChain rule example for 2-layer network:\n  ∂L/∂w₁ = ∂L/∂a₂ · ∂a₂/∂z₂ · ∂z₂/∂a₁ · ∂a₁/∂z₁ · ∂z₁/∂w₁\n\nVanishing gradient problem: deep networks with sigmoid/tanh\nSolution: ReLU activation, residual connections, proper initialization",
-    video:{t:"Backpropagation Calculus",ch:"3Blue1Brown",v:"6.5M",url:"https://www.youtube.com/results?search_query=backpropagation+3blue1brown"}},
-  {trigger:"k-means",ghost:"K-Means Clustering Algorithm:\n\n  1. Choose K (number of clusters)\n  2. Initialize K centroids randomly\n  3. Assign each point to nearest centroid\n  4. Recompute centroids as mean of assigned points\n  5. Repeat steps 3-4 until convergence\n\nChoosing K: Elbow method — plot inertia vs K, look for the \"elbow\"\nInertia = Σ ||xᵢ - μ_cluster||²\n\nLimitations:\n  - Assumes spherical clusters of equal size\n  - Sensitive to initialization (use k-means++)\n  - Must specify K in advance\n\nAlternatives: DBSCAN (density-based), hierarchical clustering, Gaussian Mixture Models",
-    video:{t:"K-Means Clustering Explained",ch:"StatQuest",v:"2.1M",url:"https://www.youtube.com/results?search_query=kmeans+clustering+statquest"}},
-  {trigger:"decision tree",ghost:"Decision Tree splits data recursively based on feature thresholds.\n\nSplitting criteria:\n  - Classification: Gini impurity = 1 - Σpᵢ², or Entropy = -Σpᵢlog₂(pᵢ)\n  - Regression: Variance reduction (MSE)\n\nThe algorithm greedily selects the split that maximizes information gain at each node.\n\nPruning (prevent overfitting):\n  - Pre-pruning: max_depth, min_samples_leaf, min_samples_split\n  - Post-pruning: cost-complexity pruning (ccp_alpha)\n\nAdvantages: interpretable, handles mixed data types, no scaling needed\nLimitations: high variance (overfitting), axis-aligned splits only",
-    video:{t:"Decision Trees Explained",ch:"StatQuest",v:"3.5M",url:"https://www.youtube.com/results?search_query=decision+tree+statquest"}},
-  // Finance
-  {trigger:"npv",ghost:"Net Present Value (NPV) = Σ [CFₜ / (1+r)ᵗ] - Initial Investment\n\nWhere:\n  CFₜ = Cash flow at time t\n  r = Discount rate (usually WACC)\n  t = Time period\n\nDecision rule: NPV > 0 → accept project (creates value)\n\nExample: Investment of 1000, returns 400/year for 3 years at 10% discount:\n  NPV = -1000 + 400/1.1 + 400/1.21 + 400/1.331 = -5.26 (reject)\n\nAdvantages: accounts for time value of money, considers all cash flows\nLimitations: requires accurate cash flow estimates, sensitive to discount rate",
-    video:{t:"NPV Explained Simply",ch:"365 Financial",v:"1.8M",url:"https://www.youtube.com/results?search_query=npv+explained"}},
-  {trigger:"wacc",ghost:"WACC = (E/V × Re) + (D/V × Rd × (1-T))\n\nComponents:\n  E = Market value of equity\n  D = Market value of debt\n  V = E + D (total firm value)\n  Re = Cost of equity (from CAPM: Rf + β(Rm-Rf))\n  Rd = Cost of debt (yield on existing debt)\n  T = Corporate tax rate\n\nExample: E=600, D=400, V=1000, Re=12%, Rd=6%, T=25%\n  WACC = (0.6×12%) + (0.4×6%×0.75) = 7.2% + 1.8% = 9.0%\n\nUsed as discount rate for NPV calculations and firm valuation.",
-    video:{t:"WACC Calculation Walk-Through",ch:"CFI",v:"800K",url:"https://www.youtube.com/results?search_query=wacc+calculation"}},
-  {trigger:"capm",ghost:"Capital Asset Pricing Model: E(Rᵢ) = Rf + βᵢ(E(Rm) - Rf)\n\nWhere:\n  Rf = Risk-free rate (e.g. 10-year government bond yield)\n  βᵢ = Beta of stock i (systematic risk measure)\n  E(Rm) = Expected market return\n  E(Rm)-Rf = Market risk premium (typically 4-7%)\n\nBeta interpretation:\n  β = 1 → moves with market\n  β > 1 → more volatile than market\n  β < 1 → less volatile (defensive stock)\n  β < 0 → inversely correlated (rare)\n\nLimitations: assumes efficient markets, single-period model, historical beta may not predict future",
-    video:{t:"CAPM Explained",ch:"365 Financial",v:"1.1M",url:"https://www.youtube.com/results?search_query=capm+explained"}},
-  // Quantum
-  {trigger:"quantum entanglement",ghost:"Quantum Entanglement occurs when two particles become correlated such that the state of one instantly determines the state of the other, regardless of distance.\n\nBell State (maximally entangled): |Φ+⟩ = (|00⟩ + |11⟩)/√2\n\nKey properties:\n  - Measuring one particle instantly collapses the other\n  - No faster-than-light communication (no-communication theorem)\n  - Cannot be explained by hidden variables (Bell's theorem)\n\nApplications:\n  - Quantum teleportation\n  - Quantum key distribution (QKD) for secure communication\n  - Superdense coding (2 classical bits per qubit)\n  - Quantum error correction",
-    video:{t:"Entanglement Explained",ch:"Veritasium",v:"9.2M",url:"https://www.youtube.com/results?search_query=quantum+entanglement+veritasium"}},
-  // Health
-  {trigger:"progressive overload",ghost:"Progressive Overload — the principle of gradually increasing training stimulus:\n\nMethods:\n  1. Increase weight (most common) — add 2.5-5kg per session\n  2. Increase reps — add 1-2 reps per set\n  3. Increase sets — add 1 set per exercise\n  4. Increase frequency — train muscle group more often\n  5. Decrease rest time — more metabolic stress\n\nSample 8-week progression for bench press:\n  Week 1-2: 60kg × 4×8\n  Week 3-4: 62.5kg × 4×8\n  Week 5-6: 65kg × 4×8\n  Week 7: Deload 50kg × 3×8\n  Week 8: Test 70kg × 1RM",
-    video:{t:"Progressive Overload Science",ch:"Jeff Nippard",v:"3.8M",url:"https://www.youtube.com/results?search_query=progressive+overload+nippard"}},
-  {trigger:"protein",ghost:"Protein Requirements for Muscle Growth:\n\n  Recommended intake: 1.6 - 2.2g per kg bodyweight per day\n  For a 75kg person: 120-165g protein daily\n\nBest sources (per 100g):\n  - Chicken breast: 31g protein\n  - Greek yogurt: 10g protein\n  - Eggs: 13g protein (2 large)\n  - Whey protein scoop: 24g protein\n  - Salmon: 25g protein\n  - Lentils: 9g protein\n\nTiming: spread across 3-5 meals (30-40g per meal)\nPost-workout window: within 2 hours, 20-40g",
-    video:{t:"How Much Protein?",ch:"Jeff Nippard",v:"5.1M",url:"https://www.youtube.com/results?search_query=protein+muscle+growth"}},
-  // Budget
-  {trigger:"50/30/20",ghost:"50/30/20 Budget Rule:\n\n  50% Needs (essentials):\n    Rent/mortgage, groceries, transport, insurance, utilities, minimum debt payments\n\n  30% Wants (lifestyle):\n    Dining out, entertainment, subscriptions, shopping, hobbies, travel\n\n  20% Savings (future):\n    Emergency fund (3-6 months expenses), investments, extra debt payments, retirement\n\nFor income of 2500:\n  Needs: 1250 max\n  Wants: 750 max\n  Savings: 500 minimum",
-    video:{t:"50/30/20 Rule Explained",ch:"Two Cents",v:"2.8M",url:"https://www.youtube.com/results?search_query=50+30+20+budget+rule"}},
-  // General
-  {trigger:"pomodoro",ghost:"Pomodoro Technique:\n\n  1. Choose a task to work on\n  2. Set timer for 25 minutes (one \"pomodoro\")\n  3. Work with full focus — no distractions\n  4. Short break: 5 minutes\n  5. After 4 pomodoros: long break (15-30 minutes)\n\nTips:\n  - Track completed pomodoros per day\n  - If interrupted, mark it and restart\n  - Plan tasks in pomodoro units (1-4 per task)\n  - Adjust timer length to your attention span (25-50 min)",
-    video:{t:"Pomodoro Technique",ch:"Thomas Frank",v:"2.8M",url:"https://www.youtube.com/results?search_query=pomodoro+technique"}},
-];
-
-function getGhost(text) {
-  const plain = text.replace(/<[^>]+>/g,"").toLowerCase();
-  const lines = plain.split("\n").filter(l=>l.trim());
-  const lastLine = (lines[lines.length-1]||"").trim();
-  const last2 = lines.slice(-3).join(" ");
-  for (const r of GHOST_DB) {
-    if (lastLine.includes(r.trigger) || last2.includes(r.trigger)) return r;
-  }
-  return null;
+// --- 3B: LLM-powered knowledge analysis (replaces hardcoded keyword tracking) ---
+async function aiAnalyzeKnowledge(notes,key){
+  if(!key)return null;
+  const digest=Object.entries(notes)
+    .filter(([_,n])=>!n.children&&n.content)
+    .map(([_,n])=>`[${n.title}]: ${(n.content||"").replace(/<[^>]+>/g,"").slice(0,400)}`)
+    .join("\n---\n");
+  if(digest.length<50)return null;
+  const raw=await aiCall(
+    `Analyze these study/work notes and assess the user's knowledge coverage.\n\n${digest}\n\n`+
+    `Return ONLY valid JSON (no markdown fences):\n{"subjects":[{"name":"Subject Name","pct":65,"found":["concept covered 1","concept covered 2"],"missing":["gap 1","gap 2"],"nextTopics":[{"topic":"Topic Name","desc":"Why study this"}]}]}\n\n`+
+    `Rules:\n- Detect 2-5 main subjects from the notes\n- pct = estimated knowledge coverage 0-100 based on breadth and depth\n- found = 3-6 key concepts well covered\n- missing = 2-5 important gaps or missing topics\n- nextTopics = 1-2 suggested next topics per subject with actionable descriptions\n- JSON only, no markdown fences`,
+    key,{maxOutputTokens:800,temperature:0.3}
+  );
+  if(!raw)return null;
+  try{const m=raw.match(/\{[\s\S]*\}/);return m?JSON.parse(m[0]):null;}catch{return null;}
 }
-
-// --- 3B: Video suggestion panel ---
-const VID_DB = [
-  {t:"Quantum Computing Explained",ch:"Kurzgesagt",v:"12M",ty:"youtube",url:"https://www.youtube.com/results?search_query=quantum+computing",triggers:["quantum","qubit","superposition"]},
-  {t:"ML Full Course 2026",ch:"freeCodeCamp",v:"8.3M",ty:"youtube",url:"https://www.youtube.com/results?search_query=machine+learning+course",triggers:["machine learning","neural","regression","sklearn"]},
-  {t:"Random Forest Deep Dive",ch:"StatQuest",v:"4.8M",ty:"youtube",url:"https://www.youtube.com/results?search_query=random+forest",triggers:["random forest","ensemble","bagging"]},
-  {t:"NPV & IRR Finance",ch:"365 Financial",v:"1.2M",ty:"youtube",url:"https://www.youtube.com/results?search_query=npv+irr",triggers:["npv","irr","wacc","dcf"]},
-  {t:"PyTorch Quick Start",ch:"Fireship",v:"2.1M",ty:"youtube",url:"https://www.youtube.com/results?search_query=pytorch",triggers:["pytorch","tensorflow","deep learning"]},
-  {t:"CNN from Scratch",ch:"Sentdex",v:"1.5M",ty:"youtube",url:"https://www.youtube.com/results?search_query=cnn+tutorial",triggers:["cnn","convolutional","image classification"]},
-  {t:"Chicken Stir-Fry — 15 Min",ch:"Quick Kitchen",v:"2.3M",ty:"youtube",url:"https://www.youtube.com/results?search_query=chicken+stir+fry",triggers:["chicken","stir fry","garlic"]},
-  {t:"30-Min PPL Workout",ch:"Jeff Nippard",v:"4.2M",ty:"youtube",url:"https://www.youtube.com/results?search_query=push+pull+legs",triggers:["workout","bench","squat","deadlift"]},
-  {t:"Barcelona Guide",ch:"Lost LeBlanc",v:"2.1M",ty:"youtube",url:"https://www.youtube.com/results?search_query=barcelona+guide",triggers:["barcelona","sagrada"]},
-  {t:"Validate Startup Ideas",ch:"Y Combinator",v:"1.9M",ty:"youtube",url:"https://www.youtube.com/results?search_query=validate+startup",triggers:["startup","saas","mvp"]},
-  {t:"Transformers Explained",ch:"3Blue1Brown",v:"5.6M",ty:"youtube",url:"https://www.youtube.com/results?search_query=transformer+attention",triggers:["transformer","attention","llm","gpt"]},
-  {t:"Protein Meal Prep",ch:"R. James",v:"3.4M",ty:"youtube",url:"https://www.youtube.com/results?search_query=protein+meal+prep",triggers:["protein","meal prep","calories"]},
-  {t:"Budget Like a Pro",ch:"Two Cents",v:"2.8M",ty:"youtube",url:"https://www.youtube.com/results?search_query=budget+rule",triggers:["budget","savings","income"]},
-];
-function getVideos(text,max=3){const l=text.replace(/<[^>]+>/g,"").toLowerCase();return VID_DB.map(v=>({...v,sc:v.triggers.reduce((s,t)=>s+(l.includes(t)?1:0),0)})).filter(v=>v.sc>0).sort((a,b)=>b.sc-a.sc).slice(0,max);}
-
-// --- 3C: Knowledge tracker ---
-const KT={quantum_computing:{name:"Quantum Computing",kw:["qubit","quantum","superposition","entanglement","hadamard","cnot","pauli","decoherence","shor","grover","bloch"],tot:15},machine_learning:{name:"Machine Learning",kw:["regression","decision tree","random forest","svm","supervised","unsupervised","k-means","pca","dbscan","neural","backpropag","gradient","relu","sigmoid","cnn","pytorch","tensorflow","scikit"],tot:20},finance:{name:"Corporate Finance",kw:["npv","irr","wacc","capital structure","modigliani","dividend","dcf","valuation","cash flow","risk","portfolio","capm"],tot:15}};
-function calcKnow(notes){const t=Object.values(notes).map(n=>(n.content||"").replace(/<[^>]+>/g,"").toLowerCase()).join(" ");const r={};for(const[k,v]of Object.entries(KT)){const f=v.kw.filter(w=>t.includes(w)).length;const p=Math.min(100,Math.round(f/v.tot*100));r[k]={name:v.name,pct:p,found:f,total:v.tot,missing:v.kw.filter(w=>!t.includes(w)).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).slice(0,5)};}return r;}
-
-// --- 3D: Next topics ---
-const NXT={quantum_computing:[{topic:"Quantum Error Correction",desc:"Essential for practical quantum computers",video:"https://www.youtube.com/results?search_query=quantum+error+correction",tn:"s1"},{topic:"Quantum Machine Learning",desc:"Intersection of QC and ML",video:"https://www.youtube.com/results?search_query=quantum+machine+learning",tn:"s1"}],machine_learning:[{topic:"Transformers & Attention",desc:"Foundation of modern NLP / LLMs",video:"https://www.youtube.com/results?search_query=transformer+attention",tn:"s2"},{topic:"Reinforcement Learning",desc:"Agents, rewards, and policies",video:"https://www.youtube.com/results?search_query=reinforcement+learning",tn:"s2"},{topic:"MLOps & Deployment",desc:"Taking models to production",video:"https://www.youtube.com/results?search_query=mlops+deployment",tn:"s2"}],finance:[{topic:"Monte Carlo Simulation",desc:"Risk analysis and option pricing",video:"https://www.youtube.com/results?search_query=monte+carlo+finance",tn:"s3"},{topic:"LBO Modeling",desc:"Leveraged buyout valuation",video:"https://www.youtube.com/results?search_query=lbo+model",tn:"s3"}]};
-function getNextTopics(k){const r=[];for(const[key,info]of Object.entries(k)){if(info.pct<85&&NXT[key])for(const nt of NXT[key])r.push({...nt,subject:info.name,curPct:info.pct});}return r.slice(0,5);}
 
 
 
@@ -1662,8 +1604,8 @@ function CombinedView({title,items,onSelect,onAddLesson,parentId,onChangeNote,hi
 // ══════════════════════════════════════════════════════════════
 // SECTION 9: AI SUGGESTION PANEL
 // ══════════════════════════════════════════════════════════════
-function SugPanel({videos,ytResults,knowledge,aiInsight,loadingYT}){
-  const all=ytResults.length>0?ytResults:videos;
+function SugPanel({ytResults,knowledge,aiInsight,loadingYT,onRefreshKnowledge,knowledgeLoading}){
+  const all=ytResults;
   return(<div data-tut="ai-panel" style={S.sugPanel}>
     <div style={S.sh}>Resources {ytResults.length>0&&<span style={{fontSize:9,color:"#7b93f5"}}>(live)</span>}</div>
     {loadingYT&&<div style={{fontSize:12,color:"#7b93f5",marginBottom:8}}>Searching YouTube...</div>}
@@ -1673,14 +1615,15 @@ function SugPanel({videos,ytResults,knowledge,aiInsight,loadingYT}){
       <div style={{flex:1,minWidth:0}}><div style={{fontSize:12,fontWeight:600,color:"#f1f5f9",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v.t}</div><div style={{fontSize:10,color:"#8492a6"}}>{v.ch}{v.v?` \u00b7 ${v.v}`:""}</div></div>
     </div></a><div style={{fontSize:9,color:"#8492a6",textAlign:"center",opacity:.45,paddingBottom:2}}>drag to pin</div></div>))}
     {aiInsight&&<div style={{marginTop:14}}><div style={S.sh2}>AI Insight</div><div style={{...S.glassAccent,padding:12,fontSize:13,color:"#b0bec5",lineHeight:1.6}}>{aiInsight}</div></div>}
-    {knowledge&&<div style={{marginTop:14}}><div style={S.sh2}>Knowledge</div>{Object.values(knowledge).map((info,i)=>(<div key={i} style={{marginBottom:8}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span style={{fontWeight:600,color:"#f1f5f9"}}>{info.name}</span><span style={{color:"#7b93f5",fontFamily:"'JetBrains Mono',monospace"}}>{info.pct}%</span></div><div style={S.pBar}><div style={S.pFill(info.pct)}/></div></div>))}</div>}
+    {knowledge&&<div style={{marginTop:14}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={S.sh2}>Knowledge</div>{onRefreshKnowledge&&<button onClick={onRefreshKnowledge} disabled={knowledgeLoading} style={{padding:"2px 8px",borderRadius:6,border:"1px solid var(--t-border)",background:"transparent",color:"var(--t-txt3)",fontSize:10,cursor:knowledgeLoading?"wait":"pointer",opacity:knowledgeLoading?.5:1}}>{knowledgeLoading?"...":"↻"}</button>}</div>{Object.values(knowledge).map((info,i)=>(<div key={i} style={{marginBottom:8}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12}}><span style={{fontWeight:600,color:"#f1f5f9"}}>{info.name}</span><span style={{color:"#7b93f5",fontFamily:"'JetBrains Mono',monospace"}}>{info.pct}%</span></div><div style={S.pBar}><div style={S.pFill(info.pct)}/></div></div>))}</div>}
+    {!knowledge&&knowledgeLoading&&<div style={{marginTop:14}}><div style={S.sh2}>Knowledge</div><div style={{fontSize:12,color:"#7b93f5"}}>Analyzing your notes...</div></div>}
   </div>);
 }
 
 // ══════════════════════════════════════════════════════════════
 // SECTION 10: AI INSIGHTS (category-free, Gemini-powered)
 // ══════════════════════════════════════════════════════════════
-function InsightsPage({notes,folders,knowledge,onAddTopic,geminiKey,topicSections,confidence,insightsFolder,setInsightsFolder}){
+function InsightsPage({notes,folders,knowledge,onAddTopic,geminiKey,topicSections,confidence,insightsFolder,setInsightsFolder,onRefreshKnowledge,knowledgeLoading}){
   const[aiData,setAiData]=useState(null);const[ld,setLd]=useState(false);
   const[studyPlan,setStudyPlan]=useState(null);const[spLd,setSpLd]=useState(false);
 
@@ -1709,8 +1652,8 @@ function InsightsPage({notes,folders,knowledge,onAddTopic,geminiKey,topicSection
   const barData=Array.from({length:10},(_,i)=>({level:i+1,count:scoredTopics.filter(d=>d.score===i+1).length}));
   const maxBar=Math.max(1,...barData.map(b=>b.count));
 
-  const nxt=getNextTopics(knowledge);
-  const kVals=Object.values(knowledge);
+  const kVals=knowledge?Object.values(knowledge):[];
+  const nxt=kVals.flatMap(info=>(info.nextTopics||[]).map(nt=>({...nt,subject:info.name,curPct:info.pct}))).slice(0,5);
 
   const gen=async()=>{
     if(!geminiKey)return;setLd(true);
@@ -1843,20 +1786,22 @@ Notes:\n${digest}`;
 
     {/* Knowledge tracker */}
     {kVals.length>0&&<div style={{marginBottom:16}}>
-      <div style={S.sh}>Knowledge Tracker</div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={S.sh}>Knowledge Tracker</div>{onRefreshKnowledge&&<button onClick={onRefreshKnowledge} disabled={knowledgeLoading} style={{padding:"4px 12px",borderRadius:8,border:"1px solid var(--t-border)",background:"transparent",color:"var(--t-txt3)",fontSize:11,cursor:knowledgeLoading?"wait":"pointer",opacity:knowledgeLoading?.5:1}}>{knowledgeLoading?"Analyzing...":"Refresh"}</button>}</div>
       {kVals.map((info,i)=>(<div key={i} style={{...S.glass,padding:12,marginBottom:8}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{fontSize:13,fontWeight:600}}>{info.name}</span><span style={{fontSize:12,color:T.a1,fontFamily:"'JetBrains Mono',monospace"}}>{info.pct}%</span></div>
         <div style={S.pBar}><div style={S.pFill(info.pct,info.pct>70?T.a1:info.pct>40?T.purple:T.red)}/></div>
-        <div style={{fontSize:11,color:T.txt2,marginTop:2}}>{info.found}/{info.total} concepts covered</div>
-        {info.missing.length>0&&<div style={{marginTop:4}}><span style={{fontSize:11,color:T.purple}}>Gaps: </span><span style={{fontSize:11,color:T.txt3}}>{info.missing.join(", ")}</span></div>}
+        <div style={{fontSize:11,color:T.txt2,marginTop:2}}>{(info.found?.length||info.found||0)}/{(info.total||((info.found?.length||0)+(info.missing?.length||0)))} concepts covered</div>
+        {info.missing?.length>0&&<div style={{marginTop:4}}><span style={{fontSize:11,color:T.purple}}>Gaps: </span><span style={{fontSize:11,color:T.txt3}}>{info.missing.join(", ")}</span></div>}
       </div>))}
       {nxt.length>0&&<><div style={{...S.sh,marginTop:12}}>Suggested Next Topics</div>
         {nxt.map((nt,i)=>(<div key={i} style={{...S.glass,padding:10,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div><div style={{fontSize:13,fontWeight:600}}>{nt.topic}</div><div style={{fontSize:11,color:T.txt2}}>{nt.subject} ({nt.curPct}%)</div></div>
-          <div style={{display:"flex",gap:5}}><button className="grad-btn" onClick={()=>onAddTopic(nt)} style={{padding:"4px 12px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>Add</button><a href={nt.video} target="_blank" rel="noopener noreferrer" style={{padding:"4px 12px",borderRadius:8,border:`1px solid ${T.border}`,color:T.a2,fontSize:11,textDecoration:"none"}}>Watch</a></div>
+          <div style={{display:"flex",gap:5}}><button className="grad-btn" onClick={()=>onAddTopic(nt)} style={{padding:"4px 12px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>Add</button><a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(nt.topic)}`} target="_blank" rel="noopener noreferrer" style={{padding:"4px 12px",borderRadius:8,border:`1px solid ${T.border}`,color:T.a2,fontSize:11,textDecoration:"none"}}>Watch</a></div>
         </div>))}</>}
     </div>}
 
+    {!knowledge&&knowledgeLoading&&geminiKey&&<div style={{...S.glass,padding:16,marginBottom:16}}><div style={{fontSize:13,color:"#7b93f5"}}>Analyzing your notes for knowledge coverage...</div></div>}
+    {!knowledge&&!knowledgeLoading&&geminiKey&&<div style={{...S.glass,padding:16,marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,color:T.txt2}}>Knowledge tracker not loaded yet.</span>{onRefreshKnowledge&&<button onClick={onRefreshKnowledge} style={{padding:"6px 14px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#7b93f5,#9571cd)",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>Analyze</button>}</div>}
     {!geminiKey&&<IBox icon="!" text="Add an API key (VITE_ANTHROPIC_KEY or VITE_GEMINI_KEY) in .env to unlock AI-powered insights."/>}
 
     {/* AI Analysis results */}
@@ -3718,8 +3663,22 @@ function NotiqApp(){
   },[isDark]);
 
   const active=notes[activeNote];
-  const knowledge=useMemo(()=>calcKnow(notes),[notes]);
-  const videos=useMemo(()=>active?getVideos(active.content||""):[],[active?.content]);
+  const [knowledge,setKnowledge]=useState(null);
+  const [knowledgeLoading,setKnowledgeLoading]=useState(false);
+  const refreshKnowledge=useCallback(async()=>{
+    if(!AI_KEY||knowledgeLoading)return;
+    setKnowledgeLoading(true);
+    try{
+      const result=await aiAnalyzeKnowledge(notes,AI_KEY);
+      if(result?.subjects){
+        const kObj={};
+        result.subjects.forEach((s,i)=>{kObj[`s${i}`]={name:s.name,pct:s.pct,found:s.found||[],total:(s.found?.length||0)+(s.missing?.length||0),missing:s.missing||[],nextTopics:s.nextTopics||[]};});
+        setKnowledge(kObj);
+      }
+    }catch(e){console.error("Knowledge analysis error:",e);}
+    setKnowledgeLoading(false);
+  },[notes]);
+  useEffect(()=>{if(AI_KEY){const t=setTimeout(()=>refreshKnowledge(),2000);return()=>clearTimeout(t);}},[]);
 
   // Parse topic sections from note content (client-side heading detection)
   const parseSections=useCallback((noteId,html)=>{
@@ -3755,8 +3714,7 @@ function NotiqApp(){
       // Skip if context hasn't changed meaningfully (dedup)
       if(ctx===lastGhostCtx.current)return;
       lastGhostCtx.current=ctx;
-      const localGhost=getGhost(html);
-      if(!AI_KEY){if(localGhost)setGhostData(localGhost);return;}
+      if(!AI_KEY)return;
       if(abortRef.current)abortRef.current.abort();
       const ac=new AbortController();abortRef.current=ac;
       setGhostLoading(true);
@@ -3764,7 +3722,7 @@ function NotiqApp(){
       const curNote=notes[activeNote];
       const ragCtx=curNote?.context||"";
       const r=await geminiComplete(ctx,{title:curNote?.title||"",context:ragCtx},AI_KEY,ac.signal);
-      if(!ac.signal.aborted){setGhostData(r||localGhost);setGhostLoading(false);}
+      if(!ac.signal.aborted){setGhostData(r||null);setGhostLoading(false);}
     },350);
     // ── YouTube pipeline: debounce 2s, skip duplicate queries ──
     if(ytRef.current)clearTimeout(ytRef.current);
@@ -3817,7 +3775,7 @@ function NotiqApp(){
   const createFolder=name=>{setFolders(p=>[...p,{id:`f_${Date.now()}`,name,children:[]}]);};
   const createSubfolder=(rootId,name)=>{const sid=`sf_${Date.now()}`;setFolders(p=>p.map(f=>f.id===rootId?{...f,children:[...(f.children||[]),{id:sid,name,notes:[]}]}:f));};
   const addLesson=(pid,title)=>{const id=`${pid}_l${Date.now()}`;setNotes(p=>{const pn=p[pid];return{...p,[pid]:{...pn,children:[...(pn.children||[]),id]},[id]:{title,cat:pn.cat,created:new Date().toISOString().slice(0,10),parent:pid,content:""}};});};
-  const addTopic=nt=>{const tid=nt.tn;if(!notes[tid])return;setNotes(p=>({...p,[tid]:{...p[tid],content:(p[tid].content||"")+`<h3 style="color:var(--t-blue)">${nt.topic}</h3><p>${nt.desc}</p><p><a href="${nt.video}" target="_blank" style="color:var(--t-a2)">Watch \u2192</a></p>`}}));selectNote(tid);};
+  const addTopic=nt=>{const tid=activeNote;if(!tid||!notes[tid])return;const searchUrl=`https://www.youtube.com/results?search_query=${encodeURIComponent(nt.topic)}`;setNotes(p=>({...p,[tid]:{...p[tid],content:(p[tid].content||"")+`<h3 style="color:var(--t-blue)">${nt.topic}</h3><p>${nt.desc}</p><p><a href="${searchUrl}" target="_blank" style="color:var(--t-a2)">Watch \u2192</a></p>`}}));selectNote(tid);};
   const handleShowFiles=()=>{const sel=window.getSelection()?.toString()||"";setFileSearch(sel);setShowFiles(true);setShowAI(false);};
 
   // Folder/subfolder breadcrumb
@@ -3907,7 +3865,7 @@ function NotiqApp(){
             <RichEditor key={activeNote} content={active.content} onChange={handleChange} ghostData={ghostData} onAcceptGhost={acceptGhost} noteId={activeNote} loading={ghostLoading} onShowFiles={handleShowFiles} sectionColors={SECTION_COLORS} confidence={confidence} onSetConfidence={setConfidenceScore}/>
           </div>
           {showFiles&&<FilePanel files={uploadedFiles} onUpload={f=>setUploadedFiles(p=>[...p,f])} onClose={()=>{setShowFiles(false);setShowAI(true);}} searchText={fileSearch}/>}
-          {showAI&&!showFiles&&!showTransform&&<SugPanel videos={videos} ytResults={ytResults} knowledge={knowledge} aiInsight={aiInsight} loadingYT={ytLoading}/>}
+          {showAI&&!showFiles&&!showTransform&&<SugPanel ytResults={ytResults} knowledge={knowledge} aiInsight={aiInsight} loadingYT={ytLoading} onRefreshKnowledge={refreshKnowledge} knowledgeLoading={knowledgeLoading}/>}
         </div>
       )}
       {page==="notes"&&!viewMode&&!active&&<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{textAlign:"center",maxWidth:340}}>
@@ -3915,7 +3873,7 @@ function NotiqApp(){
         <p style={{color:"#b0bec5",fontSize:15,lineHeight:1.6,margin:"0 0 8px"}}>Select a note from the sidebar or create a new one to get started.</p>
         <p style={{color:"#8492a6",fontSize:12}}>Your AI-powered writing companion is ready.</p>
       </div></div>}
-      {page==="insights"&&<InsightsPage notes={notes} folders={folders} knowledge={knowledge} onAddTopic={addTopic} geminiKey={AI_KEY} topicSections={topicSections} confidence={confidence} insightsFolder={insightsFolder} setInsightsFolder={setInsightsFolder}/>}
+      {page==="insights"&&<InsightsPage notes={notes} folders={folders} knowledge={knowledge} onAddTopic={addTopic} geminiKey={AI_KEY} topicSections={topicSections} confidence={confidence} insightsFolder={insightsFolder} setInsightsFolder={setInsightsFolder} onRefreshKnowledge={refreshKnowledge} knowledgeLoading={knowledgeLoading}/>}
       {page==="summary"&&<SummaryPage notes={notes} folders={folders} geminiKey={AI_KEY} topicSections={topicSections} confidence={confidence}/>}
       {page==="links"&&<LinksPage notes={notes} folders={folders} geminiKey={AI_KEY} onSelectNote={selectNote}/>}
     </div>
